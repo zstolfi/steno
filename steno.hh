@@ -76,9 +76,9 @@ public:
 		}
 
 		// Assign.
-		for (char c : sL) keys.bits[Left  .find(c) +  1];
-		for (char c : sM) keys.bits[Middle.find(c) +  8];
-		for (char c : sR) keys.bits[Right .find(c) + 13];
+		for (char c : sL) keys.bits[Left  .find(c) +  1] = true;
+		for (char c : sM) keys.bits[Middle.find(c) +  8] = true;
+		for (char c : sR) keys.bits[Right .find(c) + 13] = true;
 	}
 
 private:
