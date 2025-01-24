@@ -85,7 +85,7 @@ Stroke::Stroke(FromBits_t, std::bitset<23> b) {
 	this->keys._Z  = b[22];
 }
 
-Stroke::Stroke(FromBitsReveresed_t, std::bitset<23> b) {
+Stroke::Stroke(FromBitsReversed_t, std::bitset<23> b) {
 	this->keys.Num = b[22];
 	this->keys.S_  = b[21];
 	this->keys.T_  = b[20];
@@ -111,7 +111,7 @@ Stroke::Stroke(FromBitsReveresed_t, std::bitset<23> b) {
 	this->keys._Z  = b[ 0];
 }
 
-std::strong_ordering Stroke::operator<=>(Stroke other) {
+std::strong_ordering Stroke::operator<=>(const Stroke other) const {
 	return this->keys.bits.to_ulong()
 	<=>    other.keys.bits.to_ulong();
 }
@@ -121,7 +121,7 @@ Stroke Stroke::operator+=(Stroke other) {
 	return *this;
 }
 
-void Stroke::failConstruction() { this->keys.FailedCostruction = true; }
+void Stroke::failConstruction() { this->keys.FailedConstruction = true; }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -144,7 +144,7 @@ Strokes::Strokes(std::string s) {
 	auto push = [&](unsigned i, unsigned j) {
 		// if (i == j) return false;
 		this->list.emplace_back(s.substr(i, j-i));
-		if (this->list.back().keys.FailedCostruction) return false;
+		if (this->list.back().keys.FailedConstruction) return false;
 		return true;
 	};
 

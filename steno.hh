@@ -13,8 +13,8 @@ namespace steno {
 struct FromBits_t {};
 constexpr FromBits_t FromBits;
 
-struct FromBitsReveresed_t {};
-constexpr FromBitsReveresed_t FromBitsReveresed;
+struct FromBitsReversed_t {};
+constexpr FromBitsReversed_t FromBitsReversed;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -32,7 +32,7 @@ struct Stroke {
 			unsigned _F:1, _R:1, _P:1, _B:1, _L:1, _G:1, _T:1, _S:1, _D:1, _Z:1;
 			/* Flags: */
 			unsigned Mark:1, OpenLeft:1, OpenRight:1;
-			unsigned /*padding*/:5, FailedCostruction:1;
+			unsigned /*padding*/:5, FailedConstruction:1;
 		};
 	} keys;
 
@@ -40,9 +40,9 @@ public:
 	Stroke() = default;
 	Stroke(std::string);
 	Stroke(FromBits_t, std::bitset<23>);
-	Stroke(FromBitsReveresed_t, std::bitset<23>);
+	Stroke(FromBitsReversed_t, std::bitset<23>);
 
-	std::strong_ordering operator<=>(Stroke);
+	std::strong_ordering operator<=>(const Stroke) const;
 	Stroke operator+=(Stroke);
 
 private:
