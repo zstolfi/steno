@@ -2,12 +2,7 @@
 #include <iostream>
 
 int main() {
-	steno::Stroke t[] = {
-		{"OE"},
-		{"WUPB"},
-		{"TWO"},
-		{"THRE"}
-	};
+	steno::Strokes t = {"OE/WUPB/TWO/THRE"};
 
 	std::cout << ".........ZDSTGLBPRFUE*OARHWPKTS.\n";
 	std::cout << t[0].keys.bits << "\n";

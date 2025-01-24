@@ -1,8 +1,20 @@
 #include <iostream>
 #include <bitset>
 #include <string>
+#include <vector>
+#include <span>
+#include <initializer_list>
+#include <compare>
 
 namespace steno {
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+struct FromBits_t {};
+constexpr FromBits_t FromBits;
+
+struct FromBitsReveresed_t {};
+constexpr FromBitsReveresed_t FromBitsReveresed;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -25,15 +37,69 @@ struct Stroke {
 	} keys;
 
 public:
-	constexpr Stroke() {};
+	Stroke() = default;
+	Stroke(std::string);
+	Stroke(FromBits_t, std::bitset<23>);
+	Stroke(FromBitsReveresed_t, std::bitset<23>);
 
-	Stroke(std::string s);
+	std::strong_ordering operator<=>(Stroke);
+	Stroke operator+=(Stroke);
 
 private:
 	void failConstruction();
 };
 
-constexpr auto NoStroke = Stroke {};
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+struct Strokes {
+	std::vector<Stroke> list {};
+
+public:
+	Strokes() = default;
+	Strokes(Stroke);
+	Strokes(std::span<Stroke>);
+	Strokes(std::initializer_list<Stroke>);
+	Strokes(std::string);
+
+	std::strong_ordering operator<=>(Strokes);
+
+	Stroke& operator[](std::size_t);
+	Stroke  operator[](std::size_t) const;
+
+	Strokes& append(Stroke);
+	Strokes& prepend(Stroke);
+	Strokes& append(const Strokes&);
+	Strokes& prepend(const Strokes&);
+	Strokes& operator|=(const Strokes&);
+
+private:
+	using List_t = decltype(list);
+	void normalize();
+};
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+// struct Brief {
+
+// };
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+// Multiple keys at the same time
+Stroke  operator+(Stroke , Stroke );
+Strokes operator+(Strokes, Stroke );
+Strokes operator+(Stroke , Strokes);
+
+// Multiple strokes in order
+Strokes operator|(Stroke , Stroke );
+Strokes operator|(Strokes, Stroke );
+Strokes operator|(Stroke , Strokes);
+Strokes operator|(Strokes, Strokes);
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+const auto NoStroke = Stroke {};
+const auto NoStrokes = Strokes {};
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
