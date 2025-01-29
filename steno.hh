@@ -4,7 +4,6 @@
 #include <vector>
 #include <span>
 #include <initializer_list>
-#include <compare>
 
 namespace steno {
 
@@ -38,8 +37,14 @@ struct Stroke {
 
 public:
 	Stroke() = default;
-	auto operator<=>(const Stroke x) const
-	{ return keys.bits.to_ulong() <=> x.keys.bits.to_ulong(); }
+	bool operator==(const Stroke other) const {
+		return this->keys.bits
+		==     other.keys.bits;
+	}
+	auto operator<=>(const Stroke other) const {
+		return this->keys.bits.to_ulong()
+		<=>    other.keys.bits.to_ulong();
+	}
 
 
 	Stroke(std::string);
@@ -69,22 +74,49 @@ public:
 	Stroke& operator[](std::size_t);
 	Stroke  operator[](std::size_t) const;
 
-	Strokes& append(Stroke);
-	Strokes& prepend(Stroke);
-	Strokes& append(const Strokes&);
-	Strokes& prepend(const Strokes&);
-	Strokes& operator|=(const Strokes&);
+	Strokes& append (Stroke );
+	Strokes& prepend(Stroke );
+	Strokes& append (Strokes);
+	Strokes& prepend(Strokes);
+	Strokes& operator|=(Strokes);
 
 private:
 	using List_t = decltype(list);
+};
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+struct Brief {
+	Strokes strokes {};
+	std::string text {};
+
+public:
+	Brief() = default;
+	Brief(Strokes, std::string);
+	Brief(std::string, Strokes);
+
+	Brief(Brief, std::string);
+	Brief(std::string, Brief);
+
+	Brief& operator+=(Brief);
+	Brief& operator|=(Brief);
+
+private:
+	void appendText(std::string);
+
 	void normalize();
 };
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-// struct Brief {
+struct Dictionary {
+	std::vector<Brief> entries {};
 
-// };
+public:
+	Dictionary();
+	Dictionary(std::span<Brief>);
+	Dictionary(std::initializer_list<Brief>);
+};
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -92,17 +124,23 @@ private:
 Stroke  operator+(Stroke , Stroke );
 Strokes operator+(Strokes, Stroke );
 Strokes operator+(Stroke , Strokes);
+Brief   operator+(Brief  , Brief  );
 
 // Multiple strokes in order
 Strokes operator|(Stroke , Stroke );
 Strokes operator|(Strokes, Stroke );
 Strokes operator|(Stroke , Strokes);
 Strokes operator|(Strokes, Strokes);
-
-/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+Brief   operator|(Brief  , Brief  );
 
 const auto NoStroke = Stroke {};
 const auto NoStrokes = Strokes {};
+const auto NoBrief = Brief {};
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+std::string toString(Stroke);
+std::string toString(Strokes);
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 

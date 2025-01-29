@@ -84,17 +84,14 @@ void Stroke::failConstruction() { this->keys.FailedConstruction = true; }
 
 Strokes::Strokes(Stroke x) {
 	this->list = List_t {x};
-	normalize();
 }
 
 Strokes::Strokes(std::span<Stroke> span) {
 	this->list = List_t (span.begin(), span.end());
-	normalize();
 }
 
 Strokes::Strokes(std::initializer_list<Stroke> il) {
 	this->list = List_t (il.begin(), il.end());
-	normalize();
 }
 
 Strokes::Strokes(std::string s) {
@@ -111,7 +108,6 @@ Strokes::Strokes(std::string s) {
 		i = j+1;
 	}
 	push(i, s.size());
-	normalize();
 }
 
 Stroke& Strokes::operator[](std::size_t i) /* */ { return this->list[i]; }
@@ -127,39 +123,109 @@ Strokes& Strokes::prepend(Stroke x) {
 	return *this;
 }
 
-Strokes& Strokes::append(const Strokes& xx) {
+Strokes& Strokes::append(Strokes xx) {
 	this->list.insert(this->list.end(), xx.list.begin(), xx.list.end());
 	return *this;
 }
 
-Strokes& Strokes::prepend(const Strokes& xx) {
+Strokes& Strokes::prepend(Strokes xx) {
 	this->list.insert(this->list.begin(), xx.list.begin(), xx.list.end());
 	return *this;
 }
 
-Strokes& Strokes::operator|=(const Strokes& xx) {
-	return this->append(xx);
+Strokes& Strokes::operator|=(Strokes xx) {
+	return append(xx);
 }
 
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-void Strokes::normalize() {
-	// // Remove empty strokes.
-	// this->list.erase(
-	// 	std::remove(this->list.begin(), this->list.end(), NoStroke),
-	// 	this->list.end()
-	// );
+Brief::Brief(Strokes xx, std::string str): strokes{xx}, text{str} { normalize(); }
+Brief::Brief(std::string str, Strokes xx): strokes{xx}, text{str} { normalize(); }
+
+Brief::Brief(Brief a, std::string str): strokes{a.strokes}, text{str} { normalize(); }
+Brief::Brief(std::string str, Brief a): strokes{a.strokes}, text{str} { normalize(); }
+
+Brief& Brief::operator+=(Brief other) {
+	if (this->strokes.list.size() != 1 || other.strokes.list.size() != 1) {
+		return *this |= other;
+	}
+	this->strokes[0] += other.strokes[0];
+	appendText(other.text);
+	return *this;
 }
+
+Brief& Brief::operator|=(Brief other) {
+	this->strokes |= other.strokes;
+	appendText(other.text);
+	return *this;
+}
+
+void Brief::appendText(std::string str) {
+	if (this->text.empty()) { this->text = str; return; }
+	if (str.empty()) return;
+
+	bool endGlue = this->text.back() == '~';
+	bool startGlue = str.front() == '~';
+
+	if (endGlue) this->text.pop_back();
+	this->text.insert(this->text.size(), str, startGlue? 1: 0);
+}
+
+void Brief::normalize() {
+	// Remove empty strokes.
+	this->strokes.list.erase(
+		std::remove(this->strokes.list.begin(), this->strokes.list.end(), NoStroke),
+		this->strokes.list.end()
+	);
+}
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+Dictionary::Dictionary() {}
+
+Dictionary::Dictionary(std::span<Brief> span) {
+	this->entries = std::vector<Brief> (span.begin(), span.end());
+}
+
+Dictionary::Dictionary(std::initializer_list<Brief> il) {
+	this->entries = std::vector<Brief> (il.begin(), il.end());
+}
+
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 Stroke  operator+(Stroke  x , Stroke  y ) { return x += y ; }
 Strokes operator+(Strokes xx, Stroke  y ) { return xx.list.back() += y; }
 Strokes operator+(Stroke  x , Strokes yy) { return yy.list.front() += x; }
+Brief   operator+(Brief   a , Brief   b ) { return a += b; }
 
 Strokes operator|(Stroke  x , Stroke  y ) { return Strokes {x, y}; }
 Strokes operator|(Strokes xx, Stroke  y ) { return xx.append(y); }
 Strokes operator|(Stroke  x , Strokes yy) { return yy.prepend(x); }
 Strokes operator|(Strokes xx, Strokes yy) { return xx.append(yy); }
+Brief   operator|(Brief   a , Brief   b ) { return a |= b; }
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+std::string toString(Stroke x) {
+	std::string result = "#STKPWHRAO*EUFRPBLGTSDZ";
+	for (unsigned i=0; i<result.size(); i++) {
+		if (x.keys.bits[i] == false) result[i] = ' ';
+	}
+	if (!x.keys.A && !x.keys.O && !x.keys.x && !x.keys.E && !x.keys.U) {
+		result[10] = '-';
+	}
+	return result;
+}
+
+std::string toString(Strokes xx) {
+	std::string result = "";
+	for (int i=0; auto stroke : xx.list) {
+		if (i++) result += '/';
+		result += toString(stroke);
+	}
+	return result;
+}
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
