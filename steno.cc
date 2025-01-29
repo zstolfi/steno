@@ -11,7 +11,8 @@ Stroke::Stroke(std::string s) {
 	const std::string Left   = "STKPWHR";
 	const std::string Middle = "AO*EU";
 	const std::string Right  = "FRPBLGTSDZ";
-	const std::string Misc   = "-";
+	const char Dash = '-';
+	const std::string Misc = {Dash};
 	auto in = [](std::string set) {
 		return [set](char c) { return set.find(c) != set.npos; };
 	};
@@ -29,9 +30,9 @@ Stroke::Stroke(std::string s) {
 
 	// Find unique middle secion (vowels).
 	unsigned v0 {}, v1 {};
-	if (auto dash = s.find('-'); dash != s.npos) {
-		v0 = dash;
-		v1 = dash+1;
+	if (auto d = s.find(Dash); d != s.npos) {
+		v0 = d;
+		v1 = d+1;
 	}
 	else if (auto i = s.find_first_of(Middle); i != s.npos) {
 		auto j = s.find_first_not_of(Middle, i);
@@ -42,9 +43,10 @@ Stroke::Stroke(std::string s) {
 	else { failConstruction(); return; }
 
 	// Split 's' into substrings.
-	const std::string sL = s.substr(0, v0);
-	const std::string sM = s.substr(v0, v1-v0);
-	const std::string sR = s.substr(v1, s.size()-v1);
+	std::string sL = s.substr(0, v0);
+	std::string sM = s.substr(v0, v1-v0);
+	std::string sR = s.substr(v1, s.size()-v1);
+	if (sM == "-") sM = "";
 
 	// More checks.
 	if (!std::all_of(sL.begin(), sL.end(), in(Left  ))
@@ -60,60 +62,15 @@ Stroke::Stroke(std::string s) {
 }
 
 Stroke::Stroke(FromBits_t, std::bitset<23> b) {
-	this->keys.Num = b[ 0];
-	this->keys.S_  = b[ 1];
-	this->keys.T_  = b[ 2];
-	this->keys.K_  = b[ 3];
-	this->keys.P_  = b[ 4];
-	this->keys.W_  = b[ 5];
-	this->keys.H_  = b[ 6];
-	this->keys.R_  = b[ 7];
-	this->keys.A   = b[ 8];
-	this->keys.O   = b[ 9];
-	this->keys.x   = b[10];
-	this->keys.E   = b[11];
-	this->keys.U   = b[12];
-	this->keys._F  = b[13];
-	this->keys._R  = b[14];
-	this->keys._P  = b[15];
-	this->keys._B  = b[16];
-	this->keys._L  = b[17];
-	this->keys._G  = b[18];
-	this->keys._T  = b[19];
-	this->keys._S  = b[20];
-	this->keys._D  = b[21];
-	this->keys._Z  = b[22];
+	// 0b00011000100001110100000
+	// = #STKPWHRAO*EUFRPBLGTSDZ
+	for (unsigned i=0; i<b.size(); i++) this->keys.bits[i] = b[22 - i];
 }
 
 Stroke::Stroke(FromBitsReversed_t, std::bitset<23> b) {
-	this->keys.Num = b[22];
-	this->keys.S_  = b[21];
-	this->keys.T_  = b[20];
-	this->keys.K_  = b[19];
-	this->keys.P_  = b[18];
-	this->keys.W_  = b[17];
-	this->keys.H_  = b[16];
-	this->keys.R_  = b[15];
-	this->keys.A   = b[14];
-	this->keys.O   = b[13];
-	this->keys.x   = b[12];
-	this->keys.E   = b[11];
-	this->keys.U   = b[10];
-	this->keys._F  = b[ 9];
-	this->keys._R  = b[ 8];
-	this->keys._P  = b[ 7];
-	this->keys._B  = b[ 6];
-	this->keys._L  = b[ 5];
-	this->keys._G  = b[ 4];
-	this->keys._T  = b[ 3];
-	this->keys._S  = b[ 2];
-	this->keys._D  = b[ 1];
-	this->keys._Z  = b[ 0];
-}
-
-std::strong_ordering Stroke::operator<=>(const Stroke other) const {
-	return this->keys.bits.to_ulong()
-	<=>    other.keys.bits.to_ulong();
+	// 0b00000101110000100011000
+	// = ZDSTGLBPRFUE*OARHWPKTS#
+	for (unsigned i=0; i<b.size(); i++) this->keys.bits[i] = b[i];
 }
 
 Stroke Stroke::operator+=(Stroke other) {
@@ -156,11 +113,6 @@ Strokes::Strokes(std::string s) {
 	push(i, s.size());
 	normalize();
 }
-
-// std::strong_ordering Strokes::operator<=>(Strokes other) {
-// 	return this->list
-// 	<=>    other.list;
-// }
 
 Stroke& Strokes::operator[](std::size_t i) /* */ { return this->list[i]; }
 Stroke  Strokes::operator[](std::size_t i) const { return this->list[i]; }

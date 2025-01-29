@@ -38,11 +38,14 @@ struct Stroke {
 
 public:
 	Stroke() = default;
+	auto operator<=>(const Stroke x) const
+	{ return keys.bits.to_ulong() <=> x.keys.bits.to_ulong(); }
+
+
 	Stroke(std::string);
 	Stroke(FromBits_t, std::bitset<23>);
 	Stroke(FromBitsReversed_t, std::bitset<23>);
 
-	std::strong_ordering operator<=>(const Stroke) const;
 	Stroke operator+=(Stroke);
 
 private:
@@ -56,12 +59,12 @@ struct Strokes {
 
 public:
 	Strokes() = default;
+	auto operator<=>(const Strokes xx) const { return list <=> xx.list; }
+
 	Strokes(Stroke);
 	Strokes(std::span<Stroke>);
 	Strokes(std::initializer_list<Stroke>);
 	Strokes(std::string);
-
-	std::strong_ordering operator<=>(Strokes);
 
 	Stroke& operator[](std::size_t);
 	Stroke  operator[](std::size_t) const;
