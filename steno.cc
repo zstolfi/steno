@@ -195,8 +195,10 @@ void Dictionary::add(Brief b) {
 	auto it = this->entries.find(b.strokes);
 	// Assign if it's not taken.
 	if (it == this->entries.end()) this->entries[b.strokes] = {b.text};
-	// Otherwise create a conflict.
-	else it->second.push_front(b.text);
+	// Otherwise create a conflict (if it's not already in the translation).
+	else if (std::find(it->second.begin(), it->second.end(), b.text) == it->second.end()) {
+		it->second.push_front(b.text);
+	}
 }
 
 std::string Dictionary::translate(const Entry& entry) const {
