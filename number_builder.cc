@@ -80,12 +80,16 @@ auto Num(unsigned x, bool recursed=false) -> steno::Brief {
 
 int main() {
 	for (unsigned i=0; i<1000; i++) {
-		auto brief = Num(i);
-		std::cout << brief.text << " := \t|"<< toString(brief.strokes) << " |\n";
-		numbersDict.entries.push_back(brief);
+		numbersDict.add(Num(i));
 	}
 
-	numbersDict.entries.insert(numbersDict.entries.end(), {
-		Hundred, Thousand, Million, Billion, Trillion
-	});
+	numbersDict.add(Hundred);
+	numbersDict.add(Thousand);
+	numbersDict.add(Million);
+	numbersDict.add(Billion);
+	numbersDict.add(Trillion);
+
+	for (const auto& [strokes, text] : numbersDict.entries) {
+		std::cout << text << "\t:=    |" << steno::toString(strokes) << "|\n";
+	}
 }

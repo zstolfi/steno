@@ -1,6 +1,5 @@
 #include "steno.hh"
 #include <algorithm>
-#include <cstdint>
 
 namespace steno {
 
@@ -142,8 +141,8 @@ Strokes& Strokes::operator|=(Strokes xx) {
 Brief::Brief(Strokes xx, std::string str): strokes{xx}, text{str} { normalize(); }
 Brief::Brief(std::string str, Strokes xx): strokes{xx}, text{str} { normalize(); }
 
-Brief::Brief(Brief a, std::string str): strokes{a.strokes}, text{str} { normalize(); }
-Brief::Brief(std::string str, Brief a): strokes{a.strokes}, text{str} { normalize(); }
+Brief::Brief(Brief b, std::string str): strokes{b.strokes}, text{str} { normalize(); }
+Brief::Brief(std::string str, Brief b): strokes{b.strokes}, text{str} { normalize(); }
 
 Brief& Brief::operator+=(Brief other) {
 	if (this->strokes.list.size() != 1 || other.strokes.list.size() != 1) {
@@ -184,13 +183,27 @@ void Brief::normalize() {
 Dictionary::Dictionary() {}
 
 Dictionary::Dictionary(std::span<Brief> span) {
-	this->entries = std::vector<Brief> (span.begin(), span.end());
+	for (Brief b : span) add(b);
 }
 
 Dictionary::Dictionary(std::initializer_list<Brief> il) {
-	this->entries = std::vector<Brief> (il.begin(), il.end());
+	for (Brief b : il) add(b);
 }
 
+void Dictionary::add(Brief b) {
+	// Find our spot of interest.
+	auto it = this->entries.find(b.strokes);
+	// Assign if it's not taken.
+	if (it == this->entries.end()) this->entries[b.strokes] = b.text;
+	// Otherwise create a conflict.
+	else it->second = '/' + it->second + '/' + b.text;
+}
+
+std::string Dictionary::translate(Strokes xx) {
+	auto it = this->entries.find(xx);
+	if (it == this->entries.end()) return toString(xx);
+	return it->second;
+}
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 

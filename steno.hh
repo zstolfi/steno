@@ -4,6 +4,8 @@
 #include <vector>
 #include <span>
 #include <initializer_list>
+#include <map>
+
 
 namespace steno {
 
@@ -110,12 +112,16 @@ private:
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 struct Dictionary {
-	std::vector<Brief> entries {};
+	std::map<Strokes, std::string> entries {};
 
 public:
 	Dictionary();
 	Dictionary(std::span<Brief>);
 	Dictionary(std::initializer_list<Brief>);
+
+	void add(Brief b);
+
+	std::string translate(Strokes);
 };
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
