@@ -2,9 +2,10 @@
 #include <bitset>
 #include <string>
 #include <vector>
+#include <map>
+#include <forward_list>
 #include <span>
 #include <initializer_list>
-#include <map>
 
 
 namespace steno {
@@ -112,16 +113,22 @@ private:
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 struct Dictionary {
-	std::map<Strokes, std::string> entries {};
+	// Allow conflicts in translation by allowing multiple texts per entry.
+	// Conflicts are rare, so I use a forward_list instead of a multimap.
+	using Translation = std::forward_list<std::string>;
+	std::map<Strokes, Translation> entries {};
 
 public:
 	Dictionary();
 	Dictionary(std::span<Brief>);
 	Dictionary(std::initializer_list<Brief>);
 
-	void add(Brief b);
+private:
+	using Entry = decltype(entries)::value_type;
 
-	std::string translate(Strokes);
+public:
+	void add(Brief b);
+	std::string translate(const Entry&) const;
 };
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */

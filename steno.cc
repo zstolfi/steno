@@ -194,15 +194,19 @@ void Dictionary::add(Brief b) {
 	// Find our spot of interest.
 	auto it = this->entries.find(b.strokes);
 	// Assign if it's not taken.
-	if (it == this->entries.end()) this->entries[b.strokes] = b.text;
+	if (it == this->entries.end()) this->entries[b.strokes] = {b.text};
 	// Otherwise create a conflict.
-	else it->second = '/' + it->second + '/' + b.text;
+	else it->second.push_front(b.text);
 }
 
-std::string Dictionary::translate(Strokes xx) {
-	auto it = this->entries.find(xx);
-	if (it == this->entries.end()) return toString(xx);
-	return it->second;
+std::string Dictionary::translate(const Entry& entry) const {
+	const Translation& t = entry.second;
+	// If there's just one string, return it.
+	if (++t.begin() == t.end()) [[likely]] return t.front();
+	// If it is a conflict, return all possibilities.
+	auto result = std::string {};
+	for (auto text : t) result += '/' + text;
+	return result;
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */

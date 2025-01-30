@@ -89,7 +89,8 @@ int main() {
 	numbersDict.add(Billion);
 	numbersDict.add(Trillion);
 
-	for (const auto& [strokes, text] : numbersDict.entries) {
-		std::cout << text << "\t:=    |" << steno::toString(strokes) << "|\n";
+	for (const auto& entry : numbersDict.entries) {
+		std::cout << numbersDict.translate(entry) << "\t:=    |"
+		/*     */ << steno::toString(entry.first) << "|\n";
 	}
 }

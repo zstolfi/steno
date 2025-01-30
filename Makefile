@@ -5,7 +5,7 @@ LDFLAGS   =
 all : example number_builder
 
 %.o : %.cc *.hh Makefile
-	$(CXX) $< -c -o $@ $(CXXFLAGS) 
+	$(CXX) $< -c -o $@ $(CXXFLAGS)
 
 example : example.o steno.o
 	$(CXX) $^ -o $@ $(LDFLAGS)
