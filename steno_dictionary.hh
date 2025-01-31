@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <variant> // for std::monostate
 #include <optional>
 
@@ -23,6 +24,7 @@ public:
 		for (Brief b : il) m_entries.add(b);
 	}
 
+	using Entry = typename decltype(m_entries)::value_type;
 	const auto& getEntries() const { return m_entries; }
 
 	Dictionary& add(Brief b, Data_t d={}) {
@@ -32,7 +34,11 @@ public:
 		if (it == m_entries.end()) m_entries[b.strokes] = {{b.text}, d};
 		// Otherwise create a conflict.
 		else it->second.text = makeConflict(it->second.text, b.text);
+		return *this;
+	}
 
+	Dictionary& merge(const Dictionary& other) {
+		m_entries.insert(other.m_entries.begin(), other.m_entries.end());
 		return *this;
 	}
 
