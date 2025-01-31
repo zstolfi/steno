@@ -60,13 +60,13 @@ Stroke::Stroke(std::string s) {
 	for (char c : sR) this->bits[Right .find(c) + 13] = true;
 }
 
-Stroke::Stroke(FromBits_t, std::bitset<23> b) {
+Stroke::Stroke(FromBits_Arg, std::bitset<23> b) {
 	// 0b00011000100001110100000
 	// = #STKPWHRAO*EUFRPBLGTSDZ
 	for (unsigned i=0; i<b.size(); i++) this->bits[i] = b[22 - i];
 }
 
-Stroke::Stroke(FromBitsReversed_t, std::bitset<23> b) {
+Stroke::Stroke(FromBitsReversed_Arg, std::bitset<23> b) {
 	// 0b00000101110000100011000
 	// = ZDSTGLBPRFUE*OARHWPKTS#
 	for (unsigned i=0; i<b.size(); i++) this->bits[i] = b[i];
@@ -176,39 +176,6 @@ void Brief::normalize() {
 		std::remove(this->strokes.list.begin(), this->strokes.list.end(), NoStroke),
 		this->strokes.list.end()
 	);
-}
-
-/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
-Dictionary::Dictionary() {}
-
-Dictionary::Dictionary(std::span<Brief> span) {
-	for (Brief b : span) add(b);
-}
-
-Dictionary::Dictionary(std::initializer_list<Brief> il) {
-	for (Brief b : il) add(b);
-}
-
-void Dictionary::add(Brief b) {
-	// Find our spot of interest.
-	auto it = this->entries.find(b.strokes);
-	// Assign if it's not taken.
-	if (it == this->entries.end()) this->entries[b.strokes] = {b.text};
-	// Otherwise create a conflict (if it's not already in the translation).
-	else if (std::find(it->second.begin(), it->second.end(), b.text) == it->second.end()) {
-		it->second.push_front(b.text);
-	}
-}
-
-std::string Dictionary::translate(const Entry& entry) const {
-	const Translation& t = entry.second;
-	// If there's just one string, return it.
-	if (++t.begin() == t.end()) [[likely]] return t.front();
-	// If it is a conflict, return all possibilities.
-	auto result = std::string {};
-	for (auto text : t) result += '/' + text;
-	return result;
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */

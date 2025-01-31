@@ -6,17 +6,13 @@
 #include <forward_list>
 #include <span>
 #include <initializer_list>
-
-
+#include <any>
 namespace steno {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-struct FromBits_t {};
-constexpr FromBits_t FromBits;
-
-struct FromBitsReversed_t {};
-constexpr FromBitsReversed_t FromBitsReversed;
+constexpr struct FromBits_Arg {} FromBits;
+constexpr struct FromBitsReversed_Arg {} FromBitsReversed;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -49,8 +45,8 @@ public:
 
 
 	Stroke(std::string);
-	Stroke(FromBits_t, std::bitset<23>);
-	Stroke(FromBitsReversed_t, std::bitset<23>);
+	Stroke(FromBits_Arg, std::bitset<23>);
+	Stroke(FromBitsReversed_Arg, std::bitset<23>);
 
 	Stroke operator+=(Stroke);
 
@@ -110,27 +106,6 @@ private:
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-struct Dictionary {
-	// Allow conflicts in translation by allowing multiple texts per entry.
-	// Conflicts are rare, so I use a forward_list instead of a multimap.
-	using Translation = std::forward_list<std::string>;
-	std::map<Strokes, Translation> entries {};
-
-public:
-	Dictionary();
-	Dictionary(std::span<Brief>);
-	Dictionary(std::initializer_list<Brief>);
-
-private:
-	using Entry = decltype(entries)::value_type;
-
-public:
-	void add(Brief b);
-	std::string translate(const Entry&) const;
-};
-
-/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
 // Multiple keys at the same time
 Stroke  operator+(Stroke , Stroke );
 Strokes operator+(Strokes, Stroke );
@@ -156,3 +131,5 @@ std::string toString(Strokes);
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 } // namespace steno
+
+#include "steno_dictionary.hh"
