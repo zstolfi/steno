@@ -55,25 +55,25 @@ Stroke::Stroke(std::string s) {
 	}
 
 	// Assign.
-	for (char c : sL) this->keys.bits[Left  .find(c) +  1] = true;
-	for (char c : sM) this->keys.bits[Middle.find(c) +  8] = true;
-	for (char c : sR) this->keys.bits[Right .find(c) + 13] = true;
+	for (char c : sL) this->bits[Left  .find(c) +  1] = true;
+	for (char c : sM) this->bits[Middle.find(c) +  8] = true;
+	for (char c : sR) this->bits[Right .find(c) + 13] = true;
 }
 
 Stroke::Stroke(FromBits_t, std::bitset<23> b) {
 	// 0b00011000100001110100000
 	// = #STKPWHRAO*EUFRPBLGTSDZ
-	for (unsigned i=0; i<b.size(); i++) this->keys.bits[i] = b[22 - i];
+	for (unsigned i=0; i<b.size(); i++) this->bits[i] = b[22 - i];
 }
 
 Stroke::Stroke(FromBitsReversed_t, std::bitset<23> b) {
 	// 0b00000101110000100011000
 	// = ZDSTGLBPRFUE*OARHWPKTS#
-	for (unsigned i=0; i<b.size(); i++) this->keys.bits[i] = b[i];
+	for (unsigned i=0; i<b.size(); i++) this->bits[i] = b[i];
 }
 
 Stroke Stroke::operator+=(Stroke other) {
-	this->keys.bits |= other.keys.bits;
+	this->bits |= other.bits;
 	return *this;
 }
 
@@ -229,7 +229,7 @@ Brief   operator|(Brief   a , Brief   b ) { return a |= b; }
 std::string toString(Stroke x) {
 	std::string result = "#STKPWHRAO*EUFRPBLGTSDZ";
 	for (unsigned i=0; i<result.size(); i++) {
-		if (x.keys.bits[i] == false) result[i] = ' ';
+		if (x.bits[i] == false) result[i] = ' ';
 	}
 	if (!x.keys.A && !x.keys.O && !x.keys.x && !x.keys.E && !x.keys.U) {
 		result[10] = '-';
