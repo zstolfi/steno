@@ -1,37 +1,29 @@
 #include <algorithm>
-#include <variant> // for std::monostate
-#include <optional>
+#include <any>
 
 namespace steno {
 
-template <typename Data_t = std::monostate>
 class Dictionary {
 	struct MapEntry {
 		// TODO: Better way to allow conflicts.
 		std::string text {};
-		Data_t data {}; // Allow custom user-data.
+		std::any data {}; // Allow custom user-data.
 	};
 	std::map<Strokes, MapEntry> m_entries {};
 
 public:
 	Dictionary() = default;
-
-	Dictionary(std::span<Brief> span) {
-		for (Brief b : span) m_entries.add(b);
-	}
-
-	Dictionary(std::initializer_list<Brief> il) {
-		for (Brief b : il) m_entries.add(b);
-	}
+	Dictionary(std::span<Brief>             bb) { for (auto b : bb) add(b); }
+	Dictionary(std::initializer_list<Brief> bb) { for (auto b : bb) add(b); }
 
 	using Entry = typename decltype(m_entries)::value_type;
 	const auto& getEntries() const { return m_entries; }
 
-	Dictionary& add(Brief b, Data_t d={}) {
+	Dictionary& add(Brief b, std::any data={}) {
 		// Find our spot of interest.
 		auto it = m_entries.find(b.strokes);
 		// Assign if it's not taken.
-		if (it == m_entries.end()) m_entries[b.strokes] = {{b.text}, d};
+		if (it == m_entries.end()) m_entries[b.strokes] = {{b.text}, data};
 		// Otherwise create a conflict.
 		else it->second.text = makeConflict(it->second.text, b.text);
 		return *this;
