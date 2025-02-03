@@ -29,7 +29,8 @@ const auto N_Start = std::array<steno::Brief, 20> {{
 }};
 
 const auto N_Tens = std::array<steno::Brief, 10> {{
-	{}, {},
+	{"0~", {"S K WH   -            "}},
+	steno::NoBrief,
 	{"2~", {" T PW    -            "}},
 	{"3~", {" T   HR  -            "}},
 	{"4~", {" T P  R  -            "}},
@@ -37,7 +38,7 @@ const auto N_Tens = std::array<steno::Brief, 10> {{
 	{"6~", {"S K      -            "}},
 	{"7~", {"S     R  -            "}},
 	{"8~", {"  K W R  -            "}},
-	{"9~", {" T P H   -            "}}
+	{"9~", {" T P H   *            "}}
 }};
 
 const auto N_Ones = std::array<steno::Brief, 10> {{
@@ -67,30 +68,32 @@ steno::Dictionary numbersDict {};
 
 auto Num(unsigned x, bool recursed=false) -> steno::Brief {
 	if (x == 0 && recursed) return steno::NoBrief;
+	if (x < 10 && recursed) return N_Tens[0] + N_Ones[x%10];
 	if (x < 20) return N_Start[x];
 	if (x < 100) return N_Tens[x/10] + N_Ones[x%10];
 	if (x < 1000) {
 		if (x%100 == 0) return Num(x/100) | Hundred_N;
-		return x%100 < 10
-		?	Num(x/100) | steno::Brief {"~0~", Hundred_N} | Num(x%100)
-		:	Num(x/100) | Num(x%100);
+		return (x%100 == 0)
+		?	Num(x/100) | Hundred_N
+		:	Num(x/100) | steno::Glue + Num(x%100, true);
 	}
+	unsigned N = 1;
+	N *= 1000; if (x < 1000*N) return Num(x/N) | Thousand | Num(x%N, true);
+	N *= 1000; if (x < 1000*N) return Num(x/N) | Million  | Num(x%N, true);
+	N *= 1000; if (x < 1000*N) return Num(x/N) | Billion  | Num(x%N, true);
+	N *= 1000; if (x < 1000*N) return Num(x/N) | Trillion | Num(x%N, true);
 	return steno::NoBrief;
 }
 
+unsigned fib(unsigned n) {
+	std::array t {0u, 1u};
+	while (n--) t = {t[1], t[0]+t[1]};
+	return t[0];
+}
+
 int main() {
-	for (unsigned i=0; i<1000; i++) {
-		numbersDict.add(Num(i));
-	}
-
-	numbersDict.add(Hundred);
-	numbersDict.add(Thousand);
-	numbersDict.add(Million);
-	numbersDict.add(Billion);
-	numbersDict.add(Trillion);
-
-	for (const auto& entry : numbersDict.getEntries()) {
-		std::cout << entry.second.text << "\t:=    |"
-		/*     */ << steno::toString(entry.first) << "|\n";
+	for (unsigned i=0; i<20; i++) {
+		auto b = Num(fib(i));
+		std::cout << "|" << steno::toString(b.strokes) << "| == " << b.text << "\n";
 	}
 }

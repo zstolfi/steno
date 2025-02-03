@@ -180,8 +180,11 @@ void Brief::appendText(std::string str) {
 	bool endGlue = this->text.back() == '~';
 	bool startGlue = str.front() == '~';
 
-	if (endGlue) this->text.pop_back();
-	this->text.insert(this->text.size(), str, startGlue? 1: 0);
+	if (!startGlue && !endGlue) this->text += ' ' + str;
+	else {
+		if (endGlue) this->text.pop_back();
+		this->text.insert(this->text.size(), str, startGlue? 1: 0);
+	}
 }
 
 void Brief::normalize() {
@@ -209,6 +212,9 @@ Strokes operator|(Strokes xx, Strokes yy) { return xx.append(yy); }
 Brief   operator|(Brief   a , Brief   b ) { return a |= b; }
 
 Stroke  operator&(Stroke  x , Stroke  y ) { return x &= y; }
+
+Brief operator+(Brief b, Glue_Arg) { b.text = b.text + '~'; return b; }
+Brief operator+(Glue_Arg, Brief b) { b.text = '~' + b.text; return b; }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 

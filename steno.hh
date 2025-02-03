@@ -13,6 +13,7 @@ namespace steno {
 
 constexpr struct FromBits_Arg {} FromBits;
 constexpr struct FromBitsReversed_Arg {} FromBitsReversed;
+constexpr struct Glue_Arg {} Glue;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -128,6 +129,10 @@ Brief   operator|(Brief  , Brief  );
 
 // Subset of keys:
 Stroke  operator&(Stroke , Stroke );
+
+// Maybe a bit of a hack:
+Brief operator+(Brief, Glue_Arg);
+Brief operator+(Glue_Arg, Brief);
 
 const auto NoStroke = Stroke {};
 const auto NoStrokes = Strokes {};
