@@ -77,6 +77,20 @@ Stroke Stroke::operator+=(Stroke other) {
 	return *this;
 }
 
+Stroke Stroke::operator-=(Stroke other) {
+	// Disallow deletion of the fail flag.
+	other.keys.FailedConstruction = false;
+	this->bits &= ~other.bits;
+	return *this;
+}
+
+Stroke Stroke::operator&=(Stroke other) {
+	// Disallow deletion of the fail flag.
+	other.keys.FailedConstruction = true;
+	this->bits &= other.bits;
+	return *this;
+}
+
 void Stroke::failConstruction() { this->keys.FailedConstruction = true; }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -185,11 +199,16 @@ Strokes operator+(Strokes xx, Stroke  y ) { return xx.list.back() += y; }
 Strokes operator+(Stroke  x , Strokes yy) { return yy.list.front() += x; }
 Brief   operator+(Brief   a , Brief   b ) { return a += b; }
 
+Stroke  operator-(Stroke  x , Stroke  y ) { return x -= y; }
+Strokes operator-(Strokes xx, Stroke  y ) { return xx.list.back() -= y; }
+
 Strokes operator|(Stroke  x , Stroke  y ) { return Strokes {x, y}; }
 Strokes operator|(Strokes xx, Stroke  y ) { return xx.append(y); }
 Strokes operator|(Stroke  x , Strokes yy) { return yy.prepend(x); }
 Strokes operator|(Strokes xx, Strokes yy) { return xx.append(yy); }
 Brief   operator|(Brief   a , Brief   b ) { return a |= b; }
+
+Stroke  operator&(Stroke  x , Stroke  y ) { return x &= y; }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 

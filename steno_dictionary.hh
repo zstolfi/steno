@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <any>
+#include <tuple> // for std::tie
 
 namespace steno {
 
@@ -17,16 +18,22 @@ public:
 	Dictionary(std::initializer_list<Brief> bb) { for (auto b : bb) add(b); }
 
 	using Entry = typename decltype(m_entries)::value_type;
+	using Iterator = typename decltype(m_entries)::iterator;
+
 	const auto& getEntries() const { return m_entries; }
 
-	Dictionary& add(Brief b, std::any data={}) {
+	Iterator add(Brief b, std::any data={}) {
 		// Find our spot of interest.
 		auto it = m_entries.find(b.strokes);
 		// Assign if it's not taken.
-		if (it == m_entries.end()) m_entries[b.strokes] = {{b.text}, data};
+		if (it == m_entries.end()) {
+			std::tie(it, std::ignore) = m_entries.insert(
+				Entry {b.strokes, {{b.text}, data}}
+			);
+		}
 		// Otherwise create a conflict.
 		else it->second.text = makeConflict(it->second.text, b.text);
-		return *this;
+		return it;
 	}
 
 	Dictionary& merge(const Dictionary& other) {

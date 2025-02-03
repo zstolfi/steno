@@ -49,6 +49,8 @@ public:
 	Stroke(FromBitsReversed_Arg, std::bitset<23>);
 
 	Stroke operator+=(Stroke);
+	Stroke operator-=(Stroke);
+	Stroke operator&=(Stroke);
 
 private:
 	void failConstruction();
@@ -61,6 +63,7 @@ struct Strokes {
 
 public:
 	Strokes() = default;
+	bool operator== (const Strokes xx) const { return list ==  xx.list; }
 	auto operator<=>(const Strokes xx) const { return list <=> xx.list; }
 
 	Strokes(Stroke);
@@ -106,18 +109,25 @@ private:
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-// Multiple keys at the same time
+// Multiple keys at the same time:
 Stroke  operator+(Stroke , Stroke );
 Strokes operator+(Strokes, Stroke );
 Strokes operator+(Stroke , Strokes);
 Brief   operator+(Brief  , Brief  );
 
-// Multiple strokes in order
+// Removing keys:
+Stroke  operator-(Stroke , Stroke );
+Strokes operator-(Strokes, Stroke );
+
+// Multiple strokes in order:
 Strokes operator|(Stroke , Stroke );
 Strokes operator|(Strokes, Stroke );
 Strokes operator|(Stroke , Strokes);
 Strokes operator|(Strokes, Strokes);
 Brief   operator|(Brief  , Brief  );
+
+// Subset of keys:
+Stroke  operator&(Stroke , Stroke );
 
 const auto NoStroke = Stroke {};
 const auto NoStrokes = Strokes {};
