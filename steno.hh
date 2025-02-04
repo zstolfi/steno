@@ -68,7 +68,7 @@ public:
 	auto operator<=>(const Strokes xx) const { return list <=> xx.list; }
 
 	Strokes(Stroke);
-	Strokes(std::span<Stroke>);
+	Strokes(std::span<const Stroke>);
 	Strokes(std::initializer_list<Stroke>);
 	Strokes(std::string);
 
@@ -104,7 +104,6 @@ public:
 
 private:
 	void appendText(std::string);
-
 	void normalize();
 };
 
@@ -115,6 +114,10 @@ Stroke  operator+(Stroke , Stroke );
 Strokes operator+(Strokes, Stroke );
 Strokes operator+(Stroke , Strokes);
 Brief   operator+(Brief  , Brief  );
+Brief   operator+(Strokes, Brief  );
+Brief   operator+(Brief  , Strokes);
+Brief   operator+(std::string, Brief);
+Brief   operator+(Brief, std::string);
 
 // Removing keys:
 Stroke  operator-(Stroke , Stroke );
@@ -126,6 +129,8 @@ Strokes operator|(Strokes, Stroke );
 Strokes operator|(Stroke , Strokes);
 Strokes operator|(Strokes, Strokes);
 Brief   operator|(Brief  , Brief  );
+Brief   operator|(Strokes, Brief  );
+Brief   operator|(Brief  , Strokes);
 
 // Subset of keys:
 Stroke  operator&(Stroke , Stroke );

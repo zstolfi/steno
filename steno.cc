@@ -99,7 +99,7 @@ Strokes::Strokes(Stroke x) {
 	this->list = List_t {x};
 }
 
-Strokes::Strokes(std::span<Stroke> span) {
+Strokes::Strokes(std::span<const Stroke> span) {
 	this->list = List_t (span.begin(), span.end());
 }
 
@@ -159,10 +159,14 @@ Brief::Brief(Brief b, std::string str): strokes{b.strokes}, text{str} { normaliz
 Brief::Brief(std::string str, Brief b): strokes{b.strokes}, text{str} { normalize(); }
 
 Brief& Brief::operator+=(Brief other) {
-	if (this->strokes.list.size() != 1 || other.strokes.list.size() != 1) {
-		return *this |= other;
+	if (this->strokes.list.empty()) this->strokes = other.strokes;
+	else if  (!other.strokes.list.empty()) {
+		this->strokes.list.back() += other.strokes.list.front();
+		std::copy(
+			other.strokes.list.begin()+1, other.strokes.list.end(),
+			std::back_inserter(this->strokes.list)
+		);
 	}
-	this->strokes[0] += other.strokes[0];
 	appendText(other.text);
 	return *this;
 }
@@ -201,6 +205,10 @@ Stroke  operator+(Stroke  x , Stroke  y ) { return x += y ; }
 Strokes operator+(Strokes xx, Stroke  y ) { return xx.list.back() += y; }
 Strokes operator+(Stroke  x , Strokes yy) { return yy.list.front() += x; }
 Brief   operator+(Brief   a , Brief   b ) { return a += b; }
+Brief   operator+(Strokes xx, Brief   b ) { return Brief {xx, ""} += b; }
+Brief   operator+(Brief   b , Strokes xx) { return b += Brief {xx, ""}; }
+Brief   operator+(std::string s, Brief b) { return Brief {{"-"}, s} += b; }
+Brief   operator+(Brief b, std::string s) { return b += Brief {{"-"}, s}; }
 
 Stroke  operator-(Stroke  x , Stroke  y ) { return x -= y; }
 Strokes operator-(Strokes xx, Stroke  y ) { return xx.list.back() -= y; }
@@ -210,6 +218,8 @@ Strokes operator|(Strokes xx, Stroke  y ) { return xx.append(y); }
 Strokes operator|(Stroke  x , Strokes yy) { return yy.prepend(x); }
 Strokes operator|(Strokes xx, Strokes yy) { return xx.append(yy); }
 Brief   operator|(Brief   a , Brief   b ) { return a |= b; }
+Brief   operator|(Strokes xx, Brief   b ) { return Brief {xx, ""} |= b; }
+Brief   operator|(Brief b   , Strokes xx) { return b |= Brief {xx, ""}; }
 
 Stroke  operator&(Stroke  x , Stroke  y ) { return x &= y; }
 
