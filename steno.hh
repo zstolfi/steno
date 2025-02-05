@@ -7,6 +7,8 @@
 #include <span>
 #include <initializer_list>
 #include <any>
+#include <functional>
+
 namespace steno {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -102,10 +104,15 @@ public:
 	Brief& operator+=(Brief);
 	Brief& operator|=(Brief);
 
+	using Modifier = std::function<Brief(Brief)>;
+	Brief& operator|=(Modifier);
+
 private:
 	void appendText(std::string);
 	void normalize();
 };
+
+using Modifier = Brief::Modifier;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -131,6 +138,7 @@ Strokes operator|(Strokes, Strokes);
 Brief   operator|(Brief  , Brief  );
 Brief   operator|(Strokes, Brief  );
 Brief   operator|(Brief  , Strokes);
+Brief   operator|(Brief  , Modifier);
 
 // Subset of keys:
 Stroke  operator&(Stroke , Stroke );

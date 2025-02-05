@@ -6,7 +6,7 @@
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 const auto N_Start = std::array<steno::Brief, 20> {{
-	{ "0", {"        O E           "}},
+	steno::NoBrief,
 	{ "1", {"    W      U  PB      "}},
 	{ "2", {" T  W   O             "}},
 	{ "3", {" T   HR   E           "}},
@@ -64,12 +64,8 @@ const auto Trillion   = steno::Brief {"trillion", {" T    R   EU    L     "}};
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-steno::Dictionary numbersDict {};
-
 auto Num(unsigned x, bool recursed=false) -> steno::Brief {
-	if (x == 0 && recursed) return steno::NoBrief;
-	if (x < 10 && recursed) return N_Tens[0] + N_Ones[x%10];
-	if (x < 20) return N_Start[x];
+	if (x < 20 && !(x < 10 && recursed)) return N_Start[x];
 	if (x < 100) return N_Tens[x/10] + N_Ones[x%10];
 	if (x < 1000) {
 		if (x%100 == 0) return Num(x/100) | Hundred_N;
@@ -77,23 +73,92 @@ auto Num(unsigned x, bool recursed=false) -> steno::Brief {
 		?	Num(x/100) | Hundred_N
 		:	Num(x/100) | steno::Glue + Num(x%100, true);
 	}
-	unsigned N = 1;
-	N *= 1000; if (x < 1000*N) return Num(x/N) | Thousand | Num(x%N, true);
-	N *= 1000; if (x < 1000*N) return Num(x/N) | Million  | Num(x%N, true);
-	N *= 1000; if (x < 1000*N) return Num(x/N) | Billion  | Num(x%N, true);
-	N *= 1000; if (x < 1000*N) return Num(x/N) | Trillion | Num(x%N, true);
 	return steno::NoBrief;
 }
 
-unsigned fib(unsigned n) {
-	std::array t {0u, 1u};
-	while (n--) t = {t[1], t[0]+t[1]};
-	return t[0];
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+auto WrittenOut(steno::Brief b) -> steno::Brief {
+	if (b.text.size() == 1)
+	if (char c = b.text[0]; '0' <= c&&c <= '9') {
+		b.text = std::array {
+			"zero", "one", "two", "three", "four", "five",
+			"six", "seven", "eight", "nine", "ten"
+		} [c-'0'];
+		return b;
+	}
+	return steno::NoBrief;
+};
+
+auto Dollars(steno::Brief magnitude) {
+	return [magnitude](steno::Brief b) {
+		return "$~" + b | magnitude + steno::Stroke {"-DZ"};
+	};
+};
+
+auto AsDollars(steno::Brief b) -> steno::Brief {
+	return "$~" + b | steno::Stroke{"-DZ"};
+};
+
+auto AsCents(steno::Brief b) -> steno::Brief {
+	while (b.text.size() < 3) b.text = '0' + b.text; 
+	b.text.insert(b.text.end()-2, '.');
+	return "$~" + b | steno::Stroke{"-S"};
+};
+
+auto OneDollarCents(steno::Brief b) -> steno::Brief {
+	while (b.text.size() < 2) b.text = '0' + b.text;
+	return steno::Brief {"$1.~", {"TKHRAR"}} | b;
 }
 
+auto aDollarCents(steno::Brief b) -> steno::Brief {
+	return steno::Stroke {"AEU"} | OneDollarCents(b);
+}
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
 int main() {
-	for (unsigned i=0; i<20; i++) {
-		auto b = Num(fib(i));
-		std::cout << "|" << steno::toString(b.strokes) << "| == " << b.text << "\n";
+	steno::Dictionary numbersDict {};
+
+	for (unsigned i=0; i<=999; i++) {
+		/*0*/
+		if (i == 0) numbersDict.add({"0", {"OE"}});
+		/*zero*/
+		if (i == 0) numbersDict.add({"zero", {"STKPWRHRAOER"}});
+		/*1 2 3*/
+		if (1 <= i&&i <= 10) numbersDict.add(Num(i) + steno::Stroke {"*"});
+		/*one two three*/
+		if (1 <= i&&i <= 10) numbersDict.add(Num(i) | WrittenOut);
+		/*00 01 02 03*/
+		if (0 <= i&&i <= 9) numbersDict.add(Num(i, true));
+		/*123*/
+		if (11 <= i&&i <= 999) numbersDict.add(Num(i));
+		/*123,000*/
+		if (1 <= i&&i <= 100) numbersDict.add(Num(i) | Thousand_N);
+		/*$123,000*/
+		if (1 <= i&&i <= 100) numbersDict.add(Num(i) | Dollars(Thousand_N));
+		/*$123 million*/
+		if (1 <= i&&i <= 100) numbersDict.add(Num(i) | Dollars(Million));
+		/*$123 billion*/
+		if (1 <= i&&i <= 100) numbersDict.add(Num(i) | Dollars(Billion));
+		/*$123 trillion*/
+		if (1 <= i&&i <= 100) numbersDict.add(Num(i) | Dollars(Trillion));
+
+		/*$123*/
+		if (1 <= i&&i <= 999) numbersDict.add(Num(i) | AsDollars);
+		/*$1.23*/
+		if (1 <= i&&i <= 999 && i%100) numbersDict.add(Num(i) | AsCents);
+		/*$1.02*/
+		if (1 <= i&&i <= 9)  numbersDict.add(Num(i, true) | OneDollarCents);
+		if (1 <= i&&i <= 9)  numbersDict.add(Num(i, true) | aDollarCents);
+		/*$1.23*/
+		if (1 <= i&&i <= 99)  numbersDict.add(Num(i) | OneDollarCents);
+		if (1 <= i&&i <= 99)  numbersDict.add(Num(i) | aDollarCents);
+	}
+
+//	numbersDict.add(Num(1) | Hundred_N);
+	numbersDict.genContraction({"WUPB/HUPB"}, {"WHUPB"});
+	for (const auto& entry : numbersDict.getEntries()) {
+		std::cout << "|" << steno::toString(entry.first) << "| == " << entry.second.text << "\n";
 	}
 }
