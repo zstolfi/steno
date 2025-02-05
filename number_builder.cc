@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <array>
+#include <sstream>
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -79,15 +80,13 @@ auto Num(unsigned x, bool recursed=false) -> steno::Brief {
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 auto WrittenOut(steno::Brief b) -> steno::Brief {
-	if (b.text.size() == 1)
-	if (char c = b.text[0]; '0' <= c&&c <= '9') {
-		b.text = std::array {
-			"zero", "one", "two", "three", "four", "five",
-			"six", "seven", "eight", "nine", "ten"
-		} [c-'0'];
-		return b;
-	}
-	return steno::NoBrief;
+	unsigned n {};
+	std::istringstream {b.text} >> n;
+	if (0 <= n&&n <= 10) b.text = std::array {
+		"zero", "one", "two", "three", "four", "five",
+		"six", "seven", "eight", "nine", "ten"
+	} [n];
+	return b;
 };
 
 auto Dollars(steno::Brief magnitude) {
