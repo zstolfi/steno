@@ -105,7 +105,7 @@ auto Dollars(steno::Brief b) {
 };
 
 auto Cents(steno::Brief b) -> steno::Brief {
-	b = b + Pad(3);
+	b += Pad(3);
 	b.text.insert(b.text.end()-2, '.');
 	return "$~" + b | steno::Stroke{"-S"};
 };

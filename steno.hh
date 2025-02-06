@@ -143,15 +143,17 @@ Strokes operator|(Strokes, Strokes);
 Brief   operator|(Brief  , Brief  );
 Brief   operator|(Strokes, Brief  );
 Brief   operator|(Brief  , Strokes);
-
 // Subset of keys:
 Stroke  operator&(Stroke , Stroke );
 
 // Maybe a bit of a hack:
 Brief operator+(Brief, Glue_Arg);
 Brief operator+(Glue_Arg, Brief);
-Brief operator+(Brief, Modifier);
-Brief operator|(Brief, Modifier);
+Brief operator+ (Brief, Modifier);
+Brief operator| (Brief, Modifier);
+Brief operator+=(Brief, Modifier);
+Brief operator|=(Brief, Modifier);
+
 
 const auto NoStroke = Stroke {};
 const auto NoStrokes = Strokes {};

@@ -235,13 +235,15 @@ Strokes operator|(Strokes xx, Strokes yy) { return xx.append(yy); }
 Brief   operator|(Brief   a , Brief   b ) { return a |= b; }
 Brief   operator|(Strokes xx, Brief   b ) { return Brief {xx, ""} |= b; }
 Brief   operator|(Brief b   , Strokes xx) { return b |= Brief {xx, ""}; }
-Brief   operator|(Brief b   , Modifier f) { return f(b); }
-Brief   operator+(Brief b   , Modifier f) { return f(b); }
 
 Stroke  operator&(Stroke  x , Stroke  y ) { return x &= y; }
 
 Brief operator+(Brief b, Glue_Arg) { b.text = b.text + '~'; return b; }
 Brief operator+(Glue_Arg, Brief b) { b.text = '~' + b.text; return b; }
+Brief operator+ (Brief b  , Modifier f) { return f(b); }
+Brief operator| (Brief b  , Modifier f) { return f(b); }
+Brief operator+=(Brief b  , Modifier f) { return b = f(b); }
+Brief operator|=(Brief b  , Modifier f) { return b = f(b); }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
