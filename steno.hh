@@ -104,17 +104,14 @@ public:
 	Brief& operator+=(Brief);
 	Brief& operator|=(Brief);
 
-	using Modifier = std::function<Brief(Brief)>;
-	Brief& operator|=(Modifier);
-
 private:
 	void appendText(std::string);
 	void normalize();
 };
 
-using Modifier = Brief::Modifier;
-
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+using Modifier = std::function<Brief(Brief)>;
 
 // Multiple keys at the same time:
 Stroke  operator+(Stroke , Stroke );
@@ -138,7 +135,6 @@ Strokes operator|(Strokes, Strokes);
 Brief   operator|(Brief  , Brief  );
 Brief   operator|(Strokes, Brief  );
 Brief   operator|(Brief  , Strokes);
-Brief   operator|(Brief  , Modifier);
 
 // Subset of keys:
 Stroke  operator&(Stroke , Stroke );
@@ -146,6 +142,8 @@ Stroke  operator&(Stroke , Stroke );
 // Maybe a bit of a hack:
 Brief operator+(Brief, Glue_Arg);
 Brief operator+(Glue_Arg, Brief);
+Brief operator+(Brief, Modifier);
+Brief operator|(Brief, Modifier);
 
 const auto NoStroke = Stroke {};
 const auto NoStrokes = Strokes {};

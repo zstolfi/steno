@@ -177,10 +177,6 @@ Brief& Brief::operator|=(Brief other) {
 	return *this;
 }
 
-Brief& Brief::operator|=(Modifier f) {
-	return *this = f(*this);
-}
-
 void Brief::appendText(std::string str) {
 	if (this->text.empty()) { this->text = str; return; }
 	if (str.empty()) return;
@@ -224,7 +220,8 @@ Strokes operator|(Strokes xx, Strokes yy) { return xx.append(yy); }
 Brief   operator|(Brief   a , Brief   b ) { return a |= b; }
 Brief   operator|(Strokes xx, Brief   b ) { return Brief {xx, ""} |= b; }
 Brief   operator|(Brief b   , Strokes xx) { return b |= Brief {xx, ""}; }
-Brief   operator|(Brief b   , Modifier f) { return b |= f; }
+Brief   operator|(Brief b   , Modifier f) { return f(b); }
+Brief   operator+(Brief b   , Modifier f) { return f(b); }
 
 Stroke  operator&(Stroke  x , Stroke  y ) { return x &= y; }
 
