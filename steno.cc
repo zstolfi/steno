@@ -6,12 +6,16 @@ namespace steno {
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 Stroke::Stroke(std::string s) {
-	const std::string Whitespace = " \t";
+	const std::string Whitespace = " \t\r\n";
 	const std::string Left   = "STKPWHR";
 	const std::string Middle = "AO*EU";
 	const std::string Right  = "FRPBLGTSDZ";
-	const char Dash = '-';
-	const std::string Misc = {Dash};
+	const std::string Numbers    = "0123456789";
+	const std::string NumbersMap = "OSTPHAFPLT";
+	const char Num   = '#';
+	const char Dash  = '-';
+	const char Tilde = '~';
+	const std::string  Other = {Num, Dash, Tilde};
 	auto in = [](std::string set) {
 		return [set](char c) { return set.find(c) != set.npos; };
 	};
@@ -22,8 +26,19 @@ Stroke::Stroke(std::string s) {
 		s.end()
 	);
 
+	// Handle flags.
+	if (s.front() == Tilde) s=s.substr(1), this->keys.OpenLeft  = true;
+	if (s.back () == Tilde) s.pop_back() , this->keys.OpenRight = true;
+	if (s.front() == Num  ) s=s.substr(1), this->keys.Num       = true;
+
+	// Normalize number keys.
+	if (std::any_of(s.begin(), s.end(), in(Numbers))) {
+		this->keys.Num = true;
+		for (char& c : s) if (in(Numbers)(c)) c = NumbersMap[c-'0'];
+	}
+
 	// Sinple charset test:
-	if (!std::all_of(s.begin(), s.end(), in(Left+Middle+Right+Misc))) {
+	if (!std::all_of(s.begin(), s.end(), in(Left + Middle + Right + Other))) {
 		failConstruction(); return;
 	}
 
@@ -231,7 +246,23 @@ Brief operator+(Glue_Arg, Brief b) { b.text = '~' + b.text; return b; }
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 std::string toString(Stroke x) {
-	std::string result = "#STKPWHRAO*EUFRPBLGTSDZ";
+	if (x.keys.OpenLeft) {
+		x.keys.OpenLeft = false;
+		auto result = '~' + toString(x);
+		auto i = result.find(' ');
+		if (i != result.npos) result.erase(i, 1);
+		return result;
+	}
+
+	if (x.keys.OpenRight) {
+		x.keys.OpenRight = false;
+		auto result = toString(x) + '~';
+		auto i = result.rfind(' ');
+		if (i != result.npos) result.erase(i, 1);
+		return result;
+	}
+
+	std::string result = "#STKPWHRAO*EUFRPBLGTSDZ ";
 	for (unsigned i=0; i<result.size(); i++) {
 		if (x.bits[i] == false) result[i] = ' ';
 	}

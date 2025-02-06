@@ -17,6 +17,15 @@ constexpr struct FromBits_Arg {} FromBits;
 constexpr struct FromBitsReversed_Arg {} FromBitsReversed;
 constexpr struct Glue_Arg {} Glue;
 
+//enum struct KeyIndex {
+//	Num = 0,
+//	S_, T_, K_, P_, W_, H_, R_,
+//	A, O, x, E, U,
+//	_F, _R, _P, _B, _L, _G, _T, _S, _D, _Z,
+//	Mark = 23, OpenLeft, OpenRight,
+////	FailedConstruction = 31
+//};
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 union Stroke {
@@ -45,7 +54,6 @@ public:
 		return this->bits.to_ulong()
 		<=>    other.bits.to_ulong();
 	}
-
 
 	Stroke(std::string);
 	Stroke(FromBits_Arg, std::bitset<23>);
