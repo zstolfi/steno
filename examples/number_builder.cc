@@ -1,4 +1,4 @@
-#include "steno.hh"
+#include "../steno.hh"
 #include <iostream>
 #include <string>
 #include <array>

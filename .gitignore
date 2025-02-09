@@ -1,4 +1,4 @@
 *.o
 a.out
-example
-number_builder
+examples/example
+examples/number_builder
