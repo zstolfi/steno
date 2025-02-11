@@ -15,16 +15,6 @@ namespace steno {
 
 constexpr struct FromBits_Arg {} FromBits;
 constexpr struct FromBitsReversed_Arg {} FromBitsReversed;
-constexpr struct Glue_Arg {} Glue;
-
-//enum struct KeyIndex {
-//	Num = 0,
-//	S_, T_, K_, P_, W_, H_, R_,
-//	A, O, x, E, U,
-//	_F, _R, _P, _B, _L, _G, _T, _S, _D, _Z,
-//	Mark = 23, OpenLeft, OpenRight,
-////	FailedConstruction = 31
-//};
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -74,13 +64,13 @@ struct Strokes {
 
 public:
 	Strokes() = default;
-	bool operator== (const Strokes xx) const { return list ==  xx.list; }
-	auto operator<=>(const Strokes xx) const { return list <=> xx.list; }
-
 	Strokes(Stroke);
 	Strokes(std::span<const Stroke>);
 	Strokes(std::initializer_list<Stroke>);
 	Strokes(std::string);
+
+	bool operator== (const Strokes xx) const { return list ==  xx.list; }
+	auto operator<=>(const Strokes xx) const { return list <=> xx.list; }
 
 	Stroke& operator[](std::size_t);
 	Stroke  operator[](std::size_t) const;
@@ -103,11 +93,13 @@ struct Brief {
 
 public:
 	Brief() = default;
+	// Not sure which 2 of these need to go...
 	Brief(Strokes, std::string);
 	Brief(std::string, Strokes);
-
 	Brief(Brief, std::string);
 	Brief(std::string, Brief);
+
+	bool operator==(const Brief& b) const = default;
 
 	Brief& operator+=(Brief);
 	Brief& operator|=(Brief);
@@ -147,8 +139,6 @@ Brief   operator|(Brief  , Strokes);
 Stroke  operator&(Stroke , Stroke );
 
 // Maybe a bit of a hack:
-Brief operator+(Brief, Glue_Arg);
-Brief operator+(Glue_Arg, Brief);
 Brief operator+ (Brief , Modifier);
 Brief operator| (Brief , Modifier);
 Brief operator+=(Brief&, Modifier);

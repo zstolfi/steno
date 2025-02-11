@@ -82,7 +82,7 @@ auto Num(unsigned x, bool recursed=false) -> steno::Brief {
 	if (x < 1000) {
 		return (x%100 == 0)
 		?	Num(x/100) | Hundred
-		:	Num(x/100) | steno::Glue + Num(x%100, true);
+		:	Num(x/100) | "~" + Num(x%100, true);
 	}
 	return steno::NoBrief;
 }
@@ -193,8 +193,8 @@ int main() {
 		/*1812*/
 		if (auto c=i/100, x=i%100; 18 <= c&&c <= 20) {
 			if (c < 20 && x == 0) numbersDict.add(Num(c) | Hundred);
-			if (c < 20 && 1 <= x&&x <= 9) numbersDict.add(Num(c) | steno::Glue + Oh + steno::Glue | Num(x));
-			if (10 <= x&&x <= 99) numbersDict.add(Num(c) + steno::Glue | Num(x));
+			if (c < 20 && 1 <= x&&x <= 9) numbersDict.add(Num(c) | "~" + Oh + "~" | Num(x));
+			if (10 <= x&&x <= 99) numbersDict.add(Num(c) + "~" | Num(x));
 		}
 		/*2001*/
 		if (i == 2000) numbersDict.add(steno::Brief {"2000", {"TWO/THOU"}});

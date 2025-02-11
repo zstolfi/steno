@@ -222,8 +222,14 @@ Strokes operator+(Stroke  x , Strokes yy) { return yy.list.front() += x; }
 Brief   operator+(Brief   a , Brief   b ) { return a += b; }
 Brief   operator+(Strokes xx, Brief   b ) { return Brief {xx, ""} += b; }
 Brief   operator+(Brief   b , Strokes xx) { return b += Brief {xx, ""}; }
-Brief   operator+(std::string s, Brief b) { return Brief {{"-"}, s} += b; }
-Brief   operator+(Brief b, std::string s) { return b += Brief {{"-"}, s}; }
+Brief   operator+(std::string s, Brief b) {
+	if (s=="~") { b.text = s + b.text; return b; }
+	else return Brief {{"-"}, s} += b;
+}
+Brief   operator+(Brief b, std::string s) {
+	if (s=="~") { b.text = b.text + s; return b; }
+	else return b += Brief {{"-"}, s};
+}
 
 Stroke  operator-(Stroke  x , Stroke  y ) { return x -= y; }
 Strokes operator-(Strokes xx, Stroke  y ) { return xx.list.back() -= y; }
@@ -238,8 +244,6 @@ Brief   operator|(Brief b   , Strokes xx) { return b |= Brief {xx, ""}; }
 
 Stroke  operator&(Stroke  x , Stroke  y ) { return x &= y; }
 
-Brief operator+(Brief b, Glue_Arg) { b.text = b.text + '~'; return b; }
-Brief operator+(Glue_Arg, Brief b) { b.text = '~' + b.text; return b; }
 Brief operator+ (Brief  b , Modifier f) { return f(b); }
 Brief operator| (Brief  b , Modifier f) { return f(b); }
 Brief operator+=(Brief& b , Modifier f) { return b = f(b); }
