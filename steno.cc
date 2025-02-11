@@ -240,10 +240,10 @@ Stroke  operator&(Stroke  x , Stroke  y ) { return x &= y; }
 
 Brief operator+(Brief b, Glue_Arg) { b.text = b.text + '~'; return b; }
 Brief operator+(Glue_Arg, Brief b) { b.text = '~' + b.text; return b; }
-Brief operator+ (Brief b  , Modifier f) { return f(b); }
-Brief operator| (Brief b  , Modifier f) { return f(b); }
-Brief operator+=(Brief b  , Modifier f) { return b = f(b); }
-Brief operator|=(Brief b  , Modifier f) { return b = f(b); }
+Brief operator+ (Brief  b , Modifier f) { return f(b); }
+Brief operator| (Brief  b , Modifier f) { return f(b); }
+Brief operator+=(Brief& b , Modifier f) { return b = f(b); }
+Brief operator|=(Brief& b , Modifier f) { return b = f(b); }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 

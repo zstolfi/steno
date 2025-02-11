@@ -6,6 +6,15 @@
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+const auto And      = steno::Brief {"and"     , {"S KP     -            "}};
+const auto Oh       = steno::Brief {"0"       , {"        O E           "}};
+const auto Zero     = steno::Brief {"zero"    , {"STKPWHRAO E  R        "}};
+const auto Hundred  = steno::Brief {"~00"     , {"     H     U  PB      "}};
+const auto Thousand = steno::Brief {"~,000"   , {" T   H  O  U          "}};
+const auto Million  = steno::Brief {"million" , {"   P H    EU    L     "}};
+const auto Billion  = steno::Brief {"billion" , {"   PWHR O     PB      "}};
+const auto Trillion = steno::Brief {"trillion", {" T    R   EU    L     "}};
+
 const auto N_Start = std::array<steno::Brief, 20> {{
 	steno::NoBrief,
 	{ "1", {"    W      U  PB      "}},
@@ -30,7 +39,7 @@ const auto N_Start = std::array<steno::Brief, 20> {{
 }};
 
 const auto N_Tens = std::array<steno::Brief, 10> {{
-	{"0~", {"S K WH   -            "}},
+	{"0~", And.strokes},
 	steno::NoBrief,
 	{"2~", {" T PW    -            "}},
 	{"3~", {" T   HR  -            "}},
@@ -54,12 +63,6 @@ const auto N_Ones = std::array<steno::Brief, 10> {{
 	{"~8", {"       A  EU          "}},
 	{"~9", {"       AO EU  PB      "}}
 }};
-
-const auto Hundred  = steno::Brief {"~00"     , {"     H     U  PB      "}};
-const auto Thousand = steno::Brief {"~,000"   , {" T   H  O  U          "}};
-const auto Million  = steno::Brief {"million" , {"   P H    EU    L     "}};
-const auto Billion  = steno::Brief {"billion" , {"   PWHR O     PB      "}};
-const auto Trillion = steno::Brief {"trillion", {" T    R   EU    L     "}};
 
 const auto WrittenNumbers = std::array {
 	"zero", "one", "two", "three", "four",
@@ -107,6 +110,7 @@ auto Dollars(steno::Brief b) {
 auto Cents(steno::Brief b) -> steno::Brief {
 	b += Pad(3);
 	b.text.insert(b.text.end()-2, '.');
+	auto result = "$~" + b | steno::Stroke{"-S"};
 	return "$~" + b | steno::Stroke{"-S"};
 };
 
@@ -118,22 +122,32 @@ auto aDollarCents(steno::Brief b) -> steno::Brief {
 	return steno::Stroke {"AEU"} | OneDollarCents(b);
 }
 
+auto thousandSuffix(steno::Brief b) -> steno::Brief {
+	b += Pad(3);
+	return steno::Brief {"~,~", {"THOU"}} | b;
+}
+
+auto centsSuffix(steno::Brief b) -> steno::Brief {
+	b += Pad(2);
+	return "~.~" + b | steno::Stroke {"*S"};
+}
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 int main() {
 	steno::Dictionary numbersDict {};
 
-	for (unsigned i=0; i<=12'59; i++) {
+	for (unsigned i=0; i<=2099; i++) {
 		/*0*/
-		if (i == 0) numbersDict.add({"0", {"OE"}});
+		if (i == 0) numbersDict.add(Oh);
 		/*zero*/
-		if (i == 0) numbersDict.add({"zero", {"STKPWRHRAOER"}});
+		if (i == 0) numbersDict.add(Zero);
 		/*1 2 3*/
 		if (1 <= i&&i <= 10) numbersDict.add(Num(i) + steno::Stroke {"*"});
 		/*one two three*/
 		if (1 <= i&&i <= 10) numbersDict.add(Num(i) | WrittenOut);
-		/*00 01 02 03*/
-		if (0 <= i&&i <= 9) numbersDict.add(Num(i, true));
+//		/*00 01 02 03*/
+//		if (0 <= i&&i <= 9) numbersDict.add(Num(i, true));
 		/*123*/
 		if (11 <= i&&i <= 999) numbersDict.add(Num(i));
 		/*123,000*/
@@ -150,7 +164,12 @@ int main() {
 		if (1 <= i&&i <= 100) numbersDict.add(Num(i) | Trillion | Dollars);
 
 		/*,123*/
-		if (1 <= i&&i <= 999) numbersDict.add(steno::Brief {"~,~", {"THOU"}} | Num(i) + Pad(3));
+		if (1 <= i&&i <= 999) numbersDict.add(Num(i) | thousandSuffix);
+		/*.12*/
+		if (0 <= i&&i <= 99) numbersDict.add(Num(i, true) | centsSuffix);
+		/*.12*/
+		if (10 <= i&&i <= 99) numbersDict.add(And.strokes | Num(i, true) | centsSuffix);
+
 		/*$123*/
 		if (1 <= i&&i <= 999) numbersDict.add(Num(i) | Dollars);
 		/*$1.23*/
@@ -170,6 +189,16 @@ int main() {
 			/*1:23 p.m.*/
 			numbersDict.add(Num(h) + "~:~" | Num(m) + Pad(2) | PM);
 		}
+
+		/*1812*/
+		if (auto c=i/100, x=i%100; 18 <= c&&c <= 20) {
+			if (c < 20 && x == 0) numbersDict.add(Num(c) | Hundred);
+			if (c < 20 && 1 <= x&&x <= 9) numbersDict.add(Num(c) | steno::Glue + Oh + steno::Glue | Num(x));
+			if (10 <= x&&x <= 99) numbersDict.add(Num(c) + steno::Glue | Num(x));
+		}
+		/*2001*/
+		if (i == 2000) numbersDict.add(steno::Brief {"2000", {"TWO/THOU"}});
+		if (2001 <= i&&i <= 2009) numbersDict.add(steno::Brief {"200~", {"TWO/THOU"}} | Num(i%10));
 	}
 
 	numbersDict.genContraction({"WUPB/HUPB"}, {"WHUPB"});

@@ -46,6 +46,10 @@ union Stroke {
 
 public:
 	Stroke() = default;
+	Stroke(std::string);
+	Stroke(FromBits_Arg, std::bitset<23>);
+	Stroke(FromBitsReversed_Arg, std::bitset<23>);
+
 	bool operator==(const Stroke other) const {
 		return this->bits
 		==     other.bits;
@@ -54,10 +58,6 @@ public:
 		return this->bits.to_ulong()
 		<=>    other.bits.to_ulong();
 	}
-
-	Stroke(std::string);
-	Stroke(FromBits_Arg, std::bitset<23>);
-	Stroke(FromBitsReversed_Arg, std::bitset<23>);
 
 	Stroke operator+=(Stroke);
 	Stroke operator-=(Stroke);
@@ -149,10 +149,10 @@ Stroke  operator&(Stroke , Stroke );
 // Maybe a bit of a hack:
 Brief operator+(Brief, Glue_Arg);
 Brief operator+(Glue_Arg, Brief);
-Brief operator+ (Brief, Modifier);
-Brief operator| (Brief, Modifier);
-Brief operator+=(Brief, Modifier);
-Brief operator|=(Brief, Modifier);
+Brief operator+ (Brief , Modifier);
+Brief operator| (Brief , Modifier);
+Brief operator+=(Brief&, Modifier);
+Brief operator|=(Brief&, Modifier);
 
 
 const auto NoStroke = Stroke {};
