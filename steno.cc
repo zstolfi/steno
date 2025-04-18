@@ -53,7 +53,8 @@ Stroke::Stroke(std::string s) {
 		v0 = i;
 		v1 = (j != s.npos) ? j : s.size();
 	}
-	// Fail if there is not a middle section.
+	// If there is not a middle section it might be a left-hand only shortcut.
+	else if (Stroke x {s + Dash}) { *this = x; return; }
 	else { failConstruction(); return; }
 
 	// Split 's' into substrings.
@@ -85,6 +86,10 @@ Stroke::Stroke(FromBitsReversed_Arg, std::bitset<23> b) {
 	// 0b00000101110000100011000
 	// = ZDSTGLBPRFUE*OARHWPKTS#
 	for (unsigned i=0; i<b.size(); i++) this->bits[i] = b[i];
+}
+
+Stroke::operator bool() const {
+	return !this->keys.FailedConstruction && this->bits.to_ulong();
 }
 
 Stroke Stroke::operator+=(Stroke other) {
@@ -168,10 +173,7 @@ Strokes& Strokes::operator|=(Strokes xx) {
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 Brief::Brief(Strokes xx, std::string str): strokes{xx}, text{str} { normalize(); }
-Brief::Brief(std::string str, Strokes xx): strokes{xx}, text{str} { normalize(); }
-
 Brief::Brief(Brief b, std::string str): strokes{b.strokes}, text{str} { normalize(); }
-Brief::Brief(std::string str, Brief b): strokes{b.strokes}, text{str} { normalize(); }
 
 Brief& Brief::operator+=(Brief other) {
 	if (this->strokes.list.empty()) this->strokes = other.strokes;
@@ -286,6 +288,15 @@ std::string toString(Strokes xx) {
 	}
 	return result;
 }
+
+std::ostream& operator<<(std::ostream& os, Stroke x) {
+	return os << toString(x);
+}
+
+std::ostream& operator<<(std::ostream& os, Strokes xx) {
+	return os << toString(xx);
+}
+
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 

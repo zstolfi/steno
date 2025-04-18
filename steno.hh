@@ -49,6 +49,8 @@ public:
 		<=>    other.bits.to_ulong();
 	}
 
+	operator bool() const;
+
 	Stroke operator+=(Stroke);
 	Stroke operator-=(Stroke);
 	Stroke operator&=(Stroke);
@@ -93,11 +95,8 @@ struct Brief {
 
 public:
 	Brief() = default;
-	// Not sure which 2 of these need to go...
 	Brief(Strokes, std::string);
-	Brief(std::string, Strokes);
 	Brief(Brief, std::string);
-	Brief(std::string, Brief);
 
 	bool operator==(const Brief& b) const = default;
 
@@ -153,9 +152,11 @@ const auto NoBrief = Brief {};
 
 std::string toString(Stroke);
 std::string toString(Strokes);
+std::ostream& operator<<(std::ostream&, Stroke);
+std::ostream& operator<<(std::ostream&, Strokes);
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 } // namespace steno
 
-#include "steno_dictionary.hh"
+//#include "steno_dictionary.hh"
