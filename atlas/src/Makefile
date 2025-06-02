@@ -3,7 +3,7 @@ CC          = emcc
 CXX         = em++
 EMFLAGS     = -sUSE_SDL=3 -fsanitize=undefined
 CXXFLAGS    = -std=c++20 -Wall -O1 -ferror-limit=30
-LDFLAGS     = --shell-file index.html
+LDFLAGS     = --shell-file shell.html
 FUNCTIONS   = _main
 
 # ~~~~ Directories ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
@@ -26,7 +26,7 @@ LDFLAGS    += -sEXPORTED_RUNTIME_METHODS=ccall,cwrap
 
 all : $(TARGET)
 
-$(TARGET): $(OBJECTS) index.html Makefile
+$(TARGET): $(OBJECTS) shell.html Makefile
 	$(CXX) $(EMFLAGS) $(LDFLAGS) $(OBJECTS) -o $@
 
 %.o : %.cc
