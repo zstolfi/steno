@@ -45,7 +45,7 @@
 			canvas: canvasElement,
 			setStatus: (text) => console.log(`Status: ${text}`),
 		};
-		window.onerror = () => console.log("onerror: " + event);;
+		window.onerror = () => console.error(event);
 	</script>
 	<script async type="text/javascript" src="index.js"></script>
 </body>
