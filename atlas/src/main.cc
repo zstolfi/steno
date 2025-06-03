@@ -1,7 +1,7 @@
 #include "window.hh"
-#include "external.hh"
 #include <vector>
 #include <tuple>
+#include <span>
 #include <memory>
 #include <cstdio>
 #include <cstdint>
@@ -10,6 +10,7 @@
 
 struct State {
 	static bool dragOver;
+//	static std::optional<float> transferProgress;
 //	static std::unique_ptr<File> files;
 	bool running = true;
 };
@@ -18,12 +19,11 @@ extern "C" { // These functions are called from the browser.
 	bool State::dragOver = false;
 
 	void setDragOver(bool input) { State::dragOver = input; }
-	bool transferFile(char const* name, std::size_t size, uint8_t const* bytes) {
-		std::printf("File: (%s) received!\n", name);
-		std::printf("\t%zu bytes\n", size);
-		for (std::size_t i=0; i<size; i++) putchar(bytes[i]);
-		if (bytes[size-1] != '\n') putchar('\n');
-		return true; // Success!
+	void receiveFile(char const* name, std::size_t size, uint8_t const* data) {
+		std::span bytes {data, size};
+		std::printf("File: (%s) received in %zu bytes\n", name, size);
+		for (uint8_t c : bytes) putchar(c);
+		if (bytes.back() != '\n') putchar('\n');
 	}
 }
 

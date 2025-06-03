@@ -116,7 +116,7 @@ private:
 	void DragAndDrop() {
 		EM_ASM (
 			const setDragOver = Module.cwrap("setDragOver", "", ["boolean"]);
-			const transferFile = Module.cwrap("transferFile", "boolean", ["string", "number", "string"]);
+			const transmitFile = Module.cwrap("receiveFile", "", ["string", "number", "array"]);
 			Module.canvas.addEventListener("dragenter", () => setDragOver(true));
 			Module.canvas.addEventListener("dragleave", () => setDragOver(false));
 			Module.canvas.addEventListener("drop"     , () => setDragOver(false));
@@ -130,9 +130,9 @@ private:
 				event.preventDefault(); setDragOver(false);
 				const sendFile = (file) => {
 					let reader = new FileReader();
-					reader.onload = () => transferFile(file.name, file.size, reader.result);
-//					reader.onerror = () => transferFile(file.name, null);
-					reader.readAsText(file);
+					reader.onload = () => transmitFile(file.name, file.size, new Uint8Array(reader.result));
+					reader.onerror = () => alert(`Upload of ${file.name} failed.`);
+					reader.readAsArrayBuffer(file);
 				};
 				if (event.dataTransfer.items) {
 					[...event.dataTransfer.items].forEach((item) => {

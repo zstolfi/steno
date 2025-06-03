@@ -4,7 +4,7 @@ CXX         = em++
 EMFLAGS     = -sUSE_SDL=3 -fsanitize=undefined
 CXXFLAGS    = -std=c++20 -Wall -O1 -ferror-limit=30
 LDFLAGS     = --shell-file shell.html
-FUNCTIONS   = _main,_setDragOver,_transferFile
+FUNCTIONS   = _main,_setDragOver,_receiveFile
 
 # ~~~~ Directories ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 IMGUI       = imgui
