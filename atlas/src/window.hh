@@ -1,6 +1,8 @@
 #pragma once
+#include <emscripten.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_opengl.h>
+#include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_opengl3.h"
 #include <string>
@@ -79,6 +81,9 @@ public:
 		// Setup Platform/Renderer backends
 		ImGui_ImplSDL3_InitForOpenGL(winPtr, gl_context);
 		ImGui_ImplOpenGL3_Init(glsl_version);
+
+		// Cutsom JS interfaces
+		DragAndDrop();
 	}
 
 	void newFrame() {
@@ -105,5 +110,39 @@ public:
 		SDL_GL_DestroyContext(gl_context);
 		SDL_DestroyWindow(winPtr);
 		SDL_Quit();
+	}
+
+private:
+	void DragAndDrop() {
+		EM_ASM (
+			const setDragOver = Module.cwrap("setDragOver", "", ["boolean"]);
+			const transferFile = Module.cwrap("transferFile", "boolean", ["string", "number", "string"]);
+			Module.canvas.addEventListener("dragenter", () => setDragOver(true));
+			Module.canvas.addEventListener("dragleave", () => setDragOver(false));
+			Module.canvas.addEventListener("drop"     , () => setDragOver(false));
+
+			Module.canvas.addEventListener("dragover", (event) => {
+				event.preventDefault(); setDragOver(true);
+			});
+
+			// https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API/File_drag_and_drop#process_the_drop
+			Module.canvas.addEventListener("drop", (event) => {
+				event.preventDefault(); setDragOver(false);
+				const sendFile = (file) => {
+					let reader = new FileReader();
+					reader.onload = () => transferFile(file.name, file.size, reader.result);
+//					reader.onerror = () => transferFile(file.name, null);
+					reader.readAsText(file);
+				};
+				if (event.dataTransfer.items) {
+					[...event.dataTransfer.items].forEach((item) => {
+						if (item.kind == "file") sendFile(item.getAsFile());
+					});
+				}
+				else {
+					[...event.dataTransfer.files].forEach((file) => sendFile(file));
+				}
+			});
+		);
 	}
 };

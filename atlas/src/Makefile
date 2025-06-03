@@ -4,7 +4,7 @@ CXX         = em++
 EMFLAGS     = -sUSE_SDL=3 -fsanitize=undefined
 CXXFLAGS    = -std=c++20 -Wall -O1 -ferror-limit=30
 LDFLAGS     = --shell-file shell.html
-FUNCTIONS   = _main
+FUNCTIONS   = _main,_setDragOver,_transferFile
 
 # ~~~~ Directories ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 IMGUI       = imgui
@@ -28,6 +28,8 @@ all : $(TARGET)
 
 $(TARGET): $(OBJECTS) shell.html Makefile
 	$(CXX) $(EMFLAGS) $(LDFLAGS) $(OBJECTS) -o $@
+
+main.o : window.hh
 
 %.o : %.cc
 	$(CXX) $(EMFLAGS) $(CXXFLAGS) -c $< -o $@

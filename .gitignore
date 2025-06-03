@@ -2,7 +2,7 @@
 *.o
 
 # Directories
-atlas/src/imgui/
+atlas/src/imgui
 
 # Executables
 a.out

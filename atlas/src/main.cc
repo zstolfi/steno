@@ -1,16 +1,33 @@
-#include "imgui.h"
-#include <emscripten.h>
-
 #include "window.hh"
+#include "external.hh"
+#include <vector>
 #include <tuple>
+#include <memory>
 #include <cstdio>
+#include <cstdint>
 
 
 
 struct State {
-	/* State Goes Here */
+	static bool dragOver;
+//	static std::unique_ptr<File> files;
 	bool running = true;
 };
+
+extern "C" { // These functions are called from the browser.
+	bool State::dragOver = false;
+
+	void setDragOver(bool input) { State::dragOver = input; }
+	bool transferFile(char const* name, std::size_t size, uint8_t const* bytes) {
+		std::printf("File: (%s) received!\n", name);
+		std::printf("\t%zu bytes\n", size);
+		for (std::size_t i=0; i<size; i++) putchar(bytes[i]);
+		if (bytes[size-1] != '\n') putchar('\n');
+		return true; // Success!
+	}
+}
+
+
 
 void mainLoop(Window& window, State& state, ImGuiIO& io) {
 #ifdef __EMSCRIPTEN__
@@ -26,7 +43,10 @@ void mainLoop(Window& window, State& state, ImGuiIO& io) {
 
 	/* GUI Goes Here */
 
-	window.render({0.10, 0.10, 0.11, 1.0});
+	ImVec4 color = {0.10, 0.10, 0.11, 1.0};
+	if (state.dragOver) color.x += 0.3;
+
+	window.render(color);
 }
 
 
