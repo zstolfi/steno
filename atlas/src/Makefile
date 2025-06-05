@@ -3,7 +3,7 @@ CC          = emcc
 CXX         = em++
 EMFLAGS     = -sUSE_SDL=3 -fsanitize=undefined
 CXXFLAGS    = -std=c++20 -Wall -O1 -ferror-limit=30
-LDFLAGS     = --shell-file shell.html
+LDFLAGS     = --shell-file shell.html -sALLOW_MEMORY_GROWTH=1
 FUNCTIONS   = _main,_setDragOver,_receiveFile
 
 # ~~~~ Directories ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #

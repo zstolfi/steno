@@ -1,12 +1,16 @@
 #pragma once
-#include <emscripten.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_opengl.h>
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_opengl3.h"
 #include <string>
+#include <span>
 #include <cstdio>
+
+#ifdef __EMSCRIPTEN__
+#	include <emscripten.h>
+#endif
 
 class Window {
 	SDL_Window* winPtr;
@@ -112,8 +116,30 @@ public:
 		SDL_Quit();
 	}
 
+	[[nodiscard]]
+	static GLuint loadTexture(std::span<uint8_t const> data, int W, int H) {
+		IM_ASSERT(data.size() == W*H*4);
+
+		// Create a OpenGL texture identifier
+		GLuint texture;
+		glGenTextures(1, &texture);
+		glBindTexture(GL_TEXTURE_2D, texture);
+
+		// Setup filtering parameters for display
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		// Upload pixels into texture
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, W, H, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
+
+		return texture;
+	}
+
 private:
 	void DragAndDrop() {
+#	ifdef __EMSCRIPTEN__
 		EM_ASM (
 			const setDragOver = Module.cwrap("setDragOver", "", ["boolean"]);
 			const transmitFile = Module.cwrap("receiveFile", "", ["string", "number", "array"]);
@@ -144,5 +170,6 @@ private:
 				}
 			});
 		);
+#	endif
 	}
 };
