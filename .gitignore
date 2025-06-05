@@ -5,7 +5,8 @@
 atlas/src/imgui
 
 # Executables
-a.out
+*a.out
 examples/example
 examples/number_builder
 IO/JSON_import
+atlas/src/desktop/atlas
