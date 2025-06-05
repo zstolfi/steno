@@ -24,12 +24,13 @@ CXXFLAGS   += -I$(IMGUI) -I$(IMGUI)/backends
 LDFLAGS    += -sEXPORTED_FUNCTIONS=$(FUNCTIONS)
 LDFLAGS    += -sEXPORTED_RUNTIME_METHODS=ccall,cwrap
 
+# ~~~~ Rules ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 all : $(TARGET)
+
+main.o : window.hh
 
 $(TARGET): $(OBJECTS) shell.html Makefile
 	$(CXX) $(EMFLAGS) $(LDFLAGS) $(OBJECTS) -o $@
-
-main.o : window.hh
 
 %.o : %.cc
 	$(CXX) $(EMFLAGS) $(CXXFLAGS) -c $< -o $@
@@ -40,8 +41,9 @@ main.o : window.hh
 %.o : $(IMGUI)/backends/%.cpp
 	$(CXX) $(EMFLAGS) $(CXXFLAGS) -c $< -o $@
 
-serve: all
+# ~~~~ Commands ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+serve : all
 	python3 -m http.server -d $(WEB_DIR)
 
-clean:
+clean :
 	rm -rf $(OBJECTS)
