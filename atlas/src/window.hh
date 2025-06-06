@@ -7,6 +7,7 @@
 #include <string>
 #include <span>
 #include <cstdio>
+#include <cstdint>
 
 #ifdef __EMSCRIPTEN__
 #	include <emscripten.h>
@@ -142,7 +143,7 @@ private:
 #	ifdef __EMSCRIPTEN__
 		EM_ASM (
 			const setDragOver = Module.cwrap("setDragOver", "", ["boolean"]);
-			const transmitFile = Module.cwrap("receiveFile", "", ["string", "number", "array"]);
+			const transmitFile = Module.cwrap("receiveFile", "", ["string", "number", "number"]);
 			Module.canvas.addEventListener("dragenter", () => setDragOver(true));
 			Module.canvas.addEventListener("dragleave", () => setDragOver(false));
 			Module.canvas.addEventListener("drop"     , () => setDragOver(false));
@@ -157,7 +158,11 @@ private:
 				const sendFile = (file) => {
 					let reader = new FileReader();
 					reader.onerror = () => alert(`Upload of ${file.name} failed.`);
-					reader.onload = () => transmitFile(file.name, file.size, new Uint8Array(reader.result));
+					reader.onload = () => {
+						const array = Module._malloc(file.size);
+						Module.HEAPU8.set(new Uint8Array(reader.result), array);
+						transmitFile(file.name, file.size, array);
+					};
 					reader.readAsArrayBuffer(file);
 				};
 				if (event.dataTransfer.items) {

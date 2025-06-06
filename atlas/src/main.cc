@@ -1,12 +1,9 @@
 #include "window.hh"
-#include <string>
+#include <fstream>
 #include <vector>
 #include <map>
 #include <tuple>
-#include <span>
-#include <memory>
-#include <cstdio>
-#include <cstdint>
+#include <iterator>
 
 
 
@@ -14,6 +11,11 @@ struct File {
 	std::string name;
 	std::span<uint8_t const> bytes;
 	auto operator<=>(File const& f) const { return name <=> f.name; }
+
+	void print() const {
+		for (char c : bytes) std::putchar(c);
+		if (bytes.back() != '\n') std::putchar('\n');
+	}
 };
 
 struct Atlas {
@@ -33,19 +35,21 @@ struct Atlas {
 };
 
 namespace State {
-	bool dragOver;
+	bool running = true;
+	bool showDemoWindow = false;
+
+	bool dragOver = false;
 //	std::optional<float> transferProgress;
 	std::vector<File> files;
 	std::map<File, Atlas> atlases;
 	Atlas* selectedAtlas = nullptr;
-	bool running = true;
 }
 
 extern "C" { // These functions will be called from the browser.
 	void setDragOver(bool input) { State::dragOver = input; }
-	void receiveFile(char const* name, std::size_t size, uint8_t const* data) {
+	void receiveFile(char const* name, std::size_t size, uint8_t const* bytes) {
 		std::printf("File: (%s) received in %zu bytes\n", name, size);
-		State::files.emplace_back(name, std::span {data, size});
+		State::files.emplace_back(name, std::span {bytes, size});
 	}
 }
 
@@ -62,8 +66,8 @@ void mainLoop(Window& window, ImGuiIO& io) {
 	}
 
 	window.newFrame();
-	ImGui::ShowDemoWindow();
-
+	
+	/*Main Window*/
 	ImGui::SetNextWindowSize(ImVec2 {500, 400}, ImGuiCond_FirstUseEver);
 	ImGui::Begin("Steno Atlas Pre-Prototype");
 	if (State::files.empty()) {
@@ -75,11 +79,13 @@ void mainLoop(Window& window, ImGuiIO& io) {
 			ImGui::PushID(i++);
 			if (ImGui::TreeNode(file.name.c_str())) {
 				ImGui::Text("%zu bytes", file.bytes.size());
+				ImGui::SameLine();
+				if (ImGui::Button("Print")) file.print();
 				if (auto it = State::atlases.find(file); it != State::atlases.end()) {
 					auto const& atlas = it->second;
 					ImGui::Text("Atlas (default image for now)");
 					ImGui::Indent();
-					ImGui::Image((ImTextureID)(intptr_t)atlas.texture, ImVec2(256, 256));
+					ImGui::Image((ImTextureID)(intptr_t)atlas.texture, ImVec2 {256, 256});
 					ImGui::Unindent();
 				}
 				ImGui::TreePop();
@@ -88,6 +94,24 @@ void mainLoop(Window& window, ImGuiIO& io) {
 		}
 	}
 	ImGui::End();
+
+	/*Bottom-Right Overlay*/ {
+		auto const* viewport = ImGui::GetMainViewport();
+		ImVec2 work_pos = viewport->WorkPos; // Use work area to avoid menu-bar/task-bar, if any!
+		ImVec2 work_size = viewport->WorkSize;
+		float const PAD = 10.0f;
+		ImVec2 windowPos;
+		windowPos.x = work_pos.x + work_size.x - PAD;
+		windowPos.y = work_pos.y + work_size.y - PAD;
+
+		ImGui::SetNextWindowPos(windowPos, ImGuiCond_Always, ImVec2 {1, 1});
+		ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
+		ImGui::Begin("Programmer Menu", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
+		ImGui::Checkbox("I'm Bored", &State::showDemoWindow);
+		ImGui::End();
+	}
+
+	if (State::showDemoWindow) ImGui::ShowDemoWindow();
 
 	ImVec4 color = {0.10, 0.10, 0.11, 1.0};
 	if (State::dragOver) color.x += 0.3;
