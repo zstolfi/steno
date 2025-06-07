@@ -91,12 +91,6 @@ public:
 		DragAndDrop();
 	}
 
-	void newFrame() {
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplSDL3_NewFrame();
-		ImGui::NewFrame();
-	}
-
 	void render(ImVec4 clearColor = {0, 0, 0, 1}) {
 		ImGui::Render();
 		ImGuiIO& io = ImGui::GetIO();

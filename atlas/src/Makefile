@@ -27,7 +27,7 @@ LDFLAGS    += -sEXPORTED_RUNTIME_METHODS=ccall,cwrap,HEAPU8
 # ~~~~ Rules ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 all : $(TARGET)
 
-main.o : window.hh
+main.o : window.hh gui.hh
 
 $(TARGET): $(OBJECTS) shell.html Makefile
 	$(CXX) $(EMFLAGS) $(LDFLAGS) $(OBJECTS) -o $@
