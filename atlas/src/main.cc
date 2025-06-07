@@ -62,19 +62,17 @@ void mainLoop(Window& window, ImGuiIO& io) {
 			std::filesystem::path path {e.drop.data};
 			std::string const name = path.filename();
 			std::size_t const size = std::filesystem::file_size(path);
-			std::printf("File: (%s) received in %zu bytes\n", name.c_str(), size);
-			if (std::ifstream file {path}) {
-				State::files.emplace_back(
-					name, std::vector<uint8_t> {
-						std::istreambuf_iterator<char> {file},
-						std::istreambuf_iterator<char> {}
-					}
-				);
+			if (std::ifstream fileIn {path}) {
+				std::vector<uint8_t> bytes {}; bytes.reserve(size);
+				std::istreambuf_iterator<char> const begin {fileIn}, end {};
+				for (auto it=begin; it!=end; ++it) bytes.push_back(*it);
+				State::files.emplace_back(name, std::move(bytes));
+				std::printf("File: (%s) received in %zu bytes\n", name.c_str(), size);
 			}
 			else std::fprintf(stderr, "Unable to open (%s)", path.c_str());
 		}
 	}
-	for (auto file : State::files) {
+	for (auto const& file : State::files) {
 		if (State::atlases.contains(file)) continue;
 		State::atlases[file] = Atlas {};
 	}
