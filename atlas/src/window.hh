@@ -5,6 +5,7 @@
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_opengl3.h"
 #include <string>
+#include <vector>
 #include <span>
 #include <cstdio>
 #include <cstdint>
@@ -16,6 +17,7 @@
 class Window {
 	SDL_Window* winPtr;
 	SDL_GLContext gl_context;
+	std::vector<GLuint> textures;
 
 public:
 	Window(std::string title, unsigned W, unsigned H) {
@@ -102,6 +104,8 @@ public:
 	}
 
 	~Window() {
+		glDeleteTextures(textures.size(), textures.data());
+
 		ImGui_ImplOpenGL3_Shutdown();
 		ImGui_ImplSDL3_Shutdown();
 		ImGui::DestroyContext();
@@ -112,7 +116,7 @@ public:
 	}
 
 	[[nodiscard]]
-	static GLuint loadTexture(std::span<uint8_t const> data, int W, int H) {
+	ImTextureID loadTexture(std::span<uint8_t const> data, int W, int H) {
 		IM_ASSERT(data.size() == W*H*4);
 
 		// Create a OpenGL texture identifier
@@ -129,13 +133,14 @@ public:
 		// Upload pixels into texture
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, W, H, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
 
-		return texture;
+		this->textures.push_back(texture);
+		return (ImTextureID)(intptr_t)texture;
 	}
 
 private:
 	void DragAndDrop() {
 #	ifdef __EMSCRIPTEN__
-		EM_ASM (
+		EM_ASM(
 			const setDragOver = Module.cwrap("setDragOver", "", ["boolean"]);
 			const Set = (state) => (event) => {
 				event.preventDefault();

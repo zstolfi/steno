@@ -23,7 +23,7 @@ namespace GUI {
 						auto const& atlas = it->second;
 						ImGui::Text("Atlas (default image for now)");
 						ImGui::Indent();
-						ImGui::Image((ImTextureID)(intptr_t)atlas.texture, ImVec2 {256, 256});
+						ImGui::Image(atlas.texture, ImVec2 {256, 256});
 						ImGui::Unindent();
 					}
 					ImGui::TreePop();

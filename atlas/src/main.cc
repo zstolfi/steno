@@ -1,7 +1,6 @@
 #include "window.hh"
 #include <fstream>
 #include <filesystem>
-#include <vector>
 #include <map>
 #include <tuple>
 #include <iterator>
@@ -13,6 +12,18 @@ struct File {
 	std::vector<uint8_t> bytes;
 	auto operator<=>(File const& f) const { return name <=> f.name; }
 
+	File(std::filesystem::path path) {
+		name = path.filename();
+		if (std::ifstream input {path}) {
+			bytes.reserve(std::filesystem::file_size(path));
+			std::istreambuf_iterator<char> const begin {input}, end {};
+			for (auto it=begin; it!=end; ++it) bytes.push_back(*it);
+			std::printf("File: (%s) received in %zu bytes\n"
+			,	name.c_str(), bytes.size());
+		}
+		else std::fprintf(stderr, "Unable to open (%s)", path.c_str());
+	}
+
 	void print() const {
 		for (char c : bytes) std::putchar(c);
 		if (bytes.back() != '\n') std::putchar('\n');
@@ -21,8 +32,9 @@ struct File {
 
 struct Atlas {
 	std::vector<uint8_t> image;
-	GLuint texture;
-	Atlas() : image(256*256*4) {
+	ImTextureID texture;
+	Atlas() = default;
+	Atlas(Window& window) : image(256*256*4) {
 		for (unsigned y=0; y<256; y++)
 		for (unsigned x=0; x<256; x++) {
 			std::size_t i = 256*y + x;
@@ -31,7 +43,7 @@ struct Atlas {
 			image[4*i + 2] = x^y;
 			image[4*i + 3] = 255;
 		}
-		texture = Window::loadTexture(image, 256, 256);
+		texture = window.loadTexture(image, 256, 256);
 	}
 };
 
@@ -55,26 +67,16 @@ extern "C" { // These functions will be called from the browser.
 #include "gui.hh"
 
 void mainLoop(Window& window, ImGuiIO& io) {
-	for (SDL_Event e; SDL_PollEvent(&e);) {
-		ImGui_ImplSDL3_ProcessEvent(&e);
-		if (e.type == SDL_EVENT_QUIT) State::running = false;
-		if (e.type == SDL_EVENT_DROP_FILE) {
-			std::filesystem::path path {e.drop.data};
-			std::string const name = path.filename();
-			std::size_t const size = std::filesystem::file_size(path);
-			if (std::ifstream fileIn {path}) {
-				std::vector<uint8_t> bytes {}; bytes.reserve(size);
-				std::istreambuf_iterator<char> const begin {fileIn}, end {};
-				for (auto it=begin; it!=end; ++it) bytes.push_back(*it);
-				State::files.emplace_back(name, std::move(bytes));
-				std::printf("File: (%s) received in %zu bytes\n", name.c_str(), size);
-			}
-			else std::fprintf(stderr, "Unable to open (%s)", path.c_str());
+	for (SDL_Event event; SDL_PollEvent(&event);) {
+		ImGui_ImplSDL3_ProcessEvent(&event);
+		if (event.type == SDL_EVENT_QUIT) State::running = false;
+		if (event.type == SDL_EVENT_DROP_FILE) {
+			State::files.push_back(File {event.drop.data});
 		}
 	}
 	for (auto const& file : State::files) {
 		if (State::atlases.contains(file)) continue;
-		State::atlases[file] = Atlas {};
+		State::atlases[file] = Atlas {window};
 	}
 
 	GUI::initiate();
