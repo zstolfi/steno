@@ -1,5 +1,6 @@
 #include "window.hh"
 #include <fstream>
+#include <filesystem>
 #include <vector>
 #include <map>
 #include <tuple>
@@ -9,7 +10,7 @@
 
 struct File {
 	std::string name;
-	std::span<uint8_t const> bytes;
+	std::vector<uint8_t> bytes;
 	auto operator<=>(File const& f) const { return name <=> f.name; }
 
 	void print() const {
@@ -47,10 +48,6 @@ namespace State {
 
 extern "C" { // These functions will be called from the browser.
 	void setDragOver(bool input) { State::dragOver = input; }
-	void receiveFile(char const* name, std::size_t size, uint8_t const* bytes) {
-		std::printf("File: (%s) received in %zu bytes\n", name, size);
-		State::files.emplace_back(name, std::span {bytes, size});
-	}
 }
 
 
@@ -61,6 +58,21 @@ void mainLoop(Window& window, ImGuiIO& io) {
 	for (SDL_Event e; SDL_PollEvent(&e);) {
 		ImGui_ImplSDL3_ProcessEvent(&e);
 		if (e.type == SDL_EVENT_QUIT) State::running = false;
+		if (e.type == SDL_EVENT_DROP_FILE) {
+			std::filesystem::path path {e.drop.data};
+			std::string const name = path.filename();
+			std::size_t const size = std::filesystem::file_size(path);
+			std::printf("File: (%s) received in %zu bytes\n", name.c_str(), size);
+			if (std::ifstream file {path}) {
+				State::files.emplace_back(
+					name, std::vector<uint8_t> {
+						std::istreambuf_iterator<char> {file},
+						std::istreambuf_iterator<char> {}
+					}
+				);
+			}
+			else std::fprintf(stderr, "Unable to open (%s)", path.c_str());
+		}
 	}
 	for (auto file : State::files) {
 		if (State::atlases.contains(file)) continue;

@@ -137,37 +137,14 @@ private:
 #	ifdef __EMSCRIPTEN__
 		EM_ASM (
 			const setDragOver = Module.cwrap("setDragOver", "", ["boolean"]);
-			const transmitFile = Module.cwrap("receiveFile", "", ["string", "number", "number"]);
-			Module.canvas.addEventListener("dragenter", () => setDragOver(true));
-			Module.canvas.addEventListener("dragleave", () => setDragOver(false));
-			Module.canvas.addEventListener("drop"     , () => setDragOver(false));
-
-			Module.canvas.addEventListener("dragover", (event) => {
-				event.preventDefault(); setDragOver(true);
-			});
-
-			// https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API/File_drag_and_drop#process_the_drop
-			Module.canvas.addEventListener("drop", (event) => {
-				event.preventDefault(); setDragOver(false);
-				const sendFile = (file) => {
-					let reader = new FileReader();
-					reader.onerror = () => alert(`Upload of ${file.name} failed.`);
-					reader.onload = () => {
-						const array = Module._malloc(file.size);
-						Module.HEAPU8.set(new Uint8Array(reader.result), array);
-						transmitFile(file.name, file.size, array);
-					};
-					reader.readAsArrayBuffer(file);
-				};
-				if (event.dataTransfer.items) {
-					[...event.dataTransfer.items].forEach((item) => {
-						if (item.kind == "file") sendFile(item.getAsFile());
-					});
-				}
-				else {
-					[...event.dataTransfer.files].forEach((file) => sendFile(file));
-				}
-			});
+			const Set = (state) => (event) => {
+				event.preventDefault();
+				setDragOver(state);
+			};
+			Module.canvas.addEventListener("dragenter", Set(true));
+			Module.canvas.addEventListener("dragover" , Set(true));
+			Module.canvas.addEventListener("dragleave", Set(false));
+			Module.canvas.addEventListener("drop"     , Set(false));
 		);
 #	endif
 	}
