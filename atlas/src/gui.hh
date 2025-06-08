@@ -8,28 +8,30 @@ namespace GUI {
 	void MainMenu() {
 		ImGui::SetNextWindowSize(ImVec2 {500, 400}, ImGuiCond_FirstUseEver);
 		ImGui::Begin("Steno Atlas Pre-Prototype");
-		if (State::files.empty()) {
-			ImGui::Text("Drag & drop files here to get started!");
+		if (State::dictionaries.empty()) {
+			ImGui::Text("Drag & drop dictionaries here to get started!");
+			ImGui::Text("Accepted formats are RTF, JSON, or Plain-Text.");
+			ImGui::End(); return;
 		}
-		else {
-			ImGui::Text("Number of files loaded: %zu", State::files.size());
-			for (int i=0; auto file : State::files) {
-				ImGui::PushID(i++);
-				if (ImGui::TreeNode(file.name.c_str())) {
-					ImGui::Text("%zu bytes", file.bytes.size());
-					ImGui::SameLine();
-					if (ImGui::Button("Print")) file.print();
-					if (auto it = State::atlases.find(file); it != State::atlases.end()) {
-						auto const& atlas = it->second;
-						ImGui::Text("Atlas (default image for now)");
-						ImGui::Indent();
-						ImGui::Image(atlas.texture, ImVec2 {256, 256});
-						ImGui::Unindent();
+		ImGui::Text("Number of dictionaries loaded: %zu", State::dictionaries.size());
+		for (int i=0; auto dict : State::dictionaries) {
+			ImGui::PushID(i++);
+			if (ImGui::TreeNode(dict.name.c_str())) {
+				ImGui::Text("%zu entries", dict.entries.size());
+				auto const flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter;
+				if (ImGui::BeginTable("Entries", 2, flags, ImVec2 {400, 160})) {
+					for (auto const& [stroke, text] : dict.entries) {
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0);
+						ImGui::Text("%s", toString(stroke).c_str());
+						ImGui::TableSetColumnIndex(1);
+						ImGui::Text("%s", text.c_str());
 					}
-					ImGui::TreePop();
+					ImGui::EndTable();
 				}
-				ImGui::PopID();
+				ImGui::TreePop();
 			}
+			ImGui::PopID();
 		}
 		ImGui::End();
 	}

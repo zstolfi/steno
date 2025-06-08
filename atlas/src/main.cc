@@ -1,32 +1,40 @@
 #include "window.hh"
+#include "parsers.hh"
+#include "../../steno.hh"
+#include <istream>
 #include <fstream>
 #include <filesystem>
 #include <map>
 #include <tuple>
 #include <iterator>
+#include <optional>
 
 
 
-struct File {
+struct Dictionary {
+#	pragma clang diagnostic ignored "-Wc99-designator"
+	using Map = std::map<steno::Stroke, std::string>;
+	using ParserFn = std::optional<Map> (std::istream&);
 	std::string name;
-	std::vector<uint8_t> bytes;
-	auto operator<=>(File const& f) const { return name <=> f.name; }
+	Map entries;
 
-	File(std::filesystem::path path) {
-		name = path.filename();
-		if (std::ifstream input {path}) {
-			bytes.reserve(std::filesystem::file_size(path));
-			std::istreambuf_iterator<char> const begin {input}, end {};
-			for (auto it=begin; it!=end; ++it) bytes.push_back(*it);
-			std::printf("File: (%s) received in %zu bytes\n"
-			,	name.c_str(), bytes.size());
+	enum Type { Unknown, Text, JSON, RTF };
+	Dictionary(std::string name, Type type, std::istream& input): name{name} {
+		if (type != Unknown) {
+			auto parse = (ParserFn* []) {
+				[Text] = &steno::parsePlain,
+				[JSON] = &steno::parseJSON ,
+				[RTF ] = &steno::parseRTF  ,
+			} [type];
+			if (!parse) std::printf("Unsupported filetype for %s\n", name.c_str());
+			else if (auto result = parse(input)) entries = *result;
 		}
-		else std::fprintf(stderr, "Unable to open (%s)", path.c_str());
-	}
-
-	void print() const {
-		for (char c : bytes) std::putchar(c);
-		if (bytes.back() != '\n') std::putchar('\n');
+		else if (type == Unknown) {
+			auto/*    */ result = steno::parseRTF  (input);
+			if (!result) result = steno::parseJSON (input);
+			if (!result) result = steno::parsePlain(input);
+			if (!result) std::printf("Unable to parse %s", name.c_str());
+		}
 	}
 };
 
@@ -53,8 +61,8 @@ namespace State {
 
 	bool dragOver = false;
 //	std::optional<float> transferProgress;
-	std::vector<File> files;
-	std::map<File, Atlas> atlases;
+	std::vector<Dictionary> dictionaries;
+	std::map<Dictionary, Atlas> atlases;
 	Atlas* selectedAtlas = nullptr;
 }
 
@@ -64,20 +72,25 @@ extern "C" { // These functions will be called from the browser.
 
 
 
-#include "gui.hh"
+#include "gui.hh" // dependent on State
 
 void mainLoop(Window& window, ImGuiIO& io) {
 	for (SDL_Event event; SDL_PollEvent(&event);) {
 		ImGui_ImplSDL3_ProcessEvent(&event);
 		if (event.type == SDL_EVENT_QUIT) State::running = false;
 		if (event.type == SDL_EVENT_DROP_FILE) {
-			State::files.push_back(File {event.drop.data});
+			std::filesystem::path path {event.drop.data};
+			if (std::ifstream file {path}) {
+				Dictionary dict {path.filename(), Dictionary::RTF, file};
+				if (!dict.entries.empty()) State::dictionaries.push_back(std::move(dict));
+			}
+			else std::printf("Unable to open %s", path.c_str());
 		}
 	}
-	for (auto const& file : State::files) {
-		if (State::atlases.contains(file)) continue;
-		State::atlases[file] = Atlas {window};
-	}
+//	for (auto const& file : State::files) {
+//		if (State::atlases.contains(file)) continue;
+//		State::atlases[file] = Atlas {window};
+//	}
 
 	GUI::initiate();
 

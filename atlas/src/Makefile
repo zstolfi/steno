@@ -8,11 +8,12 @@ FUNCTIONS   = _main,_setDragOver
 
 # ~~~~ Directories ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 IMGUI       = imgui
+STENO       = ../..
 WEB_DIR     = ..
 TARGET      = $(WEB_DIR)/index.html
 
 # ~~~~ Project Sources ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-SOURCES     = main.cc
+SOURCES     = main.cc $(STENO)/steno.cc
 SOURCES    += $(IMGUI)/imgui.cpp $(IMGUI)/imgui_demo.cpp
 SOURCES    += $(IMGUI)/imgui_draw.cpp $(IMGUI)/imgui_tables.cpp $(IMGUI)/imgui_widgets.cpp
 SOURCES    += $(IMGUI)/backends/imgui_impl_sdl3.cpp
@@ -27,12 +28,15 @@ LDFLAGS    += -sEXPORTED_RUNTIME_METHODS=ccall,cwrap,HEAPU8
 # ~~~~ Rules ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 all : $(TARGET)
 
-main.o : window.hh gui.hh
+main.o : $(wildcard *.hh)
 
 $(TARGET): $(OBJECTS) shell.html Makefile
 	$(CXX) $(EMFLAGS) $(LDFLAGS) $(OBJECTS) -o $@
 
 %.o : %.cc
+	$(CXX) $(EMFLAGS) $(CXXFLAGS) -c $< -o $@
+
+%.o : $(STENO)/%.cc
 	$(CXX) $(EMFLAGS) $(CXXFLAGS) -c $< -o $@
 
 %.o : $(IMGUI)/%.cpp
