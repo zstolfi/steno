@@ -7,19 +7,18 @@
 #include <map>
 #include <tuple>
 #include <iterator>
-#include <optional>
 
 
 
 struct Dictionary {
 #	pragma clang diagnostic ignored "-Wc99-designator"
-	using Map = std::map<steno::Stroke, std::string>;
-	using ParserFn = std::optional<Map> (std::istream&);
+	using ParserFn = steno::Parser<steno::Dictionary>;
 	std::string name;
-	Map entries;
+	steno::Dictionary entries;
 
 	enum Type { Unknown, Text, JSON, RTF };
-	Dictionary(std::string name, Type type, std::istream& input): name{name} {
+	Dictionary(std::string name, Type type, std::istream& input)
+	: name{name} {
 		if (type != Unknown) {
 			auto parse = (ParserFn* []) {
 				[Text] = &steno::parsePlain,
@@ -33,8 +32,20 @@ struct Dictionary {
 			auto/*    */ result = steno::parseRTF  (input);
 			if (!result) result = steno::parseJSON (input);
 			if (!result) result = steno::parsePlain(input);
-			if (!result) std::printf("Unable to parse %s", name.c_str());
+			if (!result) std::printf("Unable to parse %s\n", name.c_str());
+			else entries = *result;
 		}
+	}
+
+	Dictionary(std::string name, std::string extension, std::istream& input) {
+		Type type = Unknown;
+		if (!extension.empty()) {
+			for (char& c : extension) c = std::tolower(c);
+			/**/ if (extension == ".txt" ) type = Text;
+			else if (extension == ".json") type = JSON;
+			else if (extension == ".rtf" ) type = RTF ;
+		}
+		*this = Dictionary(name, type, input);
 	}
 };
 
@@ -81,10 +92,11 @@ void mainLoop(Window& window, ImGuiIO& io) {
 		if (event.type == SDL_EVENT_DROP_FILE) {
 			std::filesystem::path path {event.drop.data};
 			if (std::ifstream file {path}) {
-				Dictionary dict {path.filename(), Dictionary::RTF, file};
-				if (!dict.entries.empty()) State::dictionaries.push_back(std::move(dict));
+				Dictionary dict {path.filename(), path.extension(), file};
+				if (dict.entries.empty()) continue;
+				State::dictionaries.push_back(std::move(dict));
 			}
-			else std::printf("Unable to open %s", path.c_str());
+			else std::printf("Unable to open %s\n", path.c_str());
 		}
 	}
 //	for (auto const& file : State::files) {

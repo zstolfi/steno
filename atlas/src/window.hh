@@ -9,6 +9,7 @@
 #include <span>
 #include <cstdio>
 #include <cstdint>
+#include <cctype>
 
 #ifdef __EMSCRIPTEN__
 #	include <emscripten.h>
