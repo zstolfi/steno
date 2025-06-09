@@ -1,9 +1,6 @@
 # Object files
 *.o
 
-# Directories
-atlas/src/imgui
-
 # Executables
 *a.out
 examples/example

@@ -1,0 +1,3 @@
+[submodule "atlas/src/imgui"]
+	path = atlas/src/imgui
+	url = https://github.com/ocornut/imgui
