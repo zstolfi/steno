@@ -29,22 +29,20 @@ jobs:
       run:
         working-directory: ./atlas/src
     steps:
-      - uses: libsdl-org/setup-sdl@v1
-        with:
-          version: 3-latest
-          
+      - uses: actions/checkout@v4
+
       - name: Setup emsdk
         uses: mymindstorm/setup-emsdk@v14
         with:
           version: 4.0.9
           actions-cache-folder: 'emsdk-cache'
-          
+
       - name: Setup emsdk cache
         uses: actions/cache@v4
         with:
           path: 'emsdk-cache'
           key: ${{ runner.os }}-emsdk
-          
+
       - name: Verify
         run: em++ -v
 
@@ -64,8 +62,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload just the Atlas folder
-          path: './atlas'
+          # Upload entire repository
+          path: '.'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
