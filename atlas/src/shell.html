@@ -30,7 +30,19 @@
 <body>
 	<canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
 	<script type='text/javascript'>
-		var printCreationDate = () => console.log(`COMPILED: ${document.lastModified}`);
+		var printCreationDate = () => {
+			if (location.hostname == "localhost") console.log(`COMPILED: ${document.lastModified}`)
+			else fetch("https://api.github.com/repos/zstolfi/steno/commits/main")
+			.	then(response => response.json())
+			.	then(json => {
+			 		const date = new Date(json.commit.author.date);
+			 		return (json.files.some(file => file.filename.match("atlas/src")))
+			 		?	date
+			 		:	"sometime before " + date;
+			 	})
+			.	then(date => console.log(`COMPILED: ${date}`))
+			.	catch();
+		};
 		var canvasElement = document.querySelector(`#canvas`);
 		canvasElement.addEventListener("webglcontextlost", (e) => {
 			alert('WebGL context lost, please reload the page');
