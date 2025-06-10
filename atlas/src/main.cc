@@ -44,7 +44,7 @@ struct Dictionary {
 			if (!result) std::printf("Unable to parse %s\n", name.c_str());
 			else entries = *result;
 		}
-		atlas = Atlas {/*entries*/};
+		atlas = Atlas {entries};
 		texture = loadTexture(atlas.image, Atlas::N, Atlas::N);
 	}
 
