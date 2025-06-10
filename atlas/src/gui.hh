@@ -14,14 +14,16 @@ namespace GUI {
 			ImGui::End(); return;
 		}
 		ImGui::Text("Number of dictionaries loaded: %zu", State::dictionaries.size());
-		for (int i=0; auto dict : State::dictionaries) {
+		for (int i=0; auto const& dict : State::dictionaries) {
 			ImGui::PushID(i++);
 			if (ImGui::TreeNode(dict.name.c_str())) {
 				ImGui::Image(dict.texture, ImVec2 {256, 256});
 				ImGui::Text("%zu entries", dict.entries.size());
 				auto const flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter;
 				if (ImGui::BeginTable("Entries", 2, flags, ImVec2 {400, 160})) {
+					int const limit = 10'000; int i = 0;
 					for (auto const& [stroke, text] : dict.entries) {
+						if (i++ == limit) break;
 						ImGui::TableNextRow();
 						ImGui::TableSetColumnIndex(0);
 						ImGui::Text("%s", toString(stroke).c_str());
