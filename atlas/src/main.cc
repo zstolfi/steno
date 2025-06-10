@@ -1,24 +1,33 @@
 #include "window.hh"
-#include "parsers.hh"
+#include "atlas.hh"
 #include "../../steno.hh"
+#include "parsers.hh"
 #include <istream>
 #include <fstream>
 #include <filesystem>
 #include <map>
 #include <tuple>
 #include <iterator>
+#include <functional>
 
 
 
 struct Dictionary {
 #	pragma clang diagnostic ignored "-Wc99-designator"
 	using ParserFn = steno::Parser<steno::Dictionary>;
+	using TextureFn = ImTextureID (std::span<uint8_t const>, int W, int H);
+	using TextureFn_Arg = std::function<TextureFn>;
 	std::string name;
 	steno::Dictionary entries;
+	Atlas atlas;
+	ImTextureID texture;
 
 	enum Type { Unknown, Text, JSON, RTF };
-	Dictionary(std::string name, Type type, std::istream& input)
-	: name{name} {
+	Dictionary(
+		std::istream& input,
+		std::string name, Type type,
+		TextureFn_Arg loadTexture
+	): name{name} {
 		if (type != Unknown) {
 			auto parse = (ParserFn* []) {
 				[Text] = &steno::parsePlain,
@@ -35,34 +44,23 @@ struct Dictionary {
 			if (!result) std::printf("Unable to parse %s\n", name.c_str());
 			else entries = *result;
 		}
+		atlas = Atlas {/*entries*/};
+		texture = loadTexture(atlas.image, Atlas::N, Atlas::N);
 	}
 
-	Dictionary(std::string name, std::string extension, std::istream& input) {
+	Dictionary(
+		std::istream& input,
+		std::filesystem::path path,
+		TextureFn_Arg loadTexture
+	) {
 		Type type = Unknown;
-		if (!extension.empty()) {
+		if (std::string extension = path.extension(); !extension.empty()) {
 			for (char& c : extension) c = std::tolower(c);
 			/**/ if (extension == ".txt" ) type = Text;
 			else if (extension == ".json") type = JSON;
 			else if (extension == ".rtf" ) type = RTF ;
 		}
-		*this = Dictionary(name, type, input);
-	}
-};
-
-struct Atlas {
-	std::vector<uint8_t> image;
-	ImTextureID texture;
-	Atlas() = default;
-	Atlas(Window& window) : image(256*256*4) {
-		for (unsigned y=0; y<256; y++)
-		for (unsigned x=0; x<256; x++) {
-			std::size_t i = 256*y + x;
-			image[4*i + 0] = x^y;
-			image[4*i + 1] = x^y;
-			image[4*i + 2] = x^y;
-			image[4*i + 3] = 255;
-		}
-		texture = window.loadTexture(image, 256, 256);
+		*this = Dictionary(input, path.filename(), type, loadTexture);
 	}
 };
 
@@ -73,8 +71,6 @@ namespace State {
 	bool dragOver = false;
 //	std::optional<float> transferProgress;
 	std::vector<Dictionary> dictionaries;
-	std::map<Dictionary, Atlas> atlases;
-	Atlas* selectedAtlas = nullptr;
 }
 
 extern "C" { // These functions will be called from the browser.
@@ -86,23 +82,22 @@ extern "C" { // These functions will be called from the browser.
 #include "gui.hh" // dependent on State
 
 void mainLoop(Window& window, ImGuiIO& io) {
+	auto loadTexture = [&] <class ... Args> (Args&& ... args)
+	{ return window.loadTexture(std::forward<Args>(args) ... ); };
+
 	for (SDL_Event event; SDL_PollEvent(&event);) {
 		ImGui_ImplSDL3_ProcessEvent(&event);
 		if (event.type == SDL_EVENT_QUIT) State::running = false;
 		if (event.type == SDL_EVENT_DROP_FILE) {
 			std::filesystem::path path {event.drop.data};
 			if (std::ifstream file {path}) {
-				Dictionary dict {path.filename(), path.extension(), file};
+				Dictionary dict {file, path, loadTexture};
 				if (dict.entries.empty()) continue;
 				State::dictionaries.push_back(std::move(dict));
 			}
 			else std::printf("Unable to open %s\n", path.c_str());
 		}
 	}
-//	for (auto const& file : State::files) {
-//		if (State::atlases.contains(file)) continue;
-//		State::atlases[file] = Atlas {window};
-//	}
 
 	GUI::initiate();
 

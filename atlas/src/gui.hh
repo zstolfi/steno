@@ -17,6 +17,7 @@ namespace GUI {
 		for (int i=0; auto dict : State::dictionaries) {
 			ImGui::PushID(i++);
 			if (ImGui::TreeNode(dict.name.c_str())) {
+				ImGui::Image(dict.texture, ImVec2 {256, 256});
 				ImGui::Text("%zu entries", dict.entries.size());
 				auto const flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter;
 				if (ImGui::BeginTable("Entries", 2, flags, ImVec2 {400, 160})) {
