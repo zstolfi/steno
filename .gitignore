@@ -7,3 +7,8 @@ examples/example
 examples/number_builder
 IO/JSON_import
 atlas/src/desktop/atlas
+
+# Emscripten output
+atlas/index.html
+atlas/index.js
+atlas/index.wasm
