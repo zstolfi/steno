@@ -4,14 +4,17 @@ LDFLAGS   =
 
 all : example number_builder
 
-example : example.o ../steno.o
-	$(CXX) $^ -o $@ $(LDFLAGS)
+example : example.o steno.o
+	$(CXX) $(LDFLAGS) $^ -o $@
 
-number_builder : number_builder.o ../steno.o
-	$(CXX) $^ -o $@ $(LDFLAGS)
+number_builder : number_builder.o steno.o
+	$(CXX) $(LDFLAGS) $^ -o $@
 
-%.o : %.cc *.hh Makefile
-	$(CXX) $< -c -o $@ $(CXXFLAGS)
+steno.o : ../steno.cc ../steno.hh
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+%.o : %.cc $(wildcard *.hh) Makefile
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean :
 	rm -f *.o
