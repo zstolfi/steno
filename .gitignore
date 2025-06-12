@@ -4,6 +4,7 @@
 # Executables
 *a.out
 examples/example
+examples/validate
 examples/number_builder
 IO/JSON_import
 atlas/src/desktop/atlas
