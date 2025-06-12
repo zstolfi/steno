@@ -17,6 +17,15 @@ namespace steno {
 constexpr struct FromBits_Arg {} FromBits;
 constexpr struct FromBitsReversed_Arg {} FromBitsReversed;
 
+enum struct Key {
+	Num = 0,
+	S_, T_, K_, P_, W_, H_, R_,
+	A, O, x, E, U,
+	_F, _R, _P, _B, _L, _G, _T, _S, _D, _Z,
+	Mark = 23, OpenLeft, OpenRight,
+//	FailedConstruction = 31
+};
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 union Stroke {
@@ -52,6 +61,9 @@ public:
 
 	operator bool() const;
 
+	bool get(Key);
+	Stroke set(Key);
+	Stroke unset(Key);
 	Stroke operator+=(Stroke);
 	Stroke operator-=(Stroke);
 	Stroke operator&=(Stroke);

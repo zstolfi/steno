@@ -1,79 +1,87 @@
 #include "steno.hh"
 #include <algorithm>
+#include <string_view>
+
+namespace /*detail*/ {
+	const std::string Whitespace = " \t\r\n";
+	const char Hash = '#', Dash = '-', Mark = '!', Tilde = '~';
+	
+	const std::string Left   = "STKPWHR";
+	const std::string Middle = "AO*EU";
+	const std::string Right  = "FRPBLGTSDZ";
+
+	const std::string Numbers    = "1234506789";
+	const std::string NumbersMap = "STPHAOFPLT";
+
+	const std::string Other = {Hash, Dash, Tilde};
+	const std::string Body = Left + Middle + Right;
+	const std::string NumbersLeft   = Numbers.substr(0, 4);
+	const std::string NumbersMiddle = Numbers.substr(4, 2);
+	const std::string NumbersRight  = Numbers.substr(6, 4);
+
+	constexpr auto npos = std::string::npos;
+	auto in(std::string_view set) {
+		return [set](char c) {
+			return set.find(c) != npos;
+		};
+	};
+
+	std::string replaceNums(std::string/*by copy*/ str) {
+		// Don't forget about the dash! Information would be removed otherwise.
+		if (str.find(NumbersMiddle + Middle) == npos) {
+			auto i = str.find_first_of(NumbersRight);
+			str.insert(i, 1, Dash);
+		}
+		// Iterate and replace.
+		for (char& c : str) if (in(Numbers)(c)) {
+			c = NumbersMap[Numbers.find(c)];
+		}
+		return str;
+	}
+
+	bool validStroke(std::string str) {
+		// Trust the user :D
+		return true;
+	}
+}
 
 namespace steno {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-Stroke::Stroke(std::string s) {
-	const std::string Whitespace = " \t\r\n";
-	const std::string Left   = "STKPWHR";
-	const std::string Middle = "AO*EU";
-	const std::string Right  = "FRPBLGTSDZ";
-	const std::string Numbers    = "0123456789";
-	const std::string NumbersMap = "OSTPHAFPLT";
-	const char Num   = '#';
-	const char Dash  = '-';
-	const char Tilde = '~';
-	const std::string  Other = {Num, Dash, Tilde};
-	auto in = [](std::string set) {
-		return [set](char c) { return set.find(c) != set.npos; };
-	};
-
-	// Remove whitespace.
-	s.erase(
-		std::remove_if(s.begin(), s.end(), in(Whitespace)),
-		s.end()
-	);
-
-	// Handle flags.
-	if (s.front() == Tilde) s=s.substr(1), this->keys.OpenLeft  = true;
-	if (s.back () == Tilde) s.pop_back() , this->keys.OpenRight = true;
-	if (s.front() == Num  ) s=s.substr(1), this->keys.Num       = true;
-
-	// Normalize number keys.
-	if (std::any_of(s.begin(), s.end(), in(Numbers))) {
-		this->keys.Num = true;
-		for (char& c : s) if (in(Numbers)(c)) c = NumbersMap[c-'0'];
+Stroke::Stroke(std::string str) {
+	auto strHas = [&str](auto x) { return str.find(x) != npos; };
+	auto implicit = [&str](auto x) { return validStroke(x) && (str=x, true); };
+	auto subString = [&str](auto i, auto j) { return str.substr(i, j-i); };
+	// Normalize.
+	std::erase_if(str, in(Whitespace));
+	if (!validStroke(str)) {
+		// TODO: Decide with certainty how to handle empty input.
+		if (str.empty()) str = Dash;
+		// Remove flags.
+		if (str.front() == Tilde) str = {++str.begin(), str.end()}, set(Key::OpenLeft );
+		if (str.back()  == Tilde) str = {str.begin(), --str.end()}, set(Key::OpenRight);
+		// Accept an implicit dash.
+		if (implicit(str + Dash)); else
+		// Numbers are not allowed to have dashes.
+		if (strHas(Numbers)) {
+			if (!strHas(Hash) && implicit(Hash + replaceNums(str))); else
+			if ( strHas(Hash) && implicit(       replaceNums(str))); else
+			{ failConstruction(); return; }
+		} else
+		// Unable to normalize.
+		if (!validStroke(str)) { failConstruction(); return; }
 	}
-
-	// Sinple charset test:
-	if (!std::all_of(s.begin(), s.end(), in(Left + Middle + Right + Other))) {
-		failConstruction(); return;
-	}
-
-	// Find unique middle secion (vowels).
-	unsigned v0 {}, v1 {};
-	if (auto d = s.find(Dash); d != s.npos) {
-		v0 = d;
-		v1 = d+1;
-	}
-	else if (auto i = s.find_first_of(Middle); i != s.npos) {
-		auto j = s.find_first_not_of(Middle, i);
-		v0 = i;
-		v1 = (j != s.npos) ? j : s.size();
-	}
-	// If there is not a middle section it might be a left-hand only shortcut.
-	else if (Stroke x {s + Dash}) { *this = x; return; }
-	else { failConstruction(); return; }
-
-	// Split 's' into substrings.
-	std::string sL = s.substr(0, v0);
-	std::string sM = s.substr(v0, v1-v0);
-	std::string sR = s.substr(v1, s.size()-v1);
-	if (sM == "-") sM = "";
-
-	// More checks.
-	if (!std::all_of(sL.begin(), sL.end(), in(Left  ))
-	||  !std::all_of(sM.begin(), sM.end(), in(Middle))
-	||  !std::all_of(sR.begin(), sR.end(), in(Right ))) {
-		failConstruction(); return;
-	}
-
+	// Explode into 3 substrings (each w/ unique elements).
+	auto i0 = str.find_first_of(Middle+Dash);
+	auto i1 = str.find_last_of(Middle+Dash)+1;
+	const std::string left   = subString( 0, i0);
+	const std::string middle = subString(i0, str[i0] == Dash? i0: i1);
+	const std::string right  = subString(i1, str.size());
 	// Assign.
-	for (char c : sL) this->bits[Left  .find(c) +  1] = true;
-	for (char c : sM) this->bits[Middle.find(c) +  8] = true;
-	for (char c : sR) this->bits[Right .find(c) + 13] = true;
+	for (char c : left  ) bits[Left  .find(c) +  1] = true;
+	for (char c : middle) bits[Middle.find(c) +  8] = true;
+	for (char c : right ) bits[Right .find(c) + 13] = true;
 }
 
 Stroke::Stroke(FromBits_Arg, std::bitset<23> b) {
@@ -90,6 +98,20 @@ Stroke::Stroke(FromBitsReversed_Arg, std::bitset<23> b) {
 
 Stroke::operator bool() const {
 	return !this->keys.FailedConstruction && this->bits.to_ulong();
+}
+
+bool Stroke::get(Key k) {
+	return this->bits[static_cast<int>(k)];
+}
+
+Stroke Stroke::set(Key k) {
+	this->bits[static_cast<int>(k)] = true;
+	return *this;
+}
+
+Stroke Stroke::unset(Key k) {
+	this->bits[static_cast<int>(k)] = false;
+	return *this;
 }
 
 Stroke Stroke::operator+=(Stroke other) {
@@ -136,7 +158,7 @@ Strokes::Strokes(std::string s) {
 	};
 
 	signed i=0, j=0;
-	while (j=s.find('/', i), j!=s.npos) {
+	while (j=s.find('/', i), j!=npos) {
 		if (push(i, j) == false) return;
 		i = j+1;
 	}
@@ -258,7 +280,7 @@ std::string toString(Stroke x) {
 		x.keys.OpenLeft = false;
 		auto result = '~' + toString(x);
 		auto i = result.find(' ');
-		if (i != result.npos) result.erase(i, 1);
+		if (i != npos) result.erase(i, 1);
 		return result;
 	}
 
@@ -266,7 +288,7 @@ std::string toString(Stroke x) {
 		x.keys.OpenRight = false;
 		auto result = toString(x) + '~';
 		auto i = result.rfind(' ');
-		if (i != result.npos) result.erase(i, 1);
+		if (i != npos) result.erase(i, 1);
 		return result;
 	}
 
