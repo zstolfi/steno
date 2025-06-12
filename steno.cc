@@ -1,6 +1,7 @@
 #include "steno.hh"
 #include <algorithm>
 #include <string_view>
+#include <array>
 
 namespace /*detail*/ {
 	const std::string Whitespace = " \t\r\n";
@@ -28,8 +29,8 @@ namespace /*detail*/ {
 
 	std::string replaceNums(std::string/*by copy*/ str) {
 		// Don't forget about the dash! Information would be removed otherwise.
-		if (str.find(NumbersMiddle + Middle) == npos) {
-			auto i = str.find_first_of(NumbersRight);
+		if (str.find_first_of(NumbersMiddle + Middle) == npos) {
+			auto i = std::min(str.find_first_of(NumbersRight), str.size());
 			str.insert(i, 1, Dash);
 		}
 		// Iterate and replace.
@@ -39,8 +40,41 @@ namespace /*detail*/ {
 		return str;
 	}
 
+	auto decomposeStroke(std::string str) {
+		auto subString = [&str](auto i, auto j) { return str.substr(i, j-i); };
+		auto i0 = str.find_first_of(Middle+Dash);
+		auto i1 = str.find_last_of(Middle+Dash)+1;
+		return std::array {
+			subString( 0, i0),                      // Left
+			subString(i0, str[i0] == Dash? i0: i1), // Middle
+			subString(i1, str.size()),              // Right
+		};
+	}
+
+	bool validOrder(std::string str, std::string Alphabet) {
+//		assert(std::set(Alphabet.begin(), Alphabet.end()).size() == Alphabet.size());
+		auto it = str.begin();
+		for (char c : Alphabet) {
+			if (it == str.end()) return true;
+			if (*it == c) ++it;
+		}
+		return it == str.end();
+	}
+
 	bool validStroke(std::string str) {
-		// Trust the user :D
+		// The goal here is to have every possible valid stroke a unique string
+		// representation. The user input is already normalized by Stroke's
+		// constructor, so we're only making it strict for internal use.
+		if (str.empty()) return false;
+		// Every stroke is required to have a middle.
+		if (str.find_first_of(Middle + Dash) == npos) return false;
+		// Numbers will not be used internally, only '#'.
+		if (str.find_first_of(Numbers) != npos) return false;
+		// Check for order of components.
+		const auto [left, middle, right] = decomposeStroke(str);
+		if (!validOrder(left, Hash+Left)) return false;
+		if (!validOrder(middle, Middle)) return false;
+		if (!validOrder(right, Right)) return false;
 		return true;
 	}
 }
@@ -52,14 +86,14 @@ namespace steno {
 Stroke::Stroke(std::string str) {
 	auto strHas = [&str](auto x) { return str.find_first_of(x) != npos; };
 	auto implicit = [&str](auto x) { return validStroke(x) && (str=x, true); };
-	auto subString = [&str](auto i, auto j) { return str.substr(i, j-i); };
 	// Normalize.
 	std::erase_if(str, in(Whitespace));
-	bool temporaryCheck = strHas(Numbers);
-	if (temporaryCheck || !validStroke(str)) {
+	if (!validStroke(str)) {
 		// TODO: Decide with certainty how to handle empty input.
 		if (str.empty()) str = Dash;
-		// Remove flags.
+		// Marks cannot combine with keys. If you've seen anyone do this please let me know.
+		if (strHas(Mark)) { set(Key::Mark); return; }
+		// Remove other flags.
 		if (str.front() == Tilde) str = {++str.begin(), str.end()}, set(Key::OpenLeft );
 		if (str.back()  == Tilde) str = {str.begin(), --str.end()}, set(Key::OpenRight);
 		// Accept an implicit dash.
@@ -74,11 +108,7 @@ Stroke::Stroke(std::string str) {
 		if (!validStroke(str)) { failConstruction(); return; }
 	}
 	// Explode into 3 substrings (each w/ unique elements).
-	auto i0 = str.find_first_of(Middle+Dash);
-	auto i1 = str.find_last_of(Middle+Dash)+1;
-	const std::string left   = subString( 0, i0);
-	const std::string middle = subString(i0, str[i0] == Dash? i0: i1);
-	const std::string right  = subString(i1, str.size());
+	const auto [left, middle, right] = decomposeStroke(str);
 	// Assign.
 	for (char c : left  ) bits[Left  .find(c) +  1] = true;
 	for (char c : middle) bits[Middle.find(c) +  8] = true;
