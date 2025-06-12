@@ -59,9 +59,9 @@ public:
 		<=>    other.bits.to_ulong();
 	}
 
-	operator bool() const;
+	bool failed() const;
 
-	bool get(Key);
+	bool get(Key) const;
 	Stroke set(Key);
 	Stroke unset(Key);
 	Stroke operator+=(Stroke);
@@ -87,6 +87,8 @@ public:
 	bool operator== (const Strokes xx) const { return list ==  xx.list; }
 	auto operator<=>(const Strokes xx) const { return list <=> xx.list; }
 
+	bool failed() const;
+
 	Stroke& operator[](std::size_t);
 	Stroke  operator[](std::size_t) const;
 
@@ -108,10 +110,12 @@ struct Brief {
 
 public:
 	Brief() = default;
-	Brief(Strokes, std::string);
-	Brief(Brief, std::string);
+	Brief(std::string, Strokes);
+	Brief(std::string, Brief);
 
 	bool operator==(const Brief& b) const = default;
+
+	bool failed() const;
 
 	Brief& operator+=(Brief);
 	Brief& operator|=(Brief);

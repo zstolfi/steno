@@ -50,12 +50,13 @@ namespace steno {
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 Stroke::Stroke(std::string str) {
-	auto strHas = [&str](auto x) { return str.find(x) != npos; };
+	auto strHas = [&str](auto x) { return str.find_first_of(x) != npos; };
 	auto implicit = [&str](auto x) { return validStroke(x) && (str=x, true); };
 	auto subString = [&str](auto i, auto j) { return str.substr(i, j-i); };
 	// Normalize.
 	std::erase_if(str, in(Whitespace));
-	if (!validStroke(str)) {
+	bool temporaryCheck = strHas(Numbers);
+	if (temporaryCheck || !validStroke(str)) {
 		// TODO: Decide with certainty how to handle empty input.
 		if (str.empty()) str = Dash;
 		// Remove flags.
@@ -96,11 +97,11 @@ Stroke::Stroke(FromBitsReversed_Arg, std::bitset<23> b) {
 	for (unsigned i=0; i<b.size(); i++) this->bits[i] = b[i];
 }
 
-Stroke::operator bool() const {
-	return !this->keys.FailedConstruction && this->bits.to_ulong();
+bool Stroke::failed() const {
+	return this->keys.FailedConstruction;
 }
 
-bool Stroke::get(Key k) {
+bool Stroke::get(Key k) const {
 	return this->bits[static_cast<int>(k)];
 }
 
@@ -120,16 +121,16 @@ Stroke Stroke::operator+=(Stroke other) {
 }
 
 Stroke Stroke::operator-=(Stroke other) {
-	// Disallow deletion of the fail flag.
-	other.keys.FailedConstruction = false;
+	bool failState = this->keys.FailedConstruction;
 	this->bits &= ~other.bits;
+	this->keys.FailedConstruction = failState;
 	return *this;
 }
 
 Stroke Stroke::operator&=(Stroke other) {
-	// Disallow deletion of the fail flag.
-	other.keys.FailedConstruction = true;
+	bool failState = this->keys.FailedConstruction;
 	this->bits &= other.bits;
+	this->keys.FailedConstruction = failState;
 	return *this;
 }
 
@@ -165,6 +166,13 @@ Strokes::Strokes(std::string s) {
 	push(i, s.size());
 }
 
+bool Strokes::failed() const {
+	return std::any_of(
+		list.begin(), list.end(),
+		[](auto x) { return x.failed(); }
+	);
+}
+
 Stroke& Strokes::operator[](std::size_t i) /* */ { return this->list[i]; }
 Stroke  Strokes::operator[](std::size_t i) const { return this->list[i]; }
 
@@ -194,8 +202,15 @@ Strokes& Strokes::operator|=(Strokes xx) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-Brief::Brief(Strokes xx, std::string str): strokes{xx}, text{str} { normalize(); }
-Brief::Brief(Brief b, std::string str): strokes{b.strokes}, text{str} { normalize(); }
+Brief::Brief(std::string str, Strokes xx): strokes{xx}, text{str} { normalize(); }
+Brief::Brief(std::string str, Brief b): strokes{b.strokes}, text{str} { normalize(); }
+
+bool Brief::failed() const {
+	return std::any_of(
+		strokes.list.begin(), strokes.list.end(),
+		[](auto xx) { return xx.failed(); }
+	);
+}
 
 Brief& Brief::operator+=(Brief other) {
 	if (this->strokes.list.empty()) this->strokes = other.strokes;
@@ -244,15 +259,15 @@ Stroke  operator+(Stroke  x , Stroke  y ) { return x += y ; }
 Strokes operator+(Strokes xx, Stroke  y ) { return xx.list.back() += y; }
 Strokes operator+(Stroke  x , Strokes yy) { return yy.list.front() += x; }
 Brief   operator+(Brief   a , Brief   b ) { return a += b; }
-Brief   operator+(Strokes xx, Brief   b ) { return Brief {xx, ""} += b; }
-Brief   operator+(Brief   b , Strokes xx) { return b += Brief {xx, ""}; }
+Brief   operator+(Strokes xx, Brief   b ) { return Brief {"", xx} += b; }
+Brief   operator+(Brief   b , Strokes xx) { return b += Brief {"", xx}; }
 Brief   operator+(std::string s, Brief b) {
 	if (s=="~") { b.text = s + b.text; return b; }
-	else return Brief {{"-"}, s} += b;
+	else return Brief {s, {"-"}} += b;
 }
 Brief   operator+(Brief b, std::string s) {
 	if (s=="~") { b.text = b.text + s; return b; }
-	else return b += Brief {{"-"}, s};
+	else return b += Brief {s, {"-"}};
 }
 
 Stroke  operator-(Stroke  x , Stroke  y ) { return x -= y; }
@@ -263,8 +278,8 @@ Strokes operator|(Strokes xx, Stroke  y ) { return xx.append(y); }
 Strokes operator|(Stroke  x , Strokes yy) { return yy.prepend(x); }
 Strokes operator|(Strokes xx, Strokes yy) { return xx.append(yy); }
 Brief   operator|(Brief   a , Brief   b ) { return a |= b; }
-Brief   operator|(Strokes xx, Brief   b ) { return Brief {xx, ""} |= b; }
-Brief   operator|(Brief b   , Strokes xx) { return b |= Brief {xx, ""}; }
+Brief   operator|(Strokes xx, Brief   b ) { return Brief {"", xx} |= b; }
+Brief   operator|(Brief b   , Strokes xx) { return b |= Brief {"", xx}; }
 
 Stroke  operator&(Stroke  x , Stroke  y ) { return x &= y; }
 

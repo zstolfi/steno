@@ -2,7 +2,7 @@ CXX       = clang++
 CXXFLAGS  = -std=c++20 -O1 -Wall
 LDFLAGS   = 
 
-all : example number_builder
+all : example #number_builder
 
 example : example.o steno.o
 	$(CXX) $(LDFLAGS) $^ -o $@
