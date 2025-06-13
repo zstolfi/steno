@@ -2,23 +2,26 @@
 #include <algorithm>
 #include <string_view>
 #include <array>
+#include <cassert>
 
 namespace /*detail*/ {
 	const std::string Whitespace = " \t\r\n";
+	// Flags:
 	const char Hash = '#', Dash = '-', Mark = '!', Tilde = '~';
-	
-	const std::string Left   = "STKPWHR";
-	const std::string Middle = "AO*EU";
-	const std::string Right  = "FRPBLGTSDZ";
-
+	//                               Left   Mid   Right
+	// Keys:                        ┌──┴──┐┌─┴─┐┌───┴────┐
+	const std::string StenoOrder = "STKPWHRAO*EUFRPBLGTSDZ";
+	const std::string Left   = StenoOrder.substr( 0,  7);
+	const std::string Middle = StenoOrder.substr( 7,  5);
+	const std::string Right  = StenoOrder.substr(12, 10);
+	// Keys when the number bar is pressed:
+	const std::string StenoNumbers = "12K3W4R50*EU6R7B8G9SDZ";
+	const std::string NumbersLeft   = StenoNumbers.substr( 0,  7);
+	const std::string NumbersMiddle = StenoNumbers.substr( 7,  5);
+	const std::string NumbersRight  = Hash + StenoNumbers.substr(12, 10);
+	// Conversion look-ups:
 	const std::string Numbers    = "1234506789";
 	const std::string NumbersMap = "STPHAOFPLT";
-
-	const std::string Other = {Hash, Dash, Tilde};
-	const std::string Body = Left + Middle + Right;
-	const std::string NumbersLeft   = Numbers.substr(0, 4);
-	const std::string NumbersMiddle = Numbers.substr(4, 2);
-	const std::string NumbersRight  = Numbers.substr(6, 4);
 
 	constexpr auto npos = std::string::npos;
 	auto in(std::string_view set) {
@@ -29,30 +32,29 @@ namespace /*detail*/ {
 
 	std::string replaceNums(std::string/*by copy*/ str) {
 		// Don't forget about the dash! Information would be removed otherwise.
-		if (str.find_first_of(NumbersMiddle + Middle) == npos) {
+		if (str.find_first_of(NumbersMiddle + Dash) == npos) {
 			auto i = std::min(str.find_first_of(NumbersRight), str.size());
 			str.insert(i, 1, Dash);
 		}
 		// Iterate and replace.
-		for (char& c : str) if (in(Numbers)(c)) {
-			c = NumbersMap[Numbers.find(c)];
+		for (char& c : str) {
+			if (auto i = Numbers.find(c); i != npos) c = NumbersMap[i];
 		}
 		return str;
 	}
 
 	auto decomposeStroke(std::string str) {
-		auto subString = [&str](auto i, auto j) { return str.substr(i, j-i); };
-		auto i0 = str.find_first_of(Middle+Dash);
-		auto i1 = str.find_last_of(Middle+Dash)+1;
-		return std::array {
-			subString( 0, i0),                      // Left
-			subString(i0, str[i0] == Dash? i0: i1), // Middle
-			subString(i1, str.size()),              // Right
-		};
+		auto i0 = str.find_first_of(Middle + Dash);
+		auto i1 = str.find_last_of(Middle + Dash) + 1;
+		auto left   = str.substr( 0,         i0 -  0);
+		auto middle = str.substr(i0,         i1 - i0);
+		auto right  = str.substr(i1, str.size() - i1);
+		if (middle == std::string {Dash}) middle = "";
+		return std::array {left, middle, right};
 	}
 
 	bool validOrder(std::string str, std::string Alphabet) {
-//		assert(std::set(Alphabet.begin(), Alphabet.end()).size() == Alphabet.size());
+		if (!std::all_of(str.begin(), str.end(), in(Alphabet))) return false;
 		auto it = str.begin();
 		for (char c : Alphabet) {
 			if (it == str.end()) return true;
@@ -98,8 +100,8 @@ Stroke::Stroke(std::string str) {
 		if (str.back()  == Tilde) str = {str.begin(), --str.end()}, set(Key::OpenRight);
 		// Accept an implicit dash.
 		if (implicit(str + Dash)); else
-		// Numbers are not allowed to have dashes.
-		if (strHas(Numbers)) {
+		// Numbers are replaced by letters + Num flag.
+		if (strHas(Numbers) && validOrder(str, Hash + StenoNumbers)) {
 			if (!strHas(Hash) && implicit(Hash + replaceNums(str))); else
 			if ( strHas(Hash) && implicit(       replaceNums(str))); else
 			{ failConstruction(); return; }
