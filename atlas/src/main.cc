@@ -6,9 +6,7 @@
 #include <fstream>
 #include <filesystem>
 #include <map>
-#include <tuple>
 #include <iterator>
-#include <functional>
 
 
 
@@ -115,19 +113,6 @@ void mainLoop(Window& window, ImGuiIO& io) {
 
 
 int main(int argc, char const* argv[]) {
-	Window window {"Steno Atlas", 1280, 720};
-
-#ifdef __EMSCRIPTEN__
-	auto userData = std::tie(window, ImGui::GetIO());
-	emscripten_set_main_loop_arg(
-		[] (void* data) {
-			if (!State::running) emscripten_cancel_main_loop();
-			std::apply(mainLoop, *(decltype(userData)*)data);
-		},
-		&userData, 0, true
-	);
-#else
-	while (State::running) mainLoop(window, ImGui::GetIO());
-#endif
-
+	Window window {"Steno Atlas", 1280, 720, &State::running};
+	window.run(mainLoop, std::tie(window, ImGui::GetIO()));
 }

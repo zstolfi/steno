@@ -7,6 +7,9 @@
 #include <string>
 #include <vector>
 #include <span>
+#include <tuple>
+#include <functional>
+#include <variant>
 #include <cstdio>
 #include <cstdint>
 #include <cctype>
@@ -20,8 +23,14 @@ class Window {
 	SDL_GLContext gl_context;
 	std::vector<GLuint> textures;
 
+	using RunBool = bool const*;
+	using RunFunc = bool (*)();
+	std::variant<RunBool, RunFunc> runPred;
+
 public:
-	Window(std::string title, unsigned W, unsigned H) {
+	Window(std::string title, unsigned W, unsigned H, decltype(runPred) rp) {
+		// Know when the user code stops running
+		runPred = rp;
 		// Setup SDL
 		if (!SDL_Init(SDL_INIT_VIDEO)) {
 			std::printf("Error: SDL_Init(): %s\n", SDL_GetError());
@@ -104,6 +113,31 @@ public:
 		SDL_GL_SwapWindow(winPtr);
 	}
 
+	void run(auto&& mainLoop) {
+#	ifdef __EMSCRIPTEN__
+		static std::function<void ()> sMainLoop = mainLoop;
+		emscripten_set_main_loop([] { sMainLoop(); }, 0, true);
+#	else
+		while (running()) mainLoop();
+#	endif
+	}
+
+	template <template<class> class Tuple, class ... Args>
+	void run(auto&& mainLoop, Tuple<Args ... >&& userData) {
+#	ifdef __EMSCRIPTEN__
+		static std::function<void (Args ... )> sMainLoop = mainLoop;
+		static Tuple<Args ... > sUserData = userData;
+		emscripten_set_main_loop_arg(
+			[] (void* data) {
+				std::apply(sMainLoop, *(Tuple<Args ... >*)data);
+			},
+			(void*)&sUserData, 0, true
+		);
+#	else
+		while (running()) std::apply(mainLoop, userData);
+#	endif
+	}
+
 	~Window() {
 		glDeleteTextures(textures.size(), textures.data());
 
@@ -139,7 +173,13 @@ public:
 	}
 
 private:
-	void DragAndDrop() {
+	bool running() const {
+		if (RunBool const* val = std::get_if<RunBool>(&runPred)) return **val;
+		if (RunFunc const* val = std::get_if<RunFunc>(&runPred)) return (*val)();
+		return false;
+	}
+
+	void DragAndDrop() const {
 #	ifdef __EMSCRIPTEN__
 		EM_ASM(
 			const setDragOver = Module.cwrap("setDragOver", "", ["boolean"]);
