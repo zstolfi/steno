@@ -5,16 +5,16 @@ namespace GUI {
 		ImGui::NewFrame();
 	}
 
-	void MainMenu() {
+	void MainMenu(State& state) {
 		ImGui::SetNextWindowSize(ImVec2 {500, 400}, ImGuiCond_FirstUseEver);
 		ImGui::Begin("Steno Atlas Pre-Prototype");
-		if (State::dictionaries.empty()) {
+		if (state.dictionaries.empty()) {
 			ImGui::Text("Drag & drop dictionaries here to get started!");
 			ImGui::Text("Accepted formats are RTF, JSON, or Plain-Text.");
 			ImGui::End(); return;
 		}
-		ImGui::Text("Number of dictionaries loaded: %zu", State::dictionaries.size());
-		for (int i=0; auto const& dict : State::dictionaries) {
+		ImGui::Text("Number of dictionaries loaded: %zu", state.dictionaries.size());
+		for (int i=0; auto const& dict : state.dictionaries) {
 			ImGui::PushID(i++);
 			if (ImGui::TreeNode(dict.name.c_str())) {
 				ImGui::Image(dict.texture, ImVec2 {256, 256});
@@ -39,7 +39,7 @@ namespace GUI {
 		ImGui::End();
 	}
 
-	void BottomRightOverlay() {
+	void BottomRightOverlay(State& state) {
 		auto* viewport = ImGui::GetMainViewport();
 		ImVec2 work_pos = viewport->WorkPos; // Use work area to avoid menu-bar/task-bar, if any!
 		ImVec2 work_size = viewport->WorkSize;
@@ -50,7 +50,7 @@ namespace GUI {
 		ImGui::SetNextWindowPos(windowPos, ImGuiCond_Always, ImVec2 {1, 1});
 		ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
 		ImGui::Begin("Programmer Menu", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
-		ImGui::Checkbox("I'm Bored", &State::showDemoWindow);
+		ImGui::Checkbox("I'm Bored", &state.showDemoWindow);
 		ImGui::End();
 	}
 }

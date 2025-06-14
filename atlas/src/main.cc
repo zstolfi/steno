@@ -62,14 +62,15 @@ struct Dictionary {
 	}
 };
 
-namespace State {
+struct State {
 	bool running = true;
+	// App state:
 	bool showDemoWindow = false;
-
-	bool dragOver = false;
 //	std::optional<float> transferProgress;
 	std::vector<Dictionary> dictionaries;
-}
+	// Web-related state:
+	static inline bool dragOver = false;
+};
 
 extern "C" { // These functions will be called from the browser.
 	void setDragOver(bool input) { State::dragOver = input; }
@@ -79,19 +80,19 @@ extern "C" { // These functions will be called from the browser.
 
 #include "gui.hh" // dependent on State
 
-void mainLoop(Window& window, ImGuiIO& io) {
+void mainLoop(Window& window, State& state) {
 	auto loadTexture = [&] <class ... Args> (Args&& ... args)
 	{ return window.loadTexture(std::forward<Args>(args) ... ); };
 
 	for (SDL_Event event; SDL_PollEvent(&event);) {
 		ImGui_ImplSDL3_ProcessEvent(&event);
-		if (event.type == SDL_EVENT_QUIT) State::running = false;
+		if (event.type == SDL_EVENT_QUIT) state.running = false;
 		if (event.type == SDL_EVENT_DROP_FILE) {
 			std::filesystem::path path {event.drop.data};
 			if (std::ifstream file {path}) {
 				Dictionary dict {file, path, loadTexture};
 				if (dict.entries.empty()) continue;
-				State::dictionaries.push_back(std::move(dict));
+				state.dictionaries.push_back(std::move(dict));
 			}
 			else std::printf("Unable to open %s\n", path.c_str());
 		}
@@ -99,13 +100,13 @@ void mainLoop(Window& window, ImGuiIO& io) {
 
 	GUI::initiate();
 
-	GUI::BottomRightOverlay();
-	GUI::MainMenu();
+	GUI::BottomRightOverlay(state);
+	GUI::MainMenu(state);
 
-	if (State::showDemoWindow) ImGui::ShowDemoWindow();
+	if (state.showDemoWindow) ImGui::ShowDemoWindow();
 
 	ImVec4 color = {0.10, 0.10, 0.11, 1.0};
-	if (State::dragOver) color.x += 0.3;
+	if (state.dragOver) color.x += 0.3;
 
 	window.render(color);
 }
@@ -113,6 +114,7 @@ void mainLoop(Window& window, ImGuiIO& io) {
 
 
 int main(int argc, char const* argv[]) {
-	Window window {"Steno Atlas", 1280, 720, &State::running};
-	window.run(mainLoop, std::tie(window, ImGui::GetIO()));
+	State state {};
+	Window window {"Steno Atlas", 1280, 720, &state.running};
+	window.run(mainLoop, std::tie(window, state));
 }
