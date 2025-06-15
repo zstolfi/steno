@@ -9,10 +9,10 @@ examples/number_builder
 IO/JSON_import
 atlas/src/desktop/atlas
 
+# Directories/Symlinks
+.include/boost
+
 # Emscripten output
 atlas/index.html
 atlas/index.js
 atlas/index.wasm
-
-# Temporary
-IO/boost*

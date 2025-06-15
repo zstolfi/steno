@@ -8,8 +8,8 @@ FUNCTIONS   = _main,_setDragOver
 
 # ~~~~ Directories ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 STENO       = ../..
-IMGUI       = imgui
-BOOST       = $(STENO)/IO/boost_1_87_0
+IMGUI       = $(STENO)/.include/imgui
+BOOST       = $(STENO)/.include/boost#_1_88_0
 WEB_DIR     = ..
 TARGET      = $(WEB_DIR)/index.html
 
