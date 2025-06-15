@@ -2,6 +2,6 @@
 	path = .include/imgui
 	url = https://github.com/ocornut/imgui
 [submodule "atlas/src/parser"]
-	path = .include/boost_parser
+	path = .include/boost/parser
 	url = https://github.com/boostorg/parser.git
 	branch = master

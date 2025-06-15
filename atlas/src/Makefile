@@ -9,9 +9,10 @@ FUNCTIONS   = _main,_setDragOver
 # ~~~~ Directories ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 STENO       = ../..
 IMGUI       = $(STENO)/.include/imgui
-BOOST       = $(STENO)/.include/boost_parser/include# TODO: allow multiple libraries
-WEB_DIR     = ..
-TARGET      = $(WEB_DIR)/index.html
+BOOST       = $(STENO)/.include/boost
+BOOST_LIBS  = parser
+WWW         = ..
+TARGET      = $(WWW)/index.html
 
 # ~~~~ Project Sources ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 SOURCES     = main.cc $(STENO)/steno.cc $(STENO)/steno_parsers.cc
@@ -22,7 +23,8 @@ SOURCES    += $(IMGUI)/backends/imgui_impl_opengl3.cpp
 OBJECTS     = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
 
 # ~~~~ Flags ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-CXXFLAGS   += -I$(IMGUI) -I$(IMGUI)/backends -I$(STENO) -I$(BOOST)
+CXXFLAGS   += -I$(IMGUI) -I$(IMGUI)/backends
+CXXFLAGS   += -I$(STENO) $(BOOST_LIBS:%=-I$(BOOST)/%/include)
 LDFLAGS    += -sEXPORTED_FUNCTIONS=$(FUNCTIONS)
 LDFLAGS    += -sEXPORTED_RUNTIME_METHODS=ccall,cwrap,HEAPU8
 
@@ -48,7 +50,7 @@ $(TARGET): $(OBJECTS) shell.html Makefile
 
 # ~~~~ Commands ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 serve : all
-	python3 -m http.server -d $(WEB_DIR)
+	python3 -m http.server -d $(WWW)
 
 clean :
 	rm -rf $(OBJECTS)
