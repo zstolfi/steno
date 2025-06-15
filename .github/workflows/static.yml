@@ -60,14 +60,15 @@ jobs:
         env:
           BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
 
-      - name: Remove dependencies
-        run: rm -rf ${{ github.workspace }}/.include
+      - name: Move to ./www
+        run: |
+          mkdir -p www
+          mv atlas www/atlas
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
-          path: '.'
+          path: './www'
 
   deploy:
     needs: build
