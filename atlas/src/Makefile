@@ -9,7 +9,7 @@ FUNCTIONS   = _main,_setDragOver
 # ~~~~ Directories ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 STENO       = ../..
 IMGUI       = $(STENO)/.include/imgui
-BOOST       = $(STENO)/.include/boost#_1_88_0
+BOOST       = $(shell echo $${BOOST_ROOT:-$(STENO)/.include/boost})
 WEB_DIR     = ..
 TARGET      = $(WEB_DIR)/index.html
 
