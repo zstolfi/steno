@@ -1,7 +1,7 @@
 #include "window.hh"
 #include "atlas.hh"
-#include "../../steno.hh"
-#include "parsers.hh"
+#include "steno.hh"
+#include "steno_parsers.hh"
 #include <istream>
 #include <fstream>
 #include <filesystem>
@@ -12,7 +12,7 @@
 
 struct Dictionary {
 #	pragma clang diagnostic ignored "-Wc99-designator"
-	using ParserFn = steno::Parser<steno::Dictionary>;
+	using ParserFn = steno::ParserDictionaryFn;
 	using TextureFn = ImTextureID (std::span<uint8_t const>, int W, int H);
 	using TextureFn_Arg = std::function<TextureFn>;
 	std::string name;
@@ -26,22 +26,17 @@ struct Dictionary {
 		std::string name, Type type,
 		TextureFn_Arg loadTexture
 	): name{name} {
-		if (type != Unknown) {
-			auto parse = (ParserFn* []) {
-				[Text] = &steno::parsePlain,
-				[JSON] = &steno::parseJSON ,
-				[RTF ] = &steno::parseRTF  ,
-			} [type];
-			if (!parse) std::printf("Unsupported filetype for %s\n", name.c_str());
-			else if (auto result = parse(input)) entries = *result;
-		}
-		else if (type == Unknown) {
-			auto/*    */ result = steno::parseRTF  (input);
-			if (!result) result = steno::parseJSON (input);
-			if (!result) result = steno::parsePlain(input);
-			if (!result) std::printf("Unable to parse %s\n", name.c_str());
-			else entries = *result;
-		}
+		std::istreambuf_iterator<char> begin {input}, end {};
+		std::vector<uint8_t> bytes {begin, end};
+		auto parse = (ParserFn* []) {
+			[Text]    = steno::parsePlain,
+			[JSON]    = steno::parseJSON,
+			[RTF]     = steno::parseRTF,
+			[Unknown] = steno::parseGuess,
+		} [type];
+		if (!parse) std::printf("Unsupported filetype for %s\n", name.c_str());
+		else if (auto result = parse(bytes)) entries = *result;
+		else std::printf("Parse failed for %s\n", name.c_str());
 		atlas = Atlas {entries};
 		texture = loadTexture(atlas.image, Atlas::N, Atlas::N);
 	}

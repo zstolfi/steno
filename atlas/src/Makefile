@@ -7,13 +7,14 @@ LDFLAGS     = --shell-file shell.html -sALLOW_MEMORY_GROWTH=1
 FUNCTIONS   = _main,_setDragOver
 
 # ~~~~ Directories ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-IMGUI       = imgui
 STENO       = ../..
+IMGUI       = imgui
+BOOST       = $(STENO)/IO/boost_1_87_0
 WEB_DIR     = ..
 TARGET      = $(WEB_DIR)/index.html
 
 # ~~~~ Project Sources ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-SOURCES     = main.cc $(STENO)/steno.cc
+SOURCES     = main.cc $(STENO)/steno.cc $(STENO)/steno_parsers.cc
 SOURCES    += $(IMGUI)/imgui.cpp $(IMGUI)/imgui_demo.cpp
 SOURCES    += $(IMGUI)/imgui_draw.cpp $(IMGUI)/imgui_tables.cpp $(IMGUI)/imgui_widgets.cpp
 SOURCES    += $(IMGUI)/backends/imgui_impl_sdl3.cpp
@@ -21,7 +22,7 @@ SOURCES    += $(IMGUI)/backends/imgui_impl_opengl3.cpp
 OBJECTS     = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
 
 # ~~~~ Flags ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-CXXFLAGS   += -I$(IMGUI) -I$(IMGUI)/backends
+CXXFLAGS   += -I$(IMGUI) -I$(IMGUI)/backends -I$(STENO) -I$(BOOST)
 LDFLAGS    += -sEXPORTED_FUNCTIONS=$(FUNCTIONS)
 LDFLAGS    += -sEXPORTED_RUNTIME_METHODS=ccall,cwrap,HEAPU8
 
@@ -36,7 +37,7 @@ $(TARGET): $(OBJECTS) shell.html Makefile
 %.o : %.cc
 	$(CXX) $(EMFLAGS) $(CXXFLAGS) -c $< -o $@
 
-%.o : $(STENO)/%.cc
+%.o : $(STENO)/%.cc $(STENO)/steno.hh
 	$(CXX) $(EMFLAGS) $(CXXFLAGS) -c $< -o $@
 
 %.o : $(IMGUI)/%.cpp

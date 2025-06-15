@@ -127,6 +127,10 @@ private:
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+using Dictionary = std::map<steno::Strokes, std::string>;
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
 using Modifier = std::function<Brief(Brief)>;
 
 // Multiple keys at the same time:
@@ -175,5 +179,3 @@ std::ostream& operator<<(std::ostream&, Strokes);
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 } // namespace steno
-
-//#include "steno_dictionary.hh"

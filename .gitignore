@@ -13,3 +13,6 @@ atlas/src/desktop/atlas
 atlas/index.html
 atlas/index.js
 atlas/index.wasm
+
+# Temporary
+IO/boost*
