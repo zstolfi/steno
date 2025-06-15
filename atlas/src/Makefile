@@ -9,7 +9,7 @@ FUNCTIONS   = _main,_setDragOver
 # ~~~~ Directories ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 STENO       = ../..
 IMGUI       = $(STENO)/.include/imgui
-BOOST       = $(shell echo $${BOOST_ROOT:-$(STENO)/.include/boost})
+BOOST       = $(STENO)/.include/boost_parser/include# TODO: allow multiple libraries
 WEB_DIR     = ..
 TARGET      = $(WEB_DIR)/index.html
 

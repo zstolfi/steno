@@ -47,13 +47,6 @@ jobs:
           version: ${{ env.EM_VERSION }}
           actions-cache-folder: ${{ env.EM_CACHE_FOLDER }}
 
-      - name: Install boost
-        uses: MarkusJx/install-boost@v2
-        id: install-boost
-        with:
-          boost_version: 1.88.0
-          boost_install_dir: ${{ github.workspace }}/.include
-
       # Build steps go here
       - name: Build application
         run: make -C atlas/src
