@@ -26,7 +26,7 @@ OBJECTS     = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
 CXXFLAGS   += -I$(IMGUI) -I$(IMGUI)/backends
 CXXFLAGS   += -I$(STENO) $(BOOST_LIBS:%=-I$(BOOST)/%/include)
 LDFLAGS    += -sEXPORTED_FUNCTIONS=$(FUNCTIONS)
-LDFLAGS    += -sEXPORTED_RUNTIME_METHODS=ccall,cwrap,HEAPU8
+LDFLAGS    += -sEXPORTED_RUNTIME_METHODS=ccall,cwrap
 
 # ~~~~ Rules ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 all : $(TARGET)

@@ -117,6 +117,10 @@ Stroke::Stroke(std::string str) {
 	for (char c : right ) bits[Right .find(c) + 13] = true;
 }
 
+Stroke::Stroke(std::span<const char> s) {
+	*this = Stroke(std::string {s.begin(), s.end()});
+}
+
 Stroke::Stroke(FromBits_Arg, std::bitset<23> b) {
 	// 0b00011000100001110100000
 	// = #STKPWHRAO*EUFRPBLGTSDZ

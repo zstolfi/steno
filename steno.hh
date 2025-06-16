@@ -47,6 +47,7 @@ union Stroke {
 public:
 	Stroke() = default;
 	Stroke(std::string);
+	Stroke(std::span<const char>);
 	Stroke(FromBits_Arg, std::bitset<23>);
 	Stroke(FromBitsReversed_Arg, std::bitset<23>);
 

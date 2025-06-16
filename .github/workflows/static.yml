@@ -50,8 +50,6 @@ jobs:
       # Build steps go here
       - name: Build application
         run: make -C atlas/src
-        env:
-          BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
 
       - name: Move to ./www
         run: |
