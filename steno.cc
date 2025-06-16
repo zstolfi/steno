@@ -18,7 +18,7 @@ namespace /*detail*/ {
 	const std::string StenoNumbers = "12K3W4R50*EU6R7B8G9SDZ";
 	const std::string NumbersLeft   = StenoNumbers.substr( 0,  7);
 	const std::string NumbersMiddle = StenoNumbers.substr( 7,  5);
-	const std::string NumbersRight  = Hash + StenoNumbers.substr(12, 10);
+	const std::string NumbersRight  = StenoNumbers.substr(12, 10);
 	// Conversion look-ups:
 	const std::string Numbers    = "1234506789";
 	const std::string NumbersMap = "STPHAOFPLT";
