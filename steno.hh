@@ -2,13 +2,11 @@
 #include <iostream>
 #include <bitset>
 #include <string>
+#include <string_view>
 #include <vector>
 #include <map>
-#include <forward_list>
 #include <span>
 #include <initializer_list>
-#include <any>
-#include <functional>
 
 namespace steno {
 
@@ -46,8 +44,7 @@ union Stroke {
 
 public:
 	Stroke() = default;
-	Stroke(std::string);
-	Stroke(std::span<const char>);
+	Stroke(std::string_view);
 	Stroke(FromBits_Arg, std::bitset<23>);
 	Stroke(FromBitsReversed_Arg, std::bitset<23>);
 
@@ -83,7 +80,7 @@ public:
 	Strokes(Stroke);
 	Strokes(std::span<const Stroke>);
 	Strokes(std::initializer_list<Stroke>);
-	Strokes(std::string);
+	Strokes(std::string_view);
 
 	bool operator== (const Strokes xx) const { return list ==  xx.list; }
 	auto operator<=>(const Strokes xx) const { return list <=> xx.list; }
@@ -111,8 +108,8 @@ struct Brief {
 
 public:
 	Brief() = default;
-	Brief(std::string, Strokes);
-	Brief(std::string, Brief);
+	Brief(std::string_view, Strokes);
+	Brief(std::string_view, Brief);
 
 	bool operator==(const Brief& b) const = default;
 
@@ -131,8 +128,6 @@ private:
 using Dictionary = std::map<steno::Strokes, std::string>;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
-using Modifier = std::function<Brief(Brief)>;
 
 // Multiple keys at the same time:
 Stroke  operator+(Stroke , Stroke );
@@ -158,12 +153,6 @@ Brief   operator|(Strokes, Brief  );
 Brief   operator|(Brief  , Strokes);
 // Subset of keys:
 Stroke  operator&(Stroke , Stroke );
-
-// Maybe a bit of a hack:
-Brief operator+ (Brief , Modifier);
-Brief operator| (Brief , Modifier);
-Brief operator+=(Brief&, Modifier);
-Brief operator|=(Brief&, Modifier);
 
 
 const auto NoStroke = Stroke {};

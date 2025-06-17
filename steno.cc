@@ -1,6 +1,5 @@
 #include "steno.hh"
 #include <algorithm>
-#include <string_view>
 #include <array>
 #include <cassert>
 
@@ -24,7 +23,7 @@ namespace /*detail*/ {
 	const std::string NumbersMap = "STPHAOFPLT";
 
 	constexpr auto npos = std::string::npos;
-	auto in(std::string_view set) {
+	auto in(std::string set) {
 		return [set](char c) {
 			return set.find(c) != npos;
 		};
@@ -85,7 +84,8 @@ namespace steno {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-Stroke::Stroke(std::string str) {
+Stroke::Stroke(std::string_view str_v) {
+	auto str = std::string {str_v};
 	auto strHas = [&str](auto x) { return str.find_first_of(x) != npos; };
 	auto implicit = [&str](auto x) { return validStroke(x) && (str=x, true); };
 	// Normalize.
@@ -115,10 +115,6 @@ Stroke::Stroke(std::string str) {
 	for (char c : left  ) bits[Left  .find(c) +  1] = true;
 	for (char c : middle) bits[Middle.find(c) +  8] = true;
 	for (char c : right ) bits[Right .find(c) + 13] = true;
-}
-
-Stroke::Stroke(std::span<const char> s) {
-	*this = Stroke(std::string {s.begin(), s.end()});
 }
 
 Stroke::Stroke(FromBits_Arg, std::bitset<23> b) {
@@ -186,20 +182,20 @@ Strokes::Strokes(std::initializer_list<Stroke> il) {
 	this->list = List_t (il.begin(), il.end());
 }
 
-Strokes::Strokes(std::string s) {
+Strokes::Strokes(std::string_view str) {
 	auto push = [&](unsigned i, unsigned j) {
 		// if (i == j) return false;
-		this->list.emplace_back(s.substr(i, j-i));
+		this->list.emplace_back(str.substr(i, j-i));
 		if (this->list.back().keys.FailedConstruction) return false;
 		return true;
 	};
 
 	signed i=0, j=0;
-	while (j=s.find('/', i), j!=npos) {
+	while (j=str.find('/', i), j!=npos) {
 		if (push(i, j) == false) return;
 		i = j+1;
 	}
-	push(i, s.size());
+	push(i, str.size());
 }
 
 bool Strokes::failed() const {
@@ -238,8 +234,8 @@ Strokes& Strokes::operator|=(Strokes xx) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-Brief::Brief(std::string str, Strokes xx): strokes{xx}, text{str} { normalize(); }
-Brief::Brief(std::string str, Brief b): strokes{b.strokes}, text{str} { normalize(); }
+Brief::Brief(std::string_view str, Strokes xx): strokes{xx}, text{str} { normalize(); }
+Brief::Brief(std::string_view str, Brief b): strokes{b.strokes}, text{str} { normalize(); }
 
 bool Brief::failed() const {
 	return std::any_of(
@@ -318,11 +314,6 @@ Brief   operator|(Strokes xx, Brief   b ) { return Brief {"", xx} |= b; }
 Brief   operator|(Brief b   , Strokes xx) { return b |= Brief {"", xx}; }
 
 Stroke  operator&(Stroke  x , Stroke  y ) { return x &= y; }
-
-Brief operator+ (Brief  b , Modifier f) { return f(b); }
-Brief operator| (Brief  b , Modifier f) { return f(b); }
-Brief operator+=(Brief& b , Modifier f) { return b = f(b); }
-Brief operator|=(Brief& b , Modifier f) { return b = f(b); }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
