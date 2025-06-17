@@ -3,7 +3,7 @@
 
 namespace bp = boost::parser;
 
-namespace grammar {
+namespace common {
 	bp::rule<struct stroke, steno::Stroke>  stroke    = "steno stroke";
 	// STKPWHR AO*EU FRPBLGTSDZ
 	bp::rule<struct left     , std::string> left      = "left-hand consonants";
@@ -14,11 +14,12 @@ namespace grammar {
 	bp::rule<struct middleNum, std::string> middleNum = "vowel or asterisk with number bar";
 	bp::rule<struct rightNum , std::string> rightNum  = "right-hand with number bar";
 	bp::rule<struct digitSeq , std::string> digitSeq  = "digit sequence";
+	// Small helper parsers
 	const auto asString = bp::attr(std::string {});
 	const auto hash = bp::string("#");
 	const auto numberKey = bp::char_("1234506789");
 	const auto noNum  = &bp::char_ >> *(bp::char_ - numberKey) >> bp::eoi;
-	const auto anyNum = &bp::char_ >> numberKey >> *bp::char_  >> bp::eoi;
+	const auto anyNum = *bp::char_ >> numberKey >> *bp::char_  >> bp::eoi;
 	const auto allNum = &bp::char_ >> *numberKey               >> bp::eoi;
 
 	const auto stroke_def
@@ -80,7 +81,7 @@ namespace grammar {
 	;
 
 	const auto digitSeq_def
-		= 	&bp::char_("1234506789") >> asString
+		= 	asString >> &bp::char_("1234506789")
 		>>	-bp::char_('1') >> -bp::char_('2')
 		>>	-bp::char_('3') >> -bp::char_('4')
 		>>	-bp::char_('5') >> -bp::char_('0')
@@ -100,8 +101,7 @@ namespace steno {
 
 // For testing purposes:
 std::optional<Stroke> parseStroke(steno::ParserInput input) {
-	if (bp::parse(input, grammar::stroke)) return steno::Stroke {input};
-	else return {};
+	return bp::parse(input, common::stroke, bp::ws);
 }
 
 std::optional<Dictionary> parsePlain(ParserInput) {
