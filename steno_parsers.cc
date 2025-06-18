@@ -111,7 +111,7 @@ bp::rule<struct file, steno::Dictionary> file = "plain-text file";
 bp::rule<struct line, Entry            > line = "brief entry";
 
 const auto file_def
-	= 	line % bp::eol
+	= 	+line
 ;
 
 const auto line_def
