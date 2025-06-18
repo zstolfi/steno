@@ -1,11 +1,11 @@
 #include "steno_parsers.hh"
 #include <boost/parser/parser.hpp>
-
 namespace bp = boost::parser;
 
-namespace common {
+/* ~~ Common Parsers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-bp::rule<struct stroke, steno::Stroke>  stroke    = "steno stroke";
+bp::rule<struct stroke , steno::Stroke > stroke   = "steno stroke";
+bp::rule<struct strokes, steno::Strokes> strokes  = "stroke sequence";
 // STKPWHR AO*EU FRPBLGTSDZ
 bp::rule<struct left     , std::string> left      = "left-hand consonants";
 bp::rule<struct middle   , std::string> middle    = "vowel or asterisk";
@@ -24,12 +24,16 @@ const auto anyNum = *bp::char_ >> numberKey >> *bp::char_  >> bp::eoi;
 const auto allNum = &bp::char_ >> *numberKey               >> bp::eoi;
 
 const auto stroke_def
-	= 	bp::raw[ -hash >> (
+	= 	bp::string_view[ -hash >> (
 	  	  	&allNum >> digitSeq
 	  	| 	&noNum  >> left    >> -(middle    >> right   )
 	  	| 	&anyNum >> leftNum >> -(middleNum >> rightNum)
 	  	// TODO: Allow "mixed" strokes, ie. 1-TSDZ
 	)]
+;
+
+const auto strokes_def
+	= 	bp::string_view[ stroke % '/' ]
 ;
 
 const auto left_def
@@ -92,27 +96,40 @@ const auto digitSeq_def
 ;
 
 BOOST_PARSER_DEFINE_RULES(
-	stroke,
+	stroke, strokes,
 	left, middle, right,
 	leftNum, middleNum, rightNum,
 	digitSeq
 );
 
-} // namespace common
+/* ~~ Plain-Text File Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 namespace plain {
 
+using Entry = std::pair<steno::Strokes, std::string>;
+bp::rule<struct file, steno::Dictionary> file = "plain-text file";
+bp::rule<struct line, Entry            > line = "brief entry";
+
+const auto file_def
+	= 	line % bp::eol
+;
+
+const auto line_def
+	= 	strokes
+	>>	'='
+	>>	bp::lexeme[ *(bp::char_ - bp::eol) ]
+;
+
+BOOST_PARSER_DEFINE_RULES(file, line);
+
 } // namespace plain
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 namespace steno {
 
-// For testing purposes:
-std::optional<Stroke> parseStroke(steno::ParserInput input) {
-	return bp::parse(input, common::stroke, bp::ws);
-}
-
-std::optional<Dictionary> parsePlain(ParserInput) {
-	return Dictionary {{{"PHRAEUPB"}, "plain"}};
+std::optional<Dictionary> parsePlain(ParserInput input) {
+	return bp::parse(input, plain::file, bp::ws);
 }
 
 std::optional<Dictionary> parseJSON(ParserInput) {
