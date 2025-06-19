@@ -4,6 +4,11 @@ namespace bp = boost::parser;
 
 /* ~~ Common Parsers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+// "using Entry = steno::Dictionary::value_type" would not work in our parsers,
+// because steno::Strokes is not allowed to be const as we parse it.
+using Dictionary = steno::Dictionary;
+using Entry = std::pair<steno::Strokes, std::string>;
+
 bp::rule<struct stroke , steno::Stroke > stroke   = "steno stroke";
 bp::rule<struct strokes, steno::Strokes> strokes  = "stroke sequence";
 // STKPWHR AO*EU FRPBLGTSDZ
@@ -17,12 +22,24 @@ bp::rule<struct rightNum , std::string> rightNum  = "right-hand with number bar"
 bp::rule<struct digitSeq , std::string> digitSeq  = "digit sequence";
 // Small helper parsers
 const auto asString = bp::attr(std::string {});
+const auto asEntries = bp::attr(std::vector<Entry> {});
 const auto hash = bp::string("#");
 const auto numberKey = bp::char_("1234506789");
 const auto noNum  = &bp::char_ >> *(bp::char_ - numberKey) >> bp::eoi;
 const auto anyNum = *bp::char_ >> numberKey >> *bp::char_  >> bp::eoi;
 const auto allNum = &bp::char_ >> *numberKey               >> bp::eoi;
 
+#if 0 // For faster compilations while testing the file format parsers.
+const auto stroke_def
+	= 	bp::string_view[ bp::string("-") ]
+;
+
+const auto strokes_def
+	= 	bp::string_view[ stroke % '/' ]
+;
+
+BOOST_PARSER_DEFINE_RULES(stroke, strokes);
+#else
 const auto stroke_def
 	= 	bp::string_view[ -hash >> (
 	  	  	&allNum >> digitSeq
@@ -101,14 +118,25 @@ BOOST_PARSER_DEFINE_RULES(
 	leftNum, middleNum, rightNum,
 	digitSeq
 );
+#endif
+
+auto fromContainer = [] (auto& ctx) {
+	_val(ctx) = {_attr(ctx).begin(), _attr(ctx).end()};
+};
+
+auto flatten = [] (auto& ctx) {
+	for (const auto& outer : _attr(ctx))
+	for (const auto& inner : outer) {
+		_val(ctx).push_back(inner);
+	}
+};
 
 /* ~~ Plain-Text File Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 namespace plain {
 
-using Entry = std::pair<steno::Strokes, std::string>;
-bp::rule<struct file, steno::Dictionary> file = "plain-text file";
-bp::rule<struct line, Entry            > line = "brief entry";
+bp::rule<struct file, Dictionary> file = "plain-text file";
+bp::rule<struct line, Entry     > line = "brief entry";
 
 const auto file_def
 	= 	+line
@@ -124,7 +152,64 @@ BOOST_PARSER_DEFINE_RULES(file, line);
 
 } // namespace plain
 
-/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ JSON File Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+namespace JSON {
+
+bp::rule<struct file     , Dictionary        > file      = "JSON file";
+bp::rule<struct value    , std::vector<Entry>> value     = "JSON value";
+bp::rule<struct array    , std::vector<Entry>> array     = "JSON array";
+bp::rule<struct object   , std::vector<Entry>> object    = "JSON object";
+bp::rule<struct objectVal, std::vector<Entry>> objectVal = "JSON object value";
+bp::rule<struct entry    , Entry             > entry     = "brief entry";
+const auto trailingComma = -bp::lit(',');
+
+// I haven't figured out why this line doesn't work without the "fromContainer".
+// the plain::file parser seems to be converting vector<Entry> -> Dicitonary,
+// but not this one.
+const auto file_def
+	= 	value[ fromContainer ]
+;
+
+// TODO: JSON escape sequences
+const auto string
+	= 	bp::quoted_string
+;
+
+const auto value_def
+	= 	object | array
+	| 	asEntries
+	>>	bp::omit[ bp::lit("null") | bp::bool_ | bp::double_ | string ]
+;
+
+using Nested = std::vector<std::vector<Entry>>;
+
+const auto array_def
+	= 	'['
+	>>	(value % ',' >> trailingComma | bp::attr(Nested {}))[ flatten ]
+	>>	']'
+;
+
+const auto object_def
+	= 	'{'
+	>>	(objectVal % ',' >> trailingComma | bp::attr(Nested {}))[ flatten ]
+	>>	'}'
+;
+
+const auto objectVal_def
+	= 	asEntries >> entry
+	| 	bp::omit[ string ] >> ':' >> value
+;
+
+const auto entry_def
+	= 	'"' >> strokes >> '"' >> ':' >> string
+;
+
+BOOST_PARSER_DEFINE_RULES(file, value, array, object, objectVal, entry);
+
+} // namespace JSON
+
+/* ~~ Parse API ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 namespace steno {
 
@@ -132,8 +217,8 @@ std::optional<Dictionary> parsePlain(ParserInput input) {
 	return bp::parse(input, plain::file, bp::ws);
 }
 
-std::optional<Dictionary> parseJSON(ParserInput) {
-	return Dictionary {{{{"SKWR/SOPB"}, "JSON"}}};
+std::optional<Dictionary> parseJSON(ParserInput input) {
+	return bp::parse(input, JSON::file, bp::ws);
 }
 
 std::optional<Dictionary> parseRTF(ParserInput) {
