@@ -101,6 +101,7 @@ Stroke::Stroke(std::string_view str_v) {
 		// Accept an implicit dash.
 		if (implicit(str + Dash)); else
 		// Numbers are replaced by letters + Num flag.
+		// TODO: Allow "mixed" strokes, ie. 1-TSDZ
 		if (strHas(Numbers) && validOrder(str, Hash + StenoNumbers)) {
 			if (!strHas(Hash) && implicit(Hash + replaceNums(str))); else
 			if ( strHas(Hash) && implicit(       replaceNums(str))); else

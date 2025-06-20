@@ -10,24 +10,19 @@ using Dictionary = steno::Dictionary;
 using Entry = std::pair<steno::Strokes, std::string>;
 
 bp::rule<struct stroke , steno::Stroke > stroke   = "steno stroke";
-bp::rule<struct strokes, steno::Strokes> strokes  = "stroke sequence";
-// STKPWHR AO*EU FRPBLGTSDZ
+bp::rule<struct strokes, steno::Strokes> strokes  = "stroke strokes";
+// STKPWHR AO*EU FRPBLGTSDZ  or  12K3W4R 50*EU 6R7B8G9SDZ
 bp::rule<struct left     , std::string> left      = "left-hand consonants";
 bp::rule<struct middle   , std::string> middle    = "vowel or asterisk";
 bp::rule<struct right    , std::string> right     = "right-hand consonants";
-// 12K3W4R 50*EU 6R7B8G9SDZ
-bp::rule<struct leftNum  , std::string> leftNum   = "left-hand with number bar";
-bp::rule<struct middleNum, std::string> middleNum = "vowel or asterisk with number bar";
-bp::rule<struct rightNum , std::string> rightNum  = "right-hand with number bar";
+// 1234 50 6789
 bp::rule<struct digitSeq , std::string> digitSeq  = "digit sequence";
 // Small helper parsers
+const auto stenoChar = bp::char_("STKPWHRAO*EUFRPBLGTSDZ" "1234506789" "#-");
+const auto leftFlags = -bp::char_("#");
+const auto rightFlags = bp::eps;
 const auto asString = bp::attr(std::string {});
 const auto asEntries = bp::attr(std::vector<Entry> {});
-const auto hash = bp::string("#");
-const auto numberKey = bp::char_("1234506789");
-const auto noNum  = &bp::char_ >> *(bp::char_ - numberKey) >> bp::eoi;
-const auto anyNum = *bp::char_ >> numberKey >> *bp::char_  >> bp::eoi;
-const auto allNum = &bp::char_ >> *numberKey               >> bp::eoi;
 
 #if 0 // For faster compilations while testing the file format parsers.
 const auto stroke_def
@@ -41,12 +36,15 @@ const auto strokes_def
 BOOST_PARSER_DEFINE_RULES(stroke, strokes);
 #else
 const auto stroke_def
-	= 	bp::string_view[ -hash >> (
-	  	  	&allNum >> digitSeq
-	  	| 	&noNum  >> left    >> -(middle    >> right   )
-	  	| 	&anyNum >> leftNum >> -(middleNum >> rightNum)
-	  	// TODO: Allow "mixed" strokes, ie. 1-TSDZ
-	)]
+	= 	bp::string_view[ asString >> &stenoChar
+	>>	leftFlags
+	>>	(
+	  	  	left >> middle >> right
+	  	| 	digitSeq
+	  	| 	left
+	  	)
+	>>	rightFlags
+	]
 ;
 
 const auto strokes_def
@@ -55,52 +53,27 @@ const auto strokes_def
 
 const auto left_def
 	= 	asString
-	>>	-bp::char_('S')
-	>>	-bp::char_('T') >> -bp::char_('K')
-	>>	-bp::char_('P') >> -bp::char_('W')
-	>>	-bp::char_('H') >> -bp::char_('R')
+	>>	-bp::char_("S1")
+	>>	-bp::char_("T2") >> -bp::char_('K')
+	>>	-bp::char_("P3") >> -bp::char_('W')
+	>>	-bp::char_("H4") >> -bp::char_('R')
 ;
 
 const auto middle_def
 	= 	asString >> bp::char_('-')
-	| 	asString >> &bp::char_("AO*EU")
-	>>	-bp::char_('A') >> -bp::char_('O')
+	| 	asString >> &bp::char_("AO*EU" "50")
+	>>	-bp::char_("A5") >> -bp::char_("O0")
 	>>	-bp::char_('*')
 	>>	-bp::char_('E') >> -bp::char_('U')
 ;
 
 const auto right_def
 	= 	asString
-	>>	-bp::char_('F') >> -bp::char_('R')
-	>>	-bp::char_('P') >> -bp::char_('B')
-	>>	-bp::char_('L') >> -bp::char_('G')
-	>>	-bp::char_('T') >> -bp::char_('S')
-	>>	-bp::char_('D') >> -bp::char_('Z')
-;
-
-const auto leftNum_def
-	= 	asString
-	>>	-bp::char_('1')
-	>>	-bp::char_('2') >> -bp::char_('K')
-	>>	-bp::char_('3') >> -bp::char_('W')
-	>>	-bp::char_('4') >> -bp::char_('R')
-;
-
-const auto middleNum_def
-	= 	asString >> bp::char_('-')
-	| 	asString >> &bp::char_("50*EU")
-	>>	-bp::char_('5') >> -bp::char_('0')
-	>>	-bp::char_('*')
-	>>	-bp::char_('E') >> -bp::char_('U')
-;
-
-const auto rightNum_def
-	= 	asString
-	>>	-bp::char_('6') >> -bp::char_('R')
-	>>	-bp::char_('7') >> -bp::char_('B')
-	>>	-bp::char_('8') >> -bp::char_('G')
-	>>	-bp::char_('9') >> -bp::char_('S')
-	>>	-bp::char_('D') >> -bp::char_('Z')
+	>>	-bp::char_("F6") >> -bp::char_('R')
+	>>	-bp::char_("P7") >> -bp::char_('B')
+	>>	-bp::char_("L8") >> -bp::char_('G')
+	>>	-bp::char_("T9") >> -bp::char_('S')
+	>>	-bp::char_('D')      >> -bp::char_('Z')
 ;
 
 const auto digitSeq_def
@@ -115,7 +88,6 @@ const auto digitSeq_def
 BOOST_PARSER_DEFINE_RULES(
 	stroke, strokes,
 	left, middle, right,
-	leftNum, middleNum, rightNum,
 	digitSeq
 );
 #endif
