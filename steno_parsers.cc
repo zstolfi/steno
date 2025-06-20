@@ -4,6 +4,8 @@ namespace bp = boost::parser;
 
 /* ~~ Common Parsers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+namespace /*anonymous*/ {
+
 // "using Entry = steno::Dictionary::value_type" would not work in our parsers,
 // because steno::Strokes is not allowed to be const as we parse it.
 using Dictionary = steno::Dictionary;
@@ -73,7 +75,7 @@ const auto right_def
 	>>	-bp::char_("P7") >> -bp::char_('B')
 	>>	-bp::char_("L8") >> -bp::char_('G')
 	>>	-bp::char_("T9") >> -bp::char_('S')
-	>>	-bp::char_('D')      >> -bp::char_('Z')
+	>>	-bp::char_('D')  >> -bp::char_('Z')
 ;
 
 const auto digitSeq_def
@@ -91,17 +93,6 @@ BOOST_PARSER_DEFINE_RULES(
 	digitSeq
 );
 #endif
-
-auto fromContainer = [] (auto& ctx) {
-	_val(ctx) = {_attr(ctx).begin(), _attr(ctx).end()};
-};
-
-auto flatten = [] (auto& ctx) {
-	for (const auto& outer : _attr(ctx))
-	for (const auto& inner : outer) {
-		_val(ctx).push_back(inner);
-	}
-};
 
 /* ~~ Plain-Text File Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -125,6 +116,17 @@ BOOST_PARSER_DEFINE_RULES(file, line);
 } // namespace plain
 
 /* ~~ JSON File Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+auto fromContainer = [] (auto& ctx) {
+	_val(ctx) = {_attr(ctx).begin(), _attr(ctx).end()};
+};
+
+auto flatten = [] (auto& ctx) {
+	for (const auto& outer : _attr(ctx))
+	for (const auto& inner : outer) {
+		_val(ctx).push_back(inner);
+	}
+};
 
 namespace JSON {
 
@@ -180,6 +182,8 @@ const auto entry_def
 BOOST_PARSER_DEFINE_RULES(file, value, array, object, objectVal, entry);
 
 } // namespace JSON
+
+} // namespace /*anonymous*/
 
 /* ~~ Parse API ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
