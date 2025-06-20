@@ -27,7 +27,7 @@ struct Dictionary {
 		TextureFn_Arg loadTexture
 	): name{name} {
 		std::istreambuf_iterator<char> begin {input}, end {};
-		std::vector<uint8_t> bytes {begin, end};
+		std::vector<char> bytes {begin, end};
 		auto parse = (ParserFn* []) {
 			[Text]    = steno::parsePlain,
 			[JSON]    = steno::parseJSON,
