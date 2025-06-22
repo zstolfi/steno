@@ -5,10 +5,9 @@
 #include <istream>
 #include <fstream>
 #include <filesystem>
-#include <map>
 #include <iterator>
 
-
+/* ~~ App State ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 struct Dictionary {
 #	pragma clang diagnostic ignored "-Wc99-designator"
@@ -28,15 +27,16 @@ struct Dictionary {
 	): name{name} {
 		std::istreambuf_iterator<char> begin {input}, end {};
 		std::vector<char> bytes {begin, end};
+		auto tryParser = std::bind_front(&Dictionary::tryParser, this, bytes);
 		auto parse = (ParserFn* []) {
-			[Text]    = steno::parsePlain,
-			[JSON]    = steno::parseJSON,
-			[RTF]     = steno::parseRTF,
-			[Unknown] = steno::parseGuess,
+			[Text] = steno::parsePlain,
+			[JSON] = steno::parseJSON,
+			[RTF]  = steno::parseRTF,
 		} [type];
-		if (!parse) std::printf("Unsupported filetype for %s\n", name.c_str());
-		else if (auto result = parse(bytes)) entries = *result;
-		else std::printf("Parse failed for %s\n", name.c_str());
+		/**/ if (!parse && tryParser(steno::parseGuess));
+		else if (!parse) { std::printf("Unkown filetype for %s\n", name.c_str()); return; }
+		else if (tryParser(parse) || tryParser(steno::parseGuess));
+		else { std::printf("Parse failed for %s\n", name.c_str()); return; }
 		atlas = Atlas {entries};
 		texture = loadTexture(atlas.image, Atlas::N, Atlas::N);
 	}
@@ -55,6 +55,13 @@ struct Dictionary {
 		}
 		*this = Dictionary(input, path.filename(), type, loadTexture);
 	}
+
+private:
+	bool tryParser(std::vector<char> const& bytes, ParserFn* parse) {
+		auto result = parse(bytes);
+		if (result) this->entries = *result;
+		return (bool)result;
+	}
 };
 
 struct State {
@@ -71,13 +78,12 @@ extern "C" { // These functions will be called from the browser.
 	void setDragOver(bool input) { State::dragOver = input; }
 }
 
-
+/* ~~ Main Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 #include "gui.hh" // dependent on State
 
 void mainLoop(Window& window, State& state) {
-	auto loadTexture = [&] <class ... Args> (Args&& ... args)
-	{ return window.loadTexture(std::forward<Args>(args) ... ); };
+	auto loadTexture = std::bind_front(&Window::loadTexture, &window);
 
 	for (SDL_Event event; SDL_PollEvent(&event);) {
 		ImGui_ImplSDL3_ProcessEvent(&event);
@@ -86,7 +92,7 @@ void mainLoop(Window& window, State& state) {
 			std::filesystem::path path {event.drop.data};
 			if (std::ifstream file {path}) {
 				Dictionary dict {file, path, loadTexture};
-				if (dict.entries.empty()) continue;
+				if (dict.atlas.image.empty()) continue;
 				state.dictionaries.push_back(std::move(dict));
 			}
 			else std::printf("Unable to open %s\n", path.c_str());
@@ -105,8 +111,6 @@ void mainLoop(Window& window, State& state) {
 
 	window.render(color);
 }
-
-
 
 int main(int argc, char const* argv[]) {
 	State state {};

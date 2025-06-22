@@ -21,12 +21,13 @@ namespace GUI {
 				ImGui::Text("%zu entries", dict.entries.size());
 				auto const flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter;
 				if (ImGui::BeginTable("Entries", 2, flags, ImVec2 {400, 160})) {
-					int const limit = 10'000; int i = 0;
-					for (auto const& [stroke, text] : dict.entries) {
+					int const limit = 1'000; int i = 0;
+					for (auto const& [strokes, text] : dict.entries) {
+						if (strokes.list.size() != 1) continue;
 						if (i++ == limit) break;
 						ImGui::TableNextRow();
 						ImGui::TableSetColumnIndex(0);
-						ImGui::Text("%s", toString(stroke).c_str());
+						ImGui::Text("%s", toString(strokes).c_str());
 						ImGui::TableSetColumnIndex(1);
 						ImGui::Text("%s", text.c_str());
 					}

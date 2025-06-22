@@ -42,8 +42,8 @@ const auto stroke_def
 	>>	leftFlags
 	>>	(
 	  	  	left >> middle >> right
+	  	| 	left >> !middle
 	  	| 	digitSeq
-	  	| 	left
 	  	)
 	>>	rightFlags
 	]
@@ -197,12 +197,24 @@ std::optional<Dictionary> parseJSON(ParserInput input) {
 	return bp::parse(input, JSON::file, bp::ws);
 }
 
-std::optional<Dictionary> parseRTF(ParserInput) {
+std::optional<Dictionary> parseRTF(ParserInput input) {
+	if (std::string_view str_v {input.begin(), input.end()}
+	;   !str_v.starts_with("{\\rtf1")) {
+		return {};
+	}
 	return Dictionary {{{{"R*/T*/TP*"}, "RTF"}}};
 }
 
-std::optional<Dictionary> parseGuess(ParserInput) {
-	return Dictionary {{{"TKPWES"}, "guess"}};
+std::optional<Dictionary> parseGuess(ParserInput input) {
+	std::array order {
+		parseRTF,
+		parseJSON,
+		parsePlain,
+	};
+	for (auto parser : order) {
+		if (auto result = parser(input)) return result;
+	}
+	return {};
 }
 
 } // namespace steno
