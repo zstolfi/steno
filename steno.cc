@@ -29,6 +29,12 @@ namespace /*detail*/ {
 		};
 	};
 
+	auto filter(std::string str, std::string set) {
+		std::string result {};
+		for (char c : str) if (in(set)(c)) result += c;
+		return result;
+	}
+
 	std::string replaceNums(std::string/*by copy*/ str) {
 		// Don't forget about the dash! Information would be removed otherwise.
 		if (str.find_first_of(NumbersMiddle + Dash) == npos) {
@@ -91,31 +97,37 @@ Stroke::Stroke(std::string_view str_v) {
 	// Normalize.
 	std::erase_if(str, in(Whitespace));
 	if (!validStroke(str)) {
-		// TODO: Decide with certainty how to handle empty input.
-		if (str.empty()) str = Dash;
+		// Constructing with an empty string is probably a mistake.
+		if (str.empty()) { failConstruction(); return; }
 		// Marks cannot combine with keys. If you've seen anyone do this please let me know.
-		if (strHas(Mark)) { set(Key::Mark); return; }
+		if (str == std::string {Mark}) { set(Key::Mark); return; }
 		// Remove other flags.
 		if (str.front() == Tilde) str = {++str.begin(), str.end()}, set(Key::OpenLeft );
 		if (str.back()  == Tilde) str = {str.begin(), --str.end()}, set(Key::OpenRight);
 		// Accept an implicit dash.
-		if (implicit(str + Dash)); else
+		if (implicit(str + Dash));
 		// Numbers are replaced by letters + Num flag.
-		// TODO: Allow "mixed" strokes, ie. 1-TSDZ
-		if (strHas(Numbers) && validOrder(str, Hash + StenoNumbers)) {
-			if (!strHas(Hash) && implicit(Hash + replaceNums(str))); else
-			if ( strHas(Hash) && implicit(       replaceNums(str))); else
-			{ failConstruction(); return; }
-		} else
+		else if (strHas(Numbers)
+		&& validOrder(str, Hash + StenoNumbers)
+		&& validOrder(filter(str, Numbers), Numbers)) {
+			/**/ if (!strHas(Hash) && implicit(Hash + replaceNums(str)));
+			else if ( strHas(Hash) && implicit(       replaceNums(str)));
+			else { failConstruction(str); return; }
+		}
 		// Unable to normalize.
-		if (!validStroke(str)) { failConstruction(); return; }
+		else if (!validStroke(str)) { failConstruction(str); return; }
 	}
 	// Explode into 3 substrings (each w/ unique elements).
 	const auto [left, middle, right] = decomposeStroke(str);
 	// Assign.
-	for (char c : left  ) bits[Left  .find(c) +  1] = true;
-	for (char c : middle) bits[Middle.find(c) +  8] = true;
-	for (char c : right ) bits[Right .find(c) + 13] = true;
+	auto setKeys = [this] (auto sub, const auto Order, auto offset) {
+		for (int s=0, o=0; s<sub.size() && o<=Order.size(); o++) {
+			if (sub[s] == Order[o]) s++, bits[offset + o] = true;
+		}
+	};
+	setKeys(left  , Left  ,  1);
+	setKeys(middle, Middle,  8);
+	setKeys(right , Right , 13);
 }
 
 Stroke::Stroke(FromBits_Arg, std::bitset<23> b) {
@@ -167,7 +179,10 @@ Stroke Stroke::operator&=(Stroke other) {
 	return *this;
 }
 
-void Stroke::failConstruction() { this->keys.FailedConstruction = true; }
+void Stroke::failConstruction(std::string str) {
+	if (str != "") std::cout << str << "\n";
+	this->keys.FailedConstruction = true;
+}
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
