@@ -8,9 +8,25 @@ namespace steno {
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 Stroke::Stroke(std::string_view str) {
-	using State = Key;
-	auto const Begin = State::Num;
-	auto const End = State(int(State::_Z)+1);
+	enum State {
+		Mk, /*!*/    Begin = Mk,
+		Ol, /*~*/
+		Nm, /*#*/
+		S_,
+		T_, K_,
+		P_, W_,
+		H_, R_,
+		A , O ,
+		x ,
+		E , U ,
+		_F, _R,
+		_P, _B,
+		_L, _G,
+		_T, _S,
+		_D, _Z,
+		Or, /*~*/    End = Or+1
+	};
+
 	auto next = [] (State s) { return (s == End)? End: State(int(s)+1); };
 
 	//   On the left is every state's possible next valid input. This creates
@@ -46,44 +62,47 @@ Stroke::Stroke(std::string_view str) {
 	for (State state {Begin}; char c : str) if (!std::isspace(c)) {
 		valid = true;
 		if (state == End) valid = false;
-		auto accept = [&] (State key, char keyChar, char numChar = '\0') {
+		auto accept = [&] (State s, Key k, char keyChar, char numChar = '\0') {
 			bool match = false;
 			if (match |= c == numChar) this->set(Key::Num);
-			if (match |= c == keyChar) this->set(key), state = next(key);
+			if (match |= c == keyChar) this->set(k), state = next(s);
 			return match;
 		};
 		switch (state) {
 			using enum State;
-			case Num:if (accept(Num,'#', '#')); else
-			case S_: if (accept(S_, 'S', '1')); else
-			case T_: if (accept(T_, 'T', '2')); else
-			case K_: if (accept(K_, 'K'     )); else
-			case P_: if (accept(P_, 'P', '3')); else
-			case W_: if (accept(W_, 'W'     )); else
-			case H_: if (accept(H_, 'H', '4')); else
-			case R_: if (accept(R_, 'R'     )); else
-			case A : if (accept(A , 'A', '5')); else
-			/*    */ if (accept(O , 'O', '0')); else
-			/*    */ if (accept(x , '*'     )); else
-			/*    */ if (accept(E , 'E'     )); else
-			/*    */ if (accept(U , 'U'     )); else
+			case Mk: if (accept(End,Key::Mark    ,'!')); else
+			case Ol: if (accept(Ol, Key::OpenLeft,'~')); else
+			case Nm: if (accept(Nm, Key::Num,'#', '#')); else
+			case S_: if (accept(S_, Key::S_, 'S', '1')); else
+			case T_: if (accept(T_, Key::T_, 'T', '2')); else
+			case K_: if (accept(K_, Key::K_, 'K'     )); else
+			case P_: if (accept(P_, Key::P_, 'P', '3')); else
+			case W_: if (accept(W_, Key::W_, 'W'     )); else
+			case H_: if (accept(H_, Key::H_, 'H', '4')); else
+			case R_: if (accept(R_, Key::R_, 'R'     )); else
+			case A : if (accept(A , Key::A , 'A', '5')); else
+			/*    */ if (accept(O , Key::O , 'O', '0')); else
+			/*    */ if (accept(x , Key::x , '*'     )); else
+			/*    */ if (accept(E , Key::E , 'E'     )); else
+			/*    */ if (accept(U , Key::U , 'U'     )); else
 			/*    */ if (c == '-') state = _F;
 			/*    */ else valid = false;
 			break;
-			case O : if (accept(O , 'O', '0')); else
-			case x : if (accept(x , '*'     )); else
-			case E : if (accept(E , 'E'     )); else
-			case U : if (accept(U , 'U'     )); else
-			case _F: if (accept(_F, 'F', '6')); else
-			case _R: if (accept(_R, 'R'     )); else
-			case _P: if (accept(_P, 'P', '7')); else
-			case _B: if (accept(_B, 'B'     )); else
-			case _L: if (accept(_L, 'L', '8')); else
-			case _G: if (accept(_G, 'G'     )); else
-			case _T: if (accept(_T, 'T', '9')); else
-			case _S: if (accept(_S, 'S'     )); else
-			case _D: if (accept(_D, 'D'     )); else
-			case _Z: if (accept(_Z, 'Z'     )); else
+			case O : if (accept(O , Key::O , 'O', '0')); else
+			case x : if (accept(x , Key::x , '*'     )); else
+			case E : if (accept(E , Key::E , 'E'     )); else
+			case U : if (accept(U , Key::U , 'U'     )); else
+			case _F: if (accept(_F, Key::_F, 'F', '6')); else
+			case _R: if (accept(_R, Key::_R, 'R'     )); else
+			case _P: if (accept(_P, Key::_P, 'P', '7')); else
+			case _B: if (accept(_B, Key::_B, 'B'     )); else
+			case _L: if (accept(_L, Key::_L, 'L', '8')); else
+			case _G: if (accept(_G, Key::_G, 'G'     )); else
+			case _T: if (accept(_T, Key::_T, 'T', '9')); else
+			case _S: if (accept(_S, Key::_S, 'S'     )); else
+			case _D: if (accept(_D, Key::_D, 'D'     )); else
+			case _Z: if (accept(_Z, Key::_Z, 'Z'     )); else
+			case Or: if (accept(Or,Key::OpenRight,'~')); else
 			default: valid = false;
 		}
 		if (!valid) break;
