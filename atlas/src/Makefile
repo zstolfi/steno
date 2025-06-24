@@ -10,6 +10,7 @@ FUNCTIONS   = _main,_malloc,_free,_setDragOver
 STENO       = ../..
 IMGUI       = $(STENO)/.include/imgui
 BOOST       = $(STENO)/.include/boost
+STB         = $(STENO)/.include/stb
 BOOST_LIBS  = parser
 WWW         = ..
 TARGET      = $(WWW)/index.html
@@ -23,10 +24,10 @@ SOURCES    += $(IMGUI)/backends/imgui_impl_opengl3.cpp
 OBJECTS     = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
 
 # ~~~~ Flags ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-CXXFLAGS   += -I$(IMGUI) -I$(IMGUI)/backends
-CXXFLAGS   += -I$(STENO) $(BOOST_LIBS:%=-I$(BOOST)/%/include)
+CXXFLAGS   += -I$(IMGUI) -I$(IMGUI)/backends -I$(STENO) -I$(STB)
+CXXFLAGS   += $(BOOST_LIBS:%=-I$(BOOST)/%/include)
 LDFLAGS    += -sEXPORTED_FUNCTIONS=$(FUNCTIONS)
-LDFLAGS    += -sEXPORTED_RUNTIME_METHODS=ccall,cwrap
+LDFLAGS    += -sEXPORTED_RUNTIME_METHODS=ccall,cwrap,FS
 
 # ~~~~ Rules ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 all : $(TARGET)

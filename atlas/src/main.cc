@@ -4,7 +4,6 @@
 #include "steno_parsers.hh"
 #include <istream>
 #include <fstream>
-#include <filesystem>
 #include <iterator>
 
 /* ~~ App State ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -80,7 +79,7 @@ extern "C" { // These functions will be called from the browser.
 
 /* ~~ Main Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-#include "gui.hh" // dependent on State
+#include "gui.hh" // depends on everything above
 
 void mainLoop(Window& window, State& state) {
 	auto loadTexture = std::bind_front(&Window::loadTexture, &window);
@@ -102,7 +101,7 @@ void mainLoop(Window& window, State& state) {
 	GUI::initiate();
 
 	GUI::BottomRightOverlay(state);
-	GUI::MainMenu(state);
+	GUI::MainMenu(window, state);
 
 	if (state.showDemoWindow) ImGui::ShowDemoWindow();
 
@@ -114,6 +113,6 @@ void mainLoop(Window& window, State& state) {
 
 int main(int argc, char const* argv[]) {
 	State state {};
-	Window window {"Steno Atlas", 1280, 720, &state.running};
+	Window window {"Steno Atlas Prototype", 1280, 720, &state.running};
 	window.run(mainLoop, std::tie(window, state));
 }

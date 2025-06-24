@@ -10,6 +10,7 @@
 #include <tuple>
 #include <functional>
 #include <variant>
+#include <filesystem>
 #include <cstdio>
 #include <cstdint>
 #include <cctype>
@@ -17,6 +18,11 @@
 #ifdef __EMSCRIPTEN__
 #	include <emscripten.h>
 #endif
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
+extern "C" { void jsDownload(char const*); }
 
 class Window {
 	SDL_Window* winPtr;
@@ -100,7 +106,7 @@ public:
 		ImGui_ImplOpenGL3_Init(glsl_version);
 
 		// Cutsom JS interfaces
-		DragAndDrop();
+		enableDragAndDrop();
 	}
 
 	void render(ImVec4 clearColor = {0, 0, 0, 1}) {
@@ -172,6 +178,10 @@ public:
 		return (ImTextureID)(intptr_t)texture;
 	}
 
+	void download(std::filesystem::path path) {
+		jsDownload(path.c_str());
+	}
+
 private:
 	bool running() const {
 		if (RunBool const* val = std::get_if<RunBool>(&runPred)) return **val;
@@ -179,7 +189,7 @@ private:
 		return false;
 	}
 
-	void DragAndDrop() const {
+	void enableDragAndDrop() const {
 #	ifdef __EMSCRIPTEN__
 		EM_ASM(
 			const setDragOver = Module.cwrap("setDragOver", "", ["boolean"]);
@@ -195,3 +205,22 @@ private:
 #	endif
 	}
 };
+
+#ifdef __EMSCRIPTEN__
+EM_JS(void, jsDownload, (char const* path_raw), {
+	const path = UTF8ToString(path_raw);
+	const content = Module.FS.readFile(path);
+	console.log(`Downloading ${path} (${content.length} bytes)`);
+	// None shall bypass the <a>.
+	let a = document.createElement("a");
+	a.download = path;
+	a.href = URL.createObjectURL(new Blob([content]));
+	a.style.display = "none";
+	document.body.appendChild(a);
+	a.click();
+	setTimeout(() => {
+		document.body.removeChild(a);
+		URL.revokeObjectURL(a.href);
+	}, 1000);
+});
+#endif

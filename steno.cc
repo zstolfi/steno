@@ -180,7 +180,7 @@ Stroke Stroke::operator&=(Stroke other) {
 }
 
 void Stroke::failConstruction(std::string str) {
-	if (str != "") std::cout << str << "\n";
+//	if (str != "") std::cout << str << "\n";
 	this->keys.FailedConstruction = true;
 }
 

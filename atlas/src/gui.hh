@@ -5,12 +5,12 @@ namespace GUI {
 		ImGui::NewFrame();
 	}
 
-	void MainMenu(State& state) {
+	void MainMenu(Window& window, State& state) {
 		ImGui::SetNextWindowSize(ImVec2 {500, 400}, ImGuiCond_FirstUseEver);
-		ImGui::Begin("Steno Atlas Pre-Prototype");
+		ImGui::Begin("Steno Atlas Prototype");
 		if (state.dictionaries.empty()) {
 			ImGui::Text("Drag & drop dictionaries here to get started!");
-			ImGui::Text("Accepted formats are RTF, JSON, or Plain-Text.");
+			ImGui::Text("Accepted: (JSON, or TXT)");
 			ImGui::End(); return;
 		}
 		ImGui::Text("Number of dictionaries loaded: %zu", state.dictionaries.size());
@@ -18,7 +18,19 @@ namespace GUI {
 			ImGui::PushID(i++);
 			if (ImGui::TreeNode(dict.name.c_str())) {
 				ImGui::Image(dict.texture, ImVec2 {256, 256});
-				ImGui::Text("%zu entries", dict.entries.size());
+				ImGui::AlignTextToFramePadding();
+				ImGui::SameLine();
+				if (ImGui::Button("Save")) {
+					std::filesystem::path imgPath {dict.name};
+					imgPath.replace_extension("");
+					imgPath += " atlas.png";
+					stbi_write_png(
+						imgPath.c_str(), Atlas::N, Atlas::N,
+						4, dict.atlas.image.data(), 4*Atlas::N
+					);
+					window.download(imgPath);
+				}
+				ImGui::Text("%zu entries\t 1 - 1,000:", dict.entries.size());
 				auto const flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter;
 				if (ImGui::BeginTable("Entries", 2, flags, ImVec2 {400, 160})) {
 					int const limit = 1'000; int i = 0;
