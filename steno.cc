@@ -1,133 +1,94 @@
 #include "steno.hh"
 #include <algorithm>
 #include <array>
-#include <cassert>
-
-namespace /*detail*/ {
-	const std::string Whitespace = " \t\r\n";
-	// Flags:
-	const char Hash = '#', Dash = '-', Mark = '!', Tilde = '~';
-	//                               Left   Mid   Right
-	// Keys:                        ┌──┴──┐┌─┴─┐┌───┴────┐
-	const std::string StenoOrder = "STKPWHRAO*EUFRPBLGTSDZ";
-	const std::string Left   = StenoOrder.substr( 0,  7);
-	const std::string Middle = StenoOrder.substr( 7,  5);
-	const std::string Right  = StenoOrder.substr(12, 10);
-	// Keys when the number bar is pressed:
-	const std::string StenoNumbers = "12K3W4R50*EU6R7B8G9SDZ";
-	const std::string NumbersLeft   = StenoNumbers.substr( 0,  7);
-	const std::string NumbersMiddle = StenoNumbers.substr( 7,  5);
-	const std::string NumbersRight  = StenoNumbers.substr(12, 10);
-	// Conversion look-ups:
-	const std::string Numbers    = "1234506789";
-	const std::string NumbersMap = "STPHAOFPLT";
-
-	constexpr auto npos = std::string::npos;
-	auto in(std::string set) {
-		return [set](char c) {
-			return set.find(c) != npos;
-		};
-	};
-
-	auto filter(std::string str, std::string set) {
-		std::string result {};
-		for (char c : str) if (in(set)(c)) result += c;
-		return result;
-	}
-
-	std::string replaceNums(std::string/*by copy*/ str) {
-		// Don't forget about the dash! Information would be removed otherwise.
-		if (str.find_first_of(NumbersMiddle + Dash) == npos) {
-			auto i = std::min(str.find_first_of(NumbersRight), str.size());
-			str.insert(i, 1, Dash);
-		}
-		// Iterate and replace.
-		for (char& c : str) {
-			if (auto i = Numbers.find(c); i != npos) c = NumbersMap[i];
-		}
-		return str;
-	}
-
-	auto decomposeStroke(std::string str) {
-		auto i0 = str.find_first_of(Middle + Dash);
-		auto i1 = str.find_last_of(Middle + Dash) + 1;
-		auto left   = str.substr( 0,         i0 -  0);
-		auto middle = str.substr(i0,         i1 - i0);
-		auto right  = str.substr(i1, str.size() - i1);
-		if (middle == std::string {Dash}) middle = "";
-		return std::array {left, middle, right};
-	}
-
-	bool validOrder(std::string str, std::string Alphabet) {
-		if (!std::all_of(str.begin(), str.end(), in(Alphabet))) return false;
-		auto it = str.begin();
-		for (char c : Alphabet) {
-			if (it == str.end()) return true;
-			if (*it == c) ++it;
-		}
-		return it == str.end();
-	}
-
-	bool validStroke(std::string str) {
-		// The goal here is to have every possible valid stroke a unique string
-		// representation. The user input is already normalized by Stroke's
-		// constructor, so we're only making it strict for internal use.
-		if (str.empty()) return false;
-		// Every stroke is required to have a middle.
-		if (str.find_first_of(Middle + Dash) == npos) return false;
-		// Numbers will not be used internally, only '#'.
-		if (str.find_first_of(Numbers) != npos) return false;
-		// Check for order of components.
-		const auto [left, middle, right] = decomposeStroke(str);
-		if (!validOrder(left, Hash+Left)) return false;
-		if (!validOrder(middle, Middle)) return false;
-		if (!validOrder(right, Right)) return false;
-		return true;
-	}
-}
+#include <cctype>
 
 namespace steno {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-Stroke::Stroke(std::string_view str_v) {
-	auto str = std::string {str_v};
-	auto strHas = [&str](auto x) { return str.find_first_of(x) != npos; };
-	auto implicit = [&str](auto x) { return validStroke(x) && (str=x, true); };
-	// Normalize.
-	std::erase_if(str, in(Whitespace));
-	if (!validStroke(str)) {
-		// Constructing with an empty string is probably a mistake.
-		if (str.empty()) { failConstruction(); return; }
-		// Marks cannot combine with keys. If you've seen anyone do this please let me know.
-		if (str == std::string {Mark}) { set(Key::Mark); return; }
-		// Remove other flags.
-		if (str.front() == Tilde) str = {++str.begin(), str.end()}, set(Key::OpenLeft );
-		if (str.back()  == Tilde) str = {str.begin(), --str.end()}, set(Key::OpenRight);
-		// Accept an implicit dash.
-		if (implicit(str + Dash));
-		// Numbers are replaced by letters + Num flag.
-		else if (strHas(Numbers)
-		&& validOrder(str, Hash + StenoNumbers)
-		&& validOrder(filter(str, Numbers), Numbers)) {
-			/**/ if (!strHas(Hash) && implicit(Hash + replaceNums(str)));
-			else if ( strHas(Hash) && implicit(       replaceNums(str)));
-			else { failConstruction(str); return; }
+Stroke::Stroke(std::string_view str) {
+	using State = Key;
+	auto const Begin = State::Num;
+	auto const End = State(int(State::_Z)+1);
+	auto next = [] (State s) { return (s == End)? End: State(int(s)+1); };
+
+	//   On the left is every state's possible next valid input. This creates
+	// a broken triangle we can play billiards on to parse our string.
+	//   On the right we play this game with the example input "SPROUTS".
+	// Advancing in the X direction <=> finding next valid input.
+	// Advancing in the Y direction <=> advancing in the switch statement.
+
+	// S_:    STKPWHRAO*EU-                     █TKPWHRAO*EU-         
+	// T_:     TKPWHRAO*EU-                     █──█WHRAO*EU-         
+	// K_:      KPWHRAO*EU-                       K│WHRAO*EU-         
+	// P_:       PWHRAO*EU-                        │WHRAO*EU-         
+	// W_:        WHRAO*EU-                        █──█AO*EU-         
+	// H_:         HRAO*EU-                          H│AO*EU-         
+	// R_:          RAO*EU-                           │AO*EU-         
+	// A :           AO*EU-                           █─█*EU-         
+	// O :            O*EUFRPBLGTSDZ                    │*EUFRPBLGTSDZ
+	// x :             *EUFRPBLGTSDZ                    █──█FRPBLGTSDZ
+	// E :              EUFRPBLGTSDZ                      E│FRPBLGTSDZ
+	// U :               UFRPBLGTSDZ                       │FRPBLGTSDZ
+	// _F:                FRPBLGTSDZ                       █──────█SDZ
+	// _R:                 RPBLGTSDZ                         RPBLG│SDZ
+	// _P:                  PBLGTSDZ                          PBLG│SDZ
+	// _B:                   BLGTSDZ                           BLG│SDZ
+	// _L:                    LGTSDZ                            LG│SDZ
+	// _G:                     GTSDZ                             G│SDZ
+	// _T:                      TSDZ                              │SDZ
+	// _S:                       SDZ                              ██DZ
+	// _D:                        DZ                               █──End;
+	// _Z:                         Z                                 Z
+
+	bool valid = false;
+	for (State state {Begin}; char c : str) if (!std::isspace(c)) {
+		valid = true;
+		if (state == End) valid = false;
+		auto accept = [&] (State key, char keyChar, char numChar = '\0') {
+			bool match = false;
+			if (match |= c == numChar) this->set(Key::Num);
+			if (match |= c == keyChar) this->set(key), state = next(key);
+			return match;
+		};
+		switch (state) {
+			using enum State;
+			case Num:if (accept(Num,'#', '#')); else
+			case S_: if (accept(S_, 'S', '1')); else
+			case T_: if (accept(T_, 'T', '2')); else
+			case K_: if (accept(K_, 'K'     )); else
+			case P_: if (accept(P_, 'P', '3')); else
+			case W_: if (accept(W_, 'W'     )); else
+			case H_: if (accept(H_, 'H', '4')); else
+			case R_: if (accept(R_, 'R'     )); else
+			case A : if (accept(A , 'A', '5')); else
+			/*    */ if (accept(O , 'O', '0')); else
+			/*    */ if (accept(x , '*'     )); else
+			/*    */ if (accept(E , 'E'     )); else
+			/*    */ if (accept(U , 'U'     )); else
+			/*    */ if (c == '-') state = _F;
+			/*    */ else valid = false;
+			break;
+			case O : if (accept(O , 'O', '0')); else
+			case x : if (accept(x , '*'     )); else
+			case E : if (accept(E , 'E'     )); else
+			case U : if (accept(U , 'U'     )); else
+			case _F: if (accept(_F, 'F', '6')); else
+			case _R: if (accept(_R, 'R'     )); else
+			case _P: if (accept(_P, 'P', '7')); else
+			case _B: if (accept(_B, 'B'     )); else
+			case _L: if (accept(_L, 'L', '8')); else
+			case _G: if (accept(_G, 'G'     )); else
+			case _T: if (accept(_T, 'T', '9')); else
+			case _S: if (accept(_S, 'S'     )); else
+			case _D: if (accept(_D, 'D'     )); else
+			case _Z: if (accept(_Z, 'Z'     )); else
+			default: valid = false;
 		}
-		// Unable to normalize.
-		else if (!validStroke(str)) { failConstruction(str); return; }
+		if (!valid) break;
 	}
-	// Explode into 3 substrings (each w/ unique elements).
-	const auto [left, middle, right] = decomposeStroke(str);
-	// Assign.
-	auto setKeys = [this] (auto sub, const auto Order, auto offset) {
-		for (int s=0, o=0; s<sub.size() && o<=Order.size(); o++) {
-			if (sub[s] == Order[o]) s++, bits[offset + o] = true;
-		}
-	};
-	setKeys(left  , Left  ,  1);
-	setKeys(middle, Middle,  8);
-	setKeys(right , Right , 13);
+	if (!valid) failConstruction(str);
 }
 
 Stroke::Stroke(FromBits_Arg, std::bitset<23> b) {
@@ -179,8 +140,8 @@ Stroke Stroke::operator&=(Stroke other) {
 	return *this;
 }
 
-void Stroke::failConstruction(std::string str) {
-//	if (str != "") std::cout << str << "\n";
+void Stroke::failConstruction(std::string_view str) {
+	if (str != "") std::cout << str << "\n";
 	this->keys.FailedConstruction = true;
 }
 
@@ -207,7 +168,7 @@ Strokes::Strokes(std::string_view str) {
 	};
 
 	signed i=0, j=0;
-	while (j=str.find('/', i), j!=npos) {
+	while (j=str.find('/', i), j!=str.npos) {
 		if (push(i, j) == false) return;
 		i = j+1;
 	}
@@ -338,7 +299,7 @@ std::string toString(Stroke x) {
 		x.keys.OpenLeft = false;
 		auto result = '~' + toString(x);
 		auto i = result.find(' ');
-		if (i != npos) result.erase(i, 1);
+		if (i != result.npos) result.erase(i, 1);
 		return result;
 	}
 
@@ -346,7 +307,7 @@ std::string toString(Stroke x) {
 		x.keys.OpenRight = false;
 		auto result = toString(x) + '~';
 		auto i = result.rfind(' ');
-		if (i != npos) result.erase(i, 1);
+		if (i != result.npos) result.erase(i, 1);
 		return result;
 	}
 

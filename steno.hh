@@ -67,7 +67,7 @@ public:
 	Stroke operator&=(Stroke);
 
 private:
-	void failConstruction(std::string = "");
+	void failConstruction(std::string_view = "");
 };
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
