@@ -12,7 +12,7 @@ using Dictionary = steno::Dictionary;
 using Entry = std::pair<steno::Strokes, std::string>;
 
 bp::rule<struct stroke , steno::Stroke > stroke   = "steno stroke";
-bp::rule<struct strokes, steno::Strokes> strokes  = "stroke strokes";
+bp::rule<struct strokes, steno::Strokes> strokes  = "steno strokes";
 // STKPWHR AO*EU FRPBLGTSDZ  or  12K3W4R 50*EU 6R7B8G9SDZ
 bp::rule<struct left     , std::string> left      = "left-hand consonants";
 bp::rule<struct middle   , std::string> middle    = "vowel or asterisk";
