@@ -94,6 +94,20 @@ BOOST_PARSER_DEFINE_RULES(
 );
 #endif
 
+// Useful semantic actions
+auto fromContainer = [] (auto& ctx) {
+	_val(ctx) = {_attr(ctx).begin(), _attr(ctx).end()};
+};
+
+using Nested = std::vector<std::vector<Entry>>;
+
+auto flatten = [] (auto& ctx) {
+	for (const auto& outer : _attr(ctx))
+	for (const auto& inner : outer) {
+		_val(ctx).push_back(inner);
+	}
+};
+
 /* ~~ Plain-Text File Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 namespace plain {
@@ -116,17 +130,6 @@ BOOST_PARSER_DEFINE_RULES(file, line);
 } // namespace plain
 
 /* ~~ JSON File Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
-auto fromContainer = [] (auto& ctx) {
-	_val(ctx) = {_attr(ctx).begin(), _attr(ctx).end()};
-};
-
-auto flatten = [] (auto& ctx) {
-	for (const auto& outer : _attr(ctx))
-	for (const auto& inner : outer) {
-		_val(ctx).push_back(inner);
-	}
-};
 
 namespace JSON {
 
@@ -156,8 +159,6 @@ const auto value_def
 	>>	bp::omit[ bp::lit("null") | bp::bool_ | bp::double_ | string ]
 ;
 
-using Nested = std::vector<std::vector<Entry>>;
-
 const auto array_def
 	= 	'['
 	>>	(value % ',' >> trailingComma | bp::attr(Nested {}))[ flatten ]
@@ -183,26 +184,91 @@ BOOST_PARSER_DEFINE_RULES(file, value, array, object, objectVal, entry);
 
 } // namespace JSON
 
+namespace RTF {
+
+struct ControlWord { std::string w; std::optional<int> n; };
+struct ControlChar { char c; };
+
+bp::rule<struct file       , Dictionary        > file        = "RTF file";
+bp::rule<struct group      , std::vector<Entry>> group       = "RTF group";
+bp::rule<struct element    , std::vector<Entry>> element     = "RTF element";
+bp::rule<struct controlWord, ControlWord       > controlWord = "RTF control word";
+bp::rule<struct controlChar, ControlChar       > controlChar = "RTF control symbol";
+bp::rule<struct text       , std::string       > text        = "unformatted text";
+bp::rule<struct entry      , Entry             > entry       = "brief entry";
+bp::rule<struct entryText  , std::string       > entryText   = "RTF steno text";
+
+const auto file_def
+	= 	&bp::string("{\\rtf")
+	>>	group[ fromContainer ]
+;
+
+const auto group_def
+	= 	('{' >> *element >> '}')[ flatten ]
+;
+
+const auto element_def
+	= 	asEntries >> entry
+	| 	group
+	| 	asEntries >> bp::omit[ controlWord | controlChar | text ]
+;
+
+const auto controlWord_def
+	= 	'\\' >> +bp::char_('a', 'z') >> -(bp::int_)
+;
+
+const auto controlChar_def
+	= 	'\\' >> bp::char_ - bp::char_('a', 'z')
+;
+
+const auto text_def
+	//	TODO: Escape sequences
+	= 	+(bp::char_ - bp::char_("{}\\"))
+;
+
+const auto entryID
+	= 	bp::lit("\\*") >> bp::lit("\\cxs ")
+;
+
+const auto entry_def
+	= 	'{' >> entryID > strokes > '}' > entryText
+;
+
+const auto entryText_def
+	= 	bp::string_view[ +(element - ('{' >> entryID) - '}') ]
+;
+
+BOOST_PARSER_DEFINE_RULES(
+	file, entry,
+	element, group, controlWord, controlChar, text,
+	entryText,
+);
+
+} // namespace RTF
+
 } // namespace /*anonymous*/
 
 /* ~~ Parse API ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 namespace steno {
 
+
+//	return bp::parse(input, strokes, bp::ws);
+//}
+
 std::optional<Dictionary> parsePlain(ParserInput input) {
 	return bp::parse(input, plain::file, bp::ws);
 }
 
 std::optional<Dictionary> parseJSON(ParserInput input) {
+//	return Dictionary {{{"S K W RAO     PB   S  "}, "JSON" }};
 	return bp::parse(input, JSON::file, bp::ws);
 }
 
 std::optional<Dictionary> parseRTF(ParserInput input) {
 	if (std::string_view str_v {input.begin(), input.end()}
-	;   !str_v.starts_with("{\\rtf1")) {
-		return {};
-	}
-	return Dictionary {{{{"R*/T*/TP*"}, "RTF"}}};
+//	return Dictionary {{{{"R*/T*/TP*"}, "RTF"}}};
+	return bp::parse(input, RTF::file, bp::ws);
 }
 
 std::optional<Dictionary> parseGuess(ParserInput input) {
@@ -218,3 +284,4 @@ std::optional<Dictionary> parseGuess(ParserInput input) {
 }
 
 } // namespace steno
+#endif

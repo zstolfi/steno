@@ -10,7 +10,7 @@ namespace GUI {
 		ImGui::Begin("Steno Atlas Prototype");
 		if (state.dictionaries.empty()) {
 			ImGui::Text("Drag & drop dictionaries here to get started!");
-			ImGui::Text("Accepted: (JSON, or TXT)");
+			ImGui::Text("Accepted: (RTF, JSON,or TXT)");
 			ImGui::End(); return;
 		}
 		ImGui::Text("Number of dictionaries loaded: %zu", state.dictionaries.size());
