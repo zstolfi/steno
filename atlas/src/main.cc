@@ -67,6 +67,7 @@ struct State {
 	bool running = true;
 	// App state:
 	bool showDemoWindow = false;
+	ImVec4 backgroundColor = {0, 0, 0, 0};
 //	std::optional<float> transferProgress;
 	std::vector<Dictionary> dictionaries;
 	// Web-related state:
@@ -79,11 +80,9 @@ extern "C" { // These functions will be called from the browser.
 
 /* ~~ Main Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-#include "gui.hh" // depends on everything above
-
 void mainLoop(Window& window, State& state) {
 	auto loadTexture = std::bind_front(&Window::loadTexture, &window);
-
+	// Handle events.
 	for (SDL_Event event; SDL_PollEvent(&event);) {
 		ImGui_ImplSDL3_ProcessEvent(&event);
 		if (event.type == SDL_EVENT_QUIT) state.running = false;
@@ -97,18 +96,9 @@ void mainLoop(Window& window, State& state) {
 			else std::printf("Unable to open %s\n", path.c_str());
 		}
 	}
-
-	GUI::initiate();
-
-	GUI::BottomRightOverlay(state);
-	GUI::MainMenu(window, state);
-
-	if (state.showDemoWindow) ImGui::ShowDemoWindow();
-
-	ImVec4 color = {0.10, 0.10, 0.11, 1.0};
-	if (state.dragOver) color.x += 0.3;
-
-	window.render(color);
+	// Run all GUI code. (Probably should be abstracted into a class.)
+#	include "gui.hh"
+	window.render(state.backgroundColor);
 }
 
 int main(int argc, char const* argv[]) {
