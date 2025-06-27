@@ -112,20 +112,20 @@ auto flatten = [] (auto& ctx) {
 
 namespace plain {
 
-bp::rule<struct file, Dictionary> file = "plain-text file";
-bp::rule<struct line, Entry     > line = "brief entry";
+bp::rule<struct file , Dictionary> file  = "plain-text file";
+bp::rule<struct entry, Entry     > entry = "brief entry";
 
 const auto file_def
-	= 	+line
+	= 	+entry
 ;
 
-const auto line_def
+const auto entry_def
 	= 	strokes
 	>>	'='
 	>>	bp::lexeme[ *(bp::char_ - bp::eol) ]
 ;
 
-BOOST_PARSER_DEFINE_RULES(file, line);
+BOOST_PARSER_DEFINE_RULES(file, entry);
 
 } // namespace plain
 
@@ -145,11 +145,11 @@ const auto trailingComma = -bp::lit(',');
 // the plain::file parser seems to be converting vector<Entry> -> Dicitonary,
 // but not this one.
 const auto file_def
-	= 	value[ fromContainer ]
+	= 	(object | array)[ fromContainer ]
 ;
 
-// TODO: JSON escape sequences
 const auto string
+	//	TODO: JSON escape sequences
 	= 	bp::quoted_string
 ;
 
@@ -180,7 +180,7 @@ const auto entry_def
 	= 	'"' >> strokes >> '"' >> ':' >> string
 ;
 
-BOOST_PARSER_DEFINE_RULES(file, value, array, object, objectVal, entry);
+BOOST_PARSER_DEFINE_RULES(file, entry, value, array, object, objectVal);
 
 } // namespace JSON
 
@@ -252,22 +252,15 @@ BOOST_PARSER_DEFINE_RULES(
 
 namespace steno {
 
-
-//	return bp::parse(input, strokes, bp::ws);
-//}
-
 std::optional<Dictionary> parsePlain(ParserInput input) {
 	return bp::parse(input, plain::file, bp::ws);
 }
 
 std::optional<Dictionary> parseJSON(ParserInput input) {
-//	return Dictionary {{{"S K W RAO     PB   S  "}, "JSON" }};
 	return bp::parse(input, JSON::file, bp::ws);
 }
 
 std::optional<Dictionary> parseRTF(ParserInput input) {
-	if (std::string_view str_v {input.begin(), input.end()}
-//	return Dictionary {{{{"R*/T*/TP*"}, "RTF"}}};
 	return bp::parse(input, RTF::file, bp::ws);
 }
 
@@ -284,4 +277,3 @@ std::optional<Dictionary> parseGuess(ParserInput input) {
 }
 
 } // namespace steno
-#endif
