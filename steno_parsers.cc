@@ -1,11 +1,18 @@
 #include "steno_parsers.hh"
-#include <boost/parser/parser.hpp>
-namespace bp = boost::parser;
+
+#pragma clang diagnostic push
+#	pragma clang diagnostic ignored "-Wcharacter-conversion"
+#	include <boost/parser/parser.hpp>
+#pragma clang diagnostic pop
+
+// operator>> and operator> are precedence independent in boost::parser.
+#pragma clang diagnostic ignored "-Woverloaded-shift-op-parentheses"
 
 /* ~~ Common Parsers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 namespace /*anonymous*/ {
 
+namespace bp = boost::parser;
 // "using Entry = steno::Dictionary::value_type" would not work in our parsers,
 // because steno::Strokes is not allowed to be const as we parse it.
 using Dictionary = steno::Dictionary;

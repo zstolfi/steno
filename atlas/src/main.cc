@@ -8,6 +8,7 @@
 
 /* ~~ App State ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+#pragma clang diagnostic push
 struct Dictionary {
 #	pragma clang diagnostic ignored "-Wc99-designator"
 	using ParserFn = steno::ParserDictionaryFn;
@@ -62,6 +63,7 @@ private:
 		return (bool)result;
 	}
 };
+#pragma clang diagnostic pop
 
 struct State {
 	bool running = true;
