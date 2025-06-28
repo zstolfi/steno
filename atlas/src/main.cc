@@ -106,5 +106,5 @@ void mainLoop(Window& window, State& state) {
 int main(int argc, char const* argv[]) {
 	State state {};
 	Window window {"Steno Atlas Prototype", 1280, 720, &state.running};
-	window.run(mainLoop, std::tie(window, state));
+	window.run(mainLoop, window, state);
 }

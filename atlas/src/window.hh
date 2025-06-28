@@ -8,7 +8,6 @@
 #include <vector>
 #include <span>
 #include <tuple>
-#include <functional>
 #include <variant>
 #include <filesystem>
 #include <cstdio>
@@ -29,14 +28,15 @@ class Window {
 	SDL_GLContext gl_context;
 	std::vector<GLuint> textures;
 
-	using RunBool = bool const*;
-	using RunFunc = bool (*)();
-	std::variant<RunBool, RunFunc> runPred;
+	struct RunPredicate {
+		std::variant<bool const*, bool (*)()> userPred;
+		RunPredicate(auto p) : userPred{p} {}
+		bool operator()();
+	} running;
 
 public:
-	Window(std::string title, unsigned W, unsigned H, decltype(runPred) rp) {
-		// Know when the user code stops running
-		runPred = rp;
+	Window(std::string title, unsigned W, unsigned H, RunPredicate rp)
+	: running{rp} {
 		// Setup SDL
 		if (!SDL_Init(SDL_INIT_VIDEO)) {
 			std::printf("Error: SDL_Init(): %s\n", SDL_GetError());
@@ -119,28 +119,25 @@ public:
 		SDL_GL_SwapWindow(winPtr);
 	}
 
-	void run(auto&& mainLoop) {
+	template <class ... Args>
+	void run(auto&& mainLoop, Args&& ... userArgs) {
 #	ifdef __EMSCRIPTEN__
-		static std::function<void ()> sMainLoop = mainLoop;
-		emscripten_set_main_loop([] { sMainLoop(); }, 0, true);
-#	else
-		while (running()) mainLoop();
-#	endif
-	}
-
-	template <template<class> class Tuple, class ... Args>
-	void run(auto&& mainLoop, Tuple<Args ... >&& userData) {
-#	ifdef __EMSCRIPTEN__
-		static std::function<void (Args ... )> sMainLoop = mainLoop;
-		static Tuple<Args ... > sUserData = userData;
+		using Tuple = std::tuple<Args&& ... >;
+		// 'run' is only called once, so we can create static copies of our
+		// variables for our captureless lambda to use.
+		static auto  sRunning  { this->running };
+		static auto  sMainLoop { std::move(mainLoop) };
+		static Tuple sUserData { std::forward<Args>(userArgs) ... };
 		emscripten_set_main_loop_arg(
-			[] (void* data) {
-				std::apply(sMainLoop, *(Tuple<Args ... >*)data);
+			[] (void* args) {
+				if (!sRunning()) emscripten_cancel_main_loop();
+				else std::apply(sMainLoop, *(Tuple*)args);
 			},
 			(void*)&sUserData, 0, true
 		);
 #	else
-		while (running()) std::apply(mainLoop, userData);
+		while (running()) mainLoop(std::forward<Args>(userArgs) ... );
+		std::exit(0);
 #	endif
 	}
 
@@ -178,17 +175,11 @@ public:
 		return (ImTextureID)(intptr_t)texture;
 	}
 
-	void download(std::filesystem::path path) {
+	void offerDownload(std::filesystem::path path) {
 		jsDownload(path.c_str());
 	}
 
 private:
-	bool running() const {
-		if (RunBool const* val = std::get_if<RunBool>(&runPred)) return **val;
-		if (RunFunc const* val = std::get_if<RunFunc>(&runPred)) return (*val)();
-		return false;
-	}
-
 	void enableDragAndDrop() const {
 #	ifdef __EMSCRIPTEN__
 		EM_ASM(
@@ -224,3 +215,11 @@ EM_JS(void, jsDownload, (char const* path_raw), {
 	}, 1000);
 });
 #endif
+
+bool Window::RunPredicate::operator()() {
+	using RunBool = bool const*;
+	using RunFunc = bool (*)();
+	if (RunBool const* val = std::get_if<RunBool>(&userPred)) return **val;
+	if (RunFunc const* val = std::get_if<RunFunc>(&userPred)) return (*val)();
+	return false;
+}
