@@ -68,16 +68,17 @@ private:
 struct State {
 	bool running = true;
 	// App state:
-	bool showDemoWindow = false;
 	ImVec4 backgroundColor = {0, 0, 0, 0};
 //	std::optional<float> transferProgress;
 	std::vector<Dictionary> dictionaries;
 	// Web-related state:
 	static inline bool dragOver = false;
+	static inline bool showDemoWindow = false;
 };
 
 extern "C" { // These functions will be called from the browser.
 	void setDragOver(bool input) { State::dragOver = input; }
+	void showDebug() { State::showDemoWindow = true; }
 }
 
 /* ~~ Main Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -100,7 +101,7 @@ void mainLoop(Window& window, State& state) {
 	}
 	// Run all GUI code. (Probably should be abstracted into a class.)
 #	include "gui.hh"
-	window.render(state.backgroundColor);
+	window.render();
 }
 
 int main(int argc, char const* argv[]) {

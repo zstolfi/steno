@@ -5,24 +5,11 @@
 		ImGui::NewFrame();
 	}
 
-	{ // Bottom Right Overlay
-		auto* viewport = ImGui::GetMainViewport();
-		ImVec2 work_pos = viewport->WorkPos; // Use work area to avoid menu-bar/task-bar, if any!
-		ImVec2 work_size = viewport->WorkSize;
-		ImVec2 windowPos;
-		windowPos.x = work_pos.x + work_size.x - 10;
-		windowPos.y = work_pos.y + work_size.y - 10;
-
-		ImGui::SetNextWindowPos(windowPos, ImGuiCond_Always, ImVec2 {1, 1});
-		ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
-		ImGui::Begin("Programmer Menu", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
-		ImGui::Checkbox("I'm Bored", &state.showDemoWindow);
-		ImGui::End();
-	}
-
 	{ // Main Menu
-		ImGui::SetNextWindowSize(ImVec2 {500, 400}, ImGuiCond_FirstUseEver);
-		ImGui::Begin("Steno Atlas Prototype");
+		const ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(viewport->WorkPos);
+		ImGui::SetNextWindowSize(viewport->WorkSize);
+		ImGui::Begin("Steno Atlas Prototype", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
 		if (state.dictionaries.empty()) {
 			ImGui::Text("Drag & drop dictionaries here to get started!");
 			ImGui::Text("Accepted: (RTF, JSON,or TXT)");
@@ -43,7 +30,7 @@
 							imgPath.c_str(), Atlas::N, Atlas::N,
 							4, dict.atlas.image.data(), 4*Atlas::N
 						);
-						window.download(imgPath);
+						window.offerDownload(imgPath);
 					}
 					ImGui::Text("%zu entries\t 1 - 1,000:", dict.entries.size());
 					auto const flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter;
@@ -69,8 +56,6 @@
 	}
 
 	{ // Update
-		state.backgroundColor = ImVec4 {0.10, 0.10, 0.11, 1.0};
-		if (state.dragOver) state.backgroundColor.x += 0.3;
 		if (state.showDemoWindow) ImGui::ShowDemoWindow();
 	}
 }

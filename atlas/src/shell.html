@@ -55,7 +55,7 @@
 			print: (...args) => console.log(...args),
 			printErr: (...args) => console.error(...args),
 			canvas: canvasElement,
-			setStatus: (text) => console.log(`Status: ${text}`),
+			setStatus: (text) => text && console.log(`Status: ${text}`),
 		};
 	</script>
 	{{{ SCRIPT }}}
