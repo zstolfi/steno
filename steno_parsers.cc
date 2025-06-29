@@ -115,6 +115,17 @@ auto flatten = [] (auto& ctx) {
 	}
 };
 
+// Skippers
+auto const skipWhitespace
+	= 	bp::ws
+;
+
+auto const skipCxxComments
+	= 	bp::ws
+	| 	"/*" >> *(bp::char_ - "*/"   ) >> "*/"
+	| 	"//" >> *(bp::char_ - bp::eol) >> bp::eol
+;
+
 /* ~~ Plain-Text File Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 namespace plain {
@@ -155,9 +166,22 @@ const auto file_def
 	= 	(object | array)[ fromContainer ]
 ;
 
+const auto escape
+	= bp::symbols<char>
+	{
+	  	{"/", '/'},
+	  	{"b", '\b'},
+	  	{"f", '\f'},
+	  	{"n", '\n'},
+	  	{"r", '\r'},
+	  	{"t", '\t'},
+	//	TODO: Unicode escape sequences
+	  	{"u", '?'},
+	}
+;
+
 const auto string
-	//	TODO: JSON escape sequences
-	= 	bp::quoted_string
+	= 	bp::quoted_string('"', escape)
 ;
 
 const auto value_def
@@ -228,9 +252,22 @@ const auto controlChar_def
 	= 	'\\' >> bp::char_ - bp::char_('a', 'z')
 ;
 
+const auto escape
+	= bp::symbols<char>
+	{
+	  	{"\\", '\\'},
+	  	{"{", '{'},
+	  	{"}", '}'},
+	}
+;
+
+const auto character
+	= 	'\\' >> escape
+	| 	bp::char_ - bp::char_("\\{}") - bp::eol
+;
+
 const auto text_def
-	//	TODO: Escape sequences
-	= 	+(bp::char_ - bp::char_("{}\\"))
+	= 	bp::lexeme[ +character ]
 ;
 
 const auto entryID
@@ -260,15 +297,15 @@ BOOST_PARSER_DEFINE_RULES(
 namespace steno {
 
 std::optional<Dictionary> parsePlain(ParserInput input) {
-	return bp::parse(input, plain::file, bp::ws);
+	return bp::parse(input, plain::file, skipWhitespace);
 }
 
 std::optional<Dictionary> parseJSON(ParserInput input) {
-	return bp::parse(input, JSON::file, bp::ws);
+	return bp::parse(input, JSON::file, skipCxxComments);
 }
 
 std::optional<Dictionary> parseRTF(ParserInput input) {
-	return bp::parse(input, RTF::file, bp::ws);
+	return bp::parse(input, RTF::file, skipWhitespace);
 }
 
 std::optional<Dictionary> parseGuess(ParserInput input) {
