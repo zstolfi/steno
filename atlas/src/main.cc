@@ -5,6 +5,7 @@
 #include <istream>
 #include <fstream>
 #include <iterator>
+#include <list>
 
 /* ~~ App State ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -56,6 +57,17 @@ struct Dictionary {
 		*this = Dictionary(input, path.filename(), type, loadTexture);
 	}
 
+	void save() {
+		std::filesystem::path imgPath {name};
+		imgPath.replace_extension("");
+		imgPath += " atlas.png";
+		stbi_write_png(
+			imgPath.c_str(), Atlas::N, Atlas::N,
+			4, atlas.image.data(), 4*Atlas::N
+		);
+		JS::offerDownload(imgPath.c_str());
+	}
+
 private:
 	bool tryParser(std::vector<char> const& bytes, ParserFn* parse) {
 		auto result = parse(bytes);
@@ -66,11 +78,14 @@ private:
 #pragma clang diagnostic pop
 
 struct State {
+	// Window state:
 	bool running = true;
 	// App state:
-	ImVec4 backgroundColor = {0, 0, 0, 0};
 //	std::optional<float> transferProgress;
-	std::vector<Dictionary> dictionaries;
+	std::list<Dictionary> dictionaries;
+	Dictionary* selectedDictionary = nullptr;
+	float atlasScale = 1.0;
+	ImVec2 atlasPos = {0.5, 0.5};
 	// Web-related state:
 	static inline bool dragOver = false;
 	static inline bool showDemoWindow = false;

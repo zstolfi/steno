@@ -3,15 +3,16 @@ CC          = emcc
 CXX         = em++
 EMFLAGS     = -sUSE_SDL=3
 CXXFLAGS    = -std=c++20 -Wall -O1 -ferror-limit=20
-LDFLAGS     = --shell-file shell.html -sALLOW_MEMORY_GROWTH=1
-FUNCTIONS   = _main,_malloc,_free,_setDragOver,_showDebug
+LDFLAGS     = --shell-file shell.html -sMAX_WEBGL_VERSION=2
+FUNCTIONS   = _setDragOver,_showDebug
+METHODS     = FS
+BOOST_LIBS  = parser
 
 # ~~~~ Directories ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 STENO       = ../..
 IMGUI       = $(STENO)/.include/imgui
 BOOST       = $(STENO)/.include/boost
 STB         = $(STENO)/.include/stb
-BOOST_LIBS  = parser
 WWW         = ..
 TARGET      = $(WWW)/index.html
 
@@ -23,11 +24,17 @@ SOURCES    += $(IMGUI)/backends/imgui_impl_sdl3.cpp
 SOURCES    += $(IMGUI)/backends/imgui_impl_opengl3.cpp
 OBJECTS     = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
 
+# Makefile literals
+empty =
+space = $(empty) $(empty)
+comma = ,
+
 # ~~~~ Flags ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 CXXFLAGS   += -I$(IMGUI) -I$(IMGUI)/backends -I$(STENO) -I$(STB)
 CXXFLAGS   += $(BOOST_LIBS:%=-I$(BOOST)/%/include)
-LDFLAGS    += -sEXPORTED_FUNCTIONS=$(FUNCTIONS)
-LDFLAGS    += -sEXPORTED_RUNTIME_METHODS=ccall,cwrap,FS
+LDFLAGS    +=  -sALLOW_MEMORY_GROWTH=1
+LDFLAGS    += -sEXPORTED_FUNCTIONS=_main,_malloc,_free$(if $(FUNCTIONS),$(comma)$(FUNCTIONS))
+LDFLAGS    += -sEXPORTED_RUNTIME_METHODS=ccall,cwrap$(if $(METHODS),$(comma)$(METHODS))
 
 # ~~~~ Rules ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 all : $(TARGET)
