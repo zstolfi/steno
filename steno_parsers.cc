@@ -208,7 +208,7 @@ const auto objectVal_def
 ;
 
 const auto entry_def
-	= 	'"' >> strokes >> '"' >> ':' >> string
+	= 	bp::lexeme[ '"' >> strokes >> '"' ] >> ':' >> string
 ;
 
 BOOST_PARSER_DEFINE_RULES(file, entry, value, array, object, objectVal);
