@@ -114,6 +114,15 @@ void mainLoop(Window& window, State& state, Canvas& canvas) {
 			}
 			else std::printf("Unable to open %s\n", path.c_str());
 		}
+		if (event.type == SDL_EVENT_KEY_DOWN) switch (event.key.key) {
+		break; case SDLK_LEFTBRACKET : state.atlasScale /= 1.414;
+		break; case SDLK_RIGHTBRACKET: state.atlasScale *= 1.414;
+		// TODO: figure out why the X component is backwards.
+		break; case SDLK_LEFT : state.atlasPos.x -= 0.125 / state.atlasScale;
+		break; case SDLK_RIGHT: state.atlasPos.x += 0.125 / state.atlasScale;
+		break; case SDLK_DOWN : state.atlasPos.y += 0.125 / state.atlasScale;
+		break; case SDLK_UP   : state.atlasPos.y -= 0.125 / state.atlasScale;
+		}
 	}
 	// Run all GUI code. (Probably should be abstracted into a class.)
 #	include "gui.hh"
@@ -132,5 +141,7 @@ int main(int argc, char const* argv[]) {
 //		{"Position",   Window::Uniform<float, 2>    {&state.position}};
 //		{"Mouse",      Window::Uniform<float, 2>    {&state.mouse}};
 	};
+	atlasViewer.refScale = &state.atlasScale;
+	atlasViewer.refPosition = &state.atlasPos;
 	window.run(mainLoop, window, state, atlasViewer);
 }

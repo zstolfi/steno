@@ -11,6 +11,9 @@ class Canvas {
 	GLint u_Atlas, u_Resolution, u_Scale, u_Position;
 
 public:
+	float const* refScale {};
+	ImVec2 const* refPosition {};
+
 	Canvas(std::filesystem::path path) {
 		if (std::ifstream file {path}) {
 			std::istreambuf_iterator<char> begin {file}, end {};
@@ -37,8 +40,8 @@ public:
 
 		glUseProgram(program);
 		glUniform2f(u_Resolution, width, height);
-		glUniform1f(u_Scale, 1.0);
-		glUniform2f(u_Position, 0.5, 0.5);
+		if (refScale) glUniform1f(u_Scale, *refScale);
+		if (refPosition) glUniform2f(u_Position, refPosition->x, refPosition->y);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, currentAtlas);

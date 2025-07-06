@@ -43,7 +43,7 @@ all : $(TARGET)
 
 main.o : $(wildcard *.hh)
 
-$(TARGET): $(OBJECTS) shell.html Makefile
+$(TARGET): $(OBJECTS) shell.html $(wildcard $(ASSETS)/*) Makefile
 	$(CXX) $(EMFLAGS) $(LDFLAGS) $(OBJECTS) -o $@
 
 %.o : %.cc
