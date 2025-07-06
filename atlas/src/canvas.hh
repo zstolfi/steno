@@ -57,7 +57,7 @@ public:
 
 private:
 	void createTriangles() {
-		constexpr std::array<GLfloat, 8> vertices {
+		constexpr GLfloat vertices[] {
 			-1.0,	+1.0 ,  // Top-Left
 			+1.0,	+1.0 ,  // Top-Rright
 			-1.0,	-1.0 ,  // Bottom-Left
@@ -69,7 +69,7 @@ private:
 
 		glGenBuffers(1, &VBO);
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, vertices.size(), vertices.data(), GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 		glEnableVertexAttribArray(0);

@@ -58,7 +58,7 @@ struct Dictionary {
 		*this = Dictionary(input, path.filename(), type, loadTexture);
 	}
 
-	void save() {
+	void save() const {
 		std::filesystem::path imgPath {name};
 		imgPath.replace_extension("");
 		imgPath += " atlas.png";
@@ -84,7 +84,7 @@ struct State {
 	// App state:
 //	std::optional<float> transferProgress;
 	std::list<Dictionary> dictionaries;
-	Dictionary* selectedDictionary = nullptr;
+	Dictionary const* selectedDictionary = nullptr;
 	float atlasScale = 1.0;
 	ImVec2 atlasPos = {0.5, 0.5};
 	// Web-related state:
