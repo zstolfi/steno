@@ -21,198 +21,13 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-GLuint VAO, VBO, FBO, RBO
-,      textureID, shaderID
-,      textureEmpty, currentAtlas
-,      fbWidth = 800, fbHeight = 600;
+// WebGL-friendly subset of OpenGL ES 3.0 (https://emscripten.org/docs/porting/multimedia_and_graphics/OpenGL-support.html)
+constexpr auto GLVersion = (int []) {3, 0};
+constexpr auto GLVersionProfile = SDL_GL_CONTEXT_PROFILE_ES;
+constexpr auto GLSLVersion = "#version 300 es\n";
+constexpr auto GLSLPrecision = "precision mediump float;\n";
 
-GLint u_Atlas, u_Resolution, u_Scale, u_Position;
-
-char const* vertexShaderSource = R"`(#version 300 es
-precision mediump float;
-layout (location = 0) in vec2 Position;
-
-void main() {
-	gl_Position = vec4(Position, 0.0, 1.0);
-}
-)`";
-
-char const* fragmentShaderSource = R"`(#version 300 es
-precision mediump float;
-// Uniform variables (in order of importance):
-uniform sampler2D Atlas;
-uniform vec2 Resolution;
-uniform float Scale;
-uniform vec2 Position;
-//uniform vec2 Mouse;
-//uniform bvec2 MouseClick;
-//uniform float Time;
-
-layout (location = 0) out vec4 FragColor;
-
-vec3 getAtlasColor(vec2 uv) {
-	return texture(Atlas, uv).xyz;
-}
-
-void main() {
-	// View the entire Atlas centering the canvas at Scale = 1.0.
-	float zoom = max(1.0/Resolution.x, 1.0/Resolution.y);
-	vec2 uv = (gl_FragCoord.xy - 0.5*Resolution) * zoom/Scale + Position;
-	// Color everything else black.
-	bool onAtlas = max(abs(uv.x - 0.5), abs(uv.y - 0.5)) <= 0.5;
-	vec3 color = onAtlas? getAtlasColor(uv): vec3(0.0);
-	// Output.
-	FragColor = vec4(color, 1.0);
-}
-)`";
-
-void createEmptyTexture() {
-	auto constexpr N = 256;
-	std::vector<uint8_t> t (4*N*N, 0);
-	for (int y=0; y<N; y++)
-	for (int x=0; x<N; x++) {
-		std::size_t i = y*N + x;
-		t[4*i+0] = x^y;
-		t[4*i+1] = x^y;
-		t[4*i+2] = x^y;
-		t[4*i+3] = 255;
-	}
-
-	glGenTextures(1, &textureEmpty);
-	glBindTexture(GL_TEXTURE_2D, textureEmpty);
-	currentAtlas = textureEmpty;
-
-	// Setup filtering parameters for display
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	// Upload pixels into texture
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, N, N, 0, GL_RGBA, GL_UNSIGNED_BYTE, t.data());
-}
-
-void createCanvas() {
-	GLfloat vertices[] = {
-		-1.0,	+1.0 ,  // Top-Left
-		+1.0,	+1.0 ,  // Top-Rright
-		-1.0,	-1.0 ,  // Bottom-Left
-		+1.0,	-1.0 ,  // Bottom-Rright
-	};
-
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
-
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-}
-
-void addShader(GLuint program, std::string source, GLenum type) {
-	GLuint shader = glCreateShader(type);
-	auto ptr = source.c_str();
-	glShaderSource(shader, 1, &ptr, nullptr);
-	glCompileShader(shader);
-
-	GLint success {}, logLength {};
-	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-	glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
-	if (!success) {
-		std::string log (logLength-1, '\0');
-		glGetShaderInfoLog(shader, logLength, nullptr, log.data());
-		std::printf("Error compiling shader:\n%s\n", log.c_str());
-	}
-	glAttachShader(program, shader);
-}
-
-void createShaders() {
-	if (shaderID = glCreateProgram(), !shaderID) {
-		std::printf("Error creating shader program.\n");
-		return;
-	}
-
-	addShader(shaderID, vertexShaderSource, GL_VERTEX_SHADER);
-	addShader(shaderID, fragmentShaderSource, GL_FRAGMENT_SHADER);
-
-	glLinkProgram(shaderID);
-	{
-		GLint success {}, logLength {};
-		glGetProgramiv(shaderID, GL_LINK_STATUS, &success);
-		glGetProgramiv(shaderID, GL_INFO_LOG_LENGTH, &logLength);
-		if (!success) {
-			std::string log (logLength-1, '\0');
-			glGetProgramInfoLog(shaderID, logLength, nullptr, log.data());
-			std::printf("Error linking program:\n%s\n", log.c_str());
-			return;
-		}
-	}
-
-	glValidateProgram(shaderID);
-	{
-		GLint success {}, logLength {};
-		glGetProgramiv(shaderID, GL_VALIDATE_STATUS, &success);
-		glGetProgramiv(shaderID, GL_INFO_LOG_LENGTH, &logLength);
-		if (!success) {
-			std::string log (logLength-1, '\0');
-			glGetProgramInfoLog(shaderID, logLength, nullptr, log.data());
-			std::printf("Error validating program:\n%s\n", log.c_str());
-			return;
-		}
-	}
-
-	// Set uniforms.
-	glUseProgram(shaderID);
-	u_Atlas      = glGetUniformLocation(shaderID, "Atlas"     );
-	u_Resolution = glGetUniformLocation(shaderID, "Resolution");
-	u_Scale      = glGetUniformLocation(shaderID, "Scale"     );
-	u_Position   = glGetUniformLocation(shaderID, "Position"  );
-
-	createEmptyTexture();
-	glUniform1i(u_Atlas, 0/*GL_TEXTURE0*/);
-}
-
-void rescaleFramebuffer(GLsizei width, GLsizei height) {
-	glBindTexture(GL_TEXTURE_2D, textureID);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureID, 0);
-
-	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
-}
-
-void createFramebuffer() {
-	glGenFramebuffers(1, &FBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-
-	glGenTextures(1, &textureID);
-	glGenRenderbuffers(1, &RBO);
-	rescaleFramebuffer(800, 600);
-
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-		std::printf("Error completing framebuffer.\n");
-	}
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-}
-
-void bindFramebuffer() {
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-}
-
-void unbindFramebuffer() {
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
+/* ~~ Window Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 class Window {
 	SDL_Window* winPtr;
@@ -234,12 +49,9 @@ public:
 			exit(-1);
 		}
 
-		// WebGL-friendly subset of OpenGL ES 3.0
-		char const* glslVersion = "#version 300 es";
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, GLVersionProfile);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, GLVersion[0]);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, GLVersion[1]);
 
 		// Create window with graphics context
 		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
@@ -270,11 +82,7 @@ public:
 
 		// Setup Platform/Renderer backends
 		ImGui_ImplSDL3_InitForOpenGL(winPtr, glContext);
-		ImGui_ImplOpenGL3_Init(glslVersion);
-
-		createCanvas();
-		createShaders();
-		createFramebuffer();
+		ImGui_ImplOpenGL3_Init(GLSLVersion);
 
 		// Cutsom JS interfaces
 		enableDragAndDrop();
@@ -282,23 +90,6 @@ public:
 
 	void render(ImVec4 clearColor = {0, 0, 0, 1}) {
 		ImGui::Render();
-		
-		bindFramebuffer();
-		rescaleFramebuffer(fbWidth, fbHeight);
-
-		glUseProgram(shaderID);
-		glUniform2f(u_Resolution, fbWidth, fbHeight);
-		glUniform1f(u_Scale, 1.0);
-		glUniform2f(u_Position, 0.5, 0.5);
-		
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, currentAtlas);
-		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		
-		glBindVertexArray(0);
-		glUseProgram(0);
-		unbindFramebuffer();
 
 		ImGuiIO& io = ImGui::GetIO();
 		glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
@@ -344,7 +135,7 @@ public:
 
 	[[nodiscard]]
 	ImTextureID loadTexture(std::span<uint8_t const> data, int W, int H) {
-		IM_ASSERT(data.size() == W*H*4);
+		IM_ASSERT(data.size() == 4*W*H);
 
 		// Create a OpenGL texture identifier
 		GLuint texture;
@@ -361,7 +152,7 @@ public:
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, W, H, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
 
 		this->textures.push_back(texture);
-		return (ImTextureID)(intptr_t)texture;
+		return (ImTextureID)texture;
 	}
 
 private:
@@ -389,6 +180,8 @@ bool Window::RunPredicate::operator()() {
 	if (RunFunc const* val = std::get_if<RunFunc>(&userPred)) return (*val)();
 	return false;
 }
+
+/* ~~ JavaScript Utilities ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 #ifdef __EMSCRIPTEN__
 namespace JS {

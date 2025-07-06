@@ -1,6 +1,7 @@
-#include "window.hh"
-#include "atlas.hh"
 #include "steno.hh"
+#include "window.hh"
+#include "canvas.hh"
+#include "atlas.hh"
 #include "steno_parsers.hh"
 #include <istream>
 #include <fstream>
@@ -98,7 +99,7 @@ extern "C" { // These functions will be called from the browser.
 
 /* ~~ Main Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-void mainLoop(Window& window, State& state) {
+void mainLoop(Window& window, State& state, Canvas& canvas) {
 	auto loadTexture = std::bind_front(&Window::loadTexture, &window);
 	// Handle events.
 	for (SDL_Event event; SDL_PollEvent(&event);) {
@@ -116,11 +117,20 @@ void mainLoop(Window& window, State& state) {
 	}
 	// Run all GUI code. (Probably should be abstracted into a class.)
 #	include "gui.hh"
+	canvas.render();
 	window.render();
 }
 
 int main(int argc, char const* argv[]) {
 	State state {};
 	Window window {"Steno Atlas Prototype", 1280, 720, &state.running};
-	window.run(mainLoop, window, state);
+	Canvas atlasViewer {
+		"assets/atlas.frag",
+//		{"Atlas",      Window::Uniform<ImTextureID> {&currentAtlas}};
+//		{"Resolution", Window::Uniform<float, 2>    {&fbWidth, fbHeight}};
+//		{"Scale",      Window::Uniform<float, 1>    {&state.scale}};
+//		{"Position",   Window::Uniform<float, 2>    {&state.position}};
+//		{"Mouse",      Window::Uniform<float, 2>    {&state.mouse}};
+	};
+	window.run(mainLoop, window, state, atlasViewer);
 }

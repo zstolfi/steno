@@ -28,7 +28,7 @@
 					ImGui::PushID(i++);
 					if (ImGui::Button(dict.name.c_str(), ImVec2 {-FLT_MIN, 40})) {
 						state.selectedDictionary = &dict;
-						currentAtlas = (GLuint)dict.texture;
+						canvas.setAtlas(dict.texture);
 					}
 //					if (ImGui::TreeNode(dict.name.c_str())) {
 //						ImGui::Image(dict.texture, ImVec2 {256, 256});
@@ -62,9 +62,11 @@
 		ImGui::BeginChild("ChildRight", ImVec2 {0, 0}, ImGuiChildFlags_Borders/*, ImGuiWindowFlags_MenuBar*/);
 		{
 			ImGui::SeparatorText("Atlas");
-			auto const avail = ImGui::GetContentRegionAvail();
-			fbWidth = avail.x; fbHeight = avail.y;
-			ImGui::Image((ImTextureID)textureID, avail);
+			if (state.selectedDictionary) {
+				auto const avail = ImGui::GetContentRegionAvail();
+				canvas.rescale(avail.x, avail.y);
+				ImGui::Image(canvas.getTexture(), avail);
+			}
 		}
 		ImGui::EndChild();
 		ImGui::End();

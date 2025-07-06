@@ -13,6 +13,7 @@ STENO       = ../..
 IMGUI       = $(STENO)/.include/imgui
 BOOST       = $(STENO)/.include/boost
 STB         = $(STENO)/.include/stb
+ASSETS      = assets
 WWW         = ..
 TARGET      = $(WWW)/index.html
 
@@ -35,6 +36,7 @@ CXXFLAGS   += $(BOOST_LIBS:%=-I$(BOOST)/%/include)
 LDFLAGS    +=  -sALLOW_MEMORY_GROWTH=1
 LDFLAGS    += -sEXPORTED_FUNCTIONS=_main,_malloc,_free$(if $(FUNCTIONS),$(comma)$(FUNCTIONS))
 LDFLAGS    += -sEXPORTED_RUNTIME_METHODS=ccall,cwrap$(if $(METHODS),$(comma)$(METHODS))
+LDFLAGS    +=  --embed-file $(ASSETS)
 
 # ~~~~ Rules ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 all : $(TARGET)
