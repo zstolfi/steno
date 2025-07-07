@@ -1,5 +1,7 @@
 #pragma once
 #include "../../steno.hh"
+#include <array>
+#include <bit>
 #include <vector>
 #include <map>
 #include <string>
@@ -7,28 +9,43 @@
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-unsigned hilbert(unsigned iteration, unsigned x, unsigned y) {
-	const auto N = 1 << 2*iteration, n = N/4;
-	const auto S = 1 <<   iteration, s = S/2;
-	if (iteration == 0) return 0;
+// Line -> Square
+auto hilbert(unsigned val) -> std::array<unsigned, 2> {
+	std::array<unsigned, 2> pos {0, 0};
+	auto& [x, y] = pos;
 
-	unsigned q = 0;
-	const auto qx = x>=s, qy = y>=s;
-	if (!qx && !qy) q = 0;
-	if (!qx &&  qy) q = 1;
-	if ( qx &&  qy) q = 2;
-	if ( qx && !qy) q = 3;
-	const auto quadrant = q;
-
-	unsigned xNew = 0, yNew = 0;
-	switch (quadrant) {
-		break; case 0: xNew = y      , yNew = x      ;
-		break; case 1: xNew = x      , yNew = y - s  ;
-		break; case 2: xNew = x - s  , yNew = y - s  ;
-		break; case 3: xNew = s-1 - y, yNew = S-1 - x;
+	bool flip = false;
+	for (unsigned s=1; val; val/=4, s*=2, flip^=1) switch (val%4) {
+	case 0: break;
+	case 1: pos = { y + (flip? s  : 0    ),  x + (flip? 0    : s  )}; break;
+	case 2: pos = { y + (flip? s  : s    ),  x + (flip? s    : s  )}; break;
+	case 3: pos = {-x + (flip? s-1: 2*s-1), -y + (flip? 2*s-1: s-1)}; break;
 	}
 
-	return n*quadrant + hilbert(iteration-1, xNew, yNew);
+	return pos;
+}
+
+// Square -> Line
+auto hilbert_inv(std::array<unsigned, 2> pos) -> unsigned {
+	unsigned val = 0;
+	auto& [x, y] = pos;
+
+	while (x || y) {
+		unsigned s = std::max(std::bit_floor(x), std::bit_floor(y));
+		bool flip = std::countr_zero(s) & 1;
+		auto const quadrant = flip
+		?	2*(y >= s) + (x >= s) ^ (y >= s)
+		:	2*(x >= s) + (y >= s) ^ (x >= s);
+		switch (quadrant) {
+		case 0: break;
+		case 1: pos = { y + (flip? 0  : -s   ),  x + (flip? -s   : 0  )}; break;
+		case 2: pos = { y + (flip? -s : -s   ),  x + (flip? -s   : -s )}; break;
+		case 3: pos = {-x + (flip? s-1: 2*s-1), -y + (flip? 2*s-1: s-1)}; break;
+		}
+		val += s*s * quadrant;
+	}
+	
+	return val;
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -73,36 +90,8 @@ struct Atlas {
 			auto y = i/N;
 			y = N-1 - y;
 
-			auto h = hilbert(11, x, y);
+			auto h = hilbert_inv({x, y});
 			auto iter = dict.find(fromCustomBitOrdering(h));
-
-			// int r = 235, g = 235, b = 235;
-
-			// if (iter == dict.end()) r = 0, g = 0, b = 0;
-			// else {
-			// 	static const std::array patterns {
-			// 		/*0*/ std::regex {R"=(( |^)and( |$))="},
-			// 		/*1*/ std::regex {R"=(( |^)because( |$))="},
-			// 		/*2*/ std::regex {R"=(( |^)but( |$))="},
-			// 		/*3*/ std::regex {R"=(( |^)he( |$))="},
-			// 		/*4*/ std::regex {R"=(( |^)I( |$))="},
-			// 		/*5*/ std::regex {R"=(( |^)you( |$))="},
-			// 	};
-
-			// 	for (unsigned i=0; i<patterns.size(); i++) {
-			// 		if (std::regex_search(iter->second, patterns[i])) {
-			// 			if (i == 0) r  = 255, g  = 100, b  =   0;
-			// 			if (i == 1) r  = 200, g  =  50, b  =   0;
-			// 			if (i == 2) r  = 140, g  =   0, b  = 255;
-			// 			if (i == 3) r +=   0, g += 155, b +=  80;
-			// 			if (i == 4) r +=   0, g +=  80, b += 130;
-			// 			if (i == 5) r +=   0, g +=   0, b += 255;
-			// 		}
-			// 	}
-			// 	if (r > 255) r = 255;
-			// 	if (g > 255) g = 255;
-			// 	if (b > 255) b = 255;
-			// }
 
 			std::array<uint8_t, 3> rgb {};
 			static const std::array<std::array<uint8_t, 3>, 26> hues {{
