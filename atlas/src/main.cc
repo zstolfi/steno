@@ -114,15 +114,22 @@ void mainLoop(Window& window, State& state, Canvas& canvas) {
 			}
 			else std::printf("Unable to open %s\n", path.c_str());
 		}
-		if (event.type == SDL_EVENT_KEY_DOWN) switch (event.key.key) {
-		break; case SDLK_LEFTBRACKET : state.atlasScale /= 1.414;
-		break; case SDLK_RIGHTBRACKET: state.atlasScale *= 1.414;
-		// TODO: figure out why the X component is backwards.
-		break; case SDLK_LEFT : state.atlasPos.x -= 0.125 / state.atlasScale;
-		break; case SDLK_RIGHT: state.atlasPos.x += 0.125 / state.atlasScale;
-		break; case SDLK_DOWN : state.atlasPos.y += 0.125 / state.atlasScale;
-		break; case SDLK_UP   : state.atlasPos.y -= 0.125 / state.atlasScale;
-		}
+		// Keyboard input.
+		auto pressed = [&event] (auto ... keys) {
+			return event.type == SDL_EVENT_KEY_DOWN
+			&&     ((event.key.key == keys) || ... );
+		};
+		auto const Zoom = std::sqrt(2.0);
+		auto const Move = 1.0 / 8.0;
+		if (pressed(SDLK_LEFTBRACKET, SDLK_KP_MINUS)) state.atlasScale /= Zoom;
+		if (pressed(SDLK_RIGHTBRACKET, SDLK_KP_PLUS)) state.atlasScale *= Zoom;
+		if (pressed(SDLK_LEFT )) state.atlasPos.x -= Move / state.atlasScale;
+		if (pressed(SDLK_RIGHT)) state.atlasPos.x += Move / state.atlasScale;
+		if (pressed(SDLK_UP   )) state.atlasPos.y -= Move / state.atlasScale;
+		if (pressed(SDLK_DOWN )) state.atlasPos.y += Move / state.atlasScale;
+		state.atlasScale = std::clamp(state.atlasScale, 1.0f/8.0f, 1024.0f);
+		state.atlasPos.x = std::clamp(state.atlasPos.x, -2.0f, 2.0f);
+		state.atlasPos.y = std::clamp(state.atlasPos.y, -2.0f, 2.0f);
 	}
 	// Run all GUI code. (Probably should be abstracted into a class.)
 #	include "gui.hh"

@@ -19,7 +19,7 @@ void main() {
 	vec2 uv = (gl_FragCoord.xy - 0.5*Resolution) * zoom/Scale + Position;
 	// Color everything else black.
 	bool onAtlas = max(abs(uv.x - 0.5), abs(uv.y - 0.5)) <= 0.5;
-	vec3 color = onAtlas? getAtlasColor(uv): vec3(0.0);
+	vec3 color = onAtlas? getAtlasColor(uv): vec3(0.06, 0.06, 0.06);
 	// Output.
 	FragColor = vec4(color, 1.0);
 }
