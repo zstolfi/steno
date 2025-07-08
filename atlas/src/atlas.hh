@@ -59,7 +59,7 @@ struct Atlas {
 	Atlas() = default;
 
 	static constexpr unsigned N = 2048;
-	Atlas(steno::Dictionary dict): image(4*N*N, {}) {
+	Atlas(steno::Dictionary dict): image{EmptyImage()} {
 		std::for_each(dict.begin(), dict.end(), [this] (auto entry) {
 			auto const& [strokes, text] = entry;
 			if (strokes.list.size() != 1) return;
@@ -135,5 +135,11 @@ private:
 		|      x.keys._S <<  2
 		|      x.keys._D <<  1
 		|      x.keys._Z <<  0;
+	}
+
+	static std::vector<uint8_t> EmptyImage() {
+		std::vector<uint8_t> result (4*N*N, 0x00);
+		for (auto i=0; i<N*N; i++) result[4*i+3] = 0xFF;
+		return result;
 	}
 };
