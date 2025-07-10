@@ -10,6 +10,7 @@
 #include <tuple>
 #include <variant>
 #include <filesystem>
+#include <concepts>
 #include <cstdio>
 #include <cstdint>
 #include <cctype>
@@ -167,16 +168,29 @@ public:
 	Texture() = default;
 
 	Texture(ImageData pixels, int W, int H) {
+		*this = Texture(std::span {&pixels, 1}, W, H);
+	}
+
+	template <template <class> class C, std::convertible_to<ImageData> T>
+	Texture(C<T> levels, int W, int H) {
+		IM_ASSERT(!levels.empty());
 		// Create OpenGL texture identifier.
 		glGenTextures(1, &this->ID);
 		glBindTexture(GL_TEXTURE_2D, this->ID);
 		// Setup filtering parameters for display.
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		// Upload pixels into texture.
-		loadTexture(pixels, W, H);
+		if (levels.size() == 1) {
+			loadTexture(levels[0], W, H);
+			glGenerateMipmap(GL_TEXTURE_2D);
+		}
+		else for (int i=0, w=W, h=H; ImageData pixels : levels) {
+			loadTexture(pixels, w, h, i);
+			i++, w/=2, h/=2;
+		}
 	}
 
 	ImTextureID get() const {

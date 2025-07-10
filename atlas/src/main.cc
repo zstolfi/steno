@@ -37,7 +37,7 @@ struct Dictionary {
 		else if (tryParser(parse) || tryParser(steno::parseGuess));
 		else { std::printf("Parse failed for %s\n", name.c_str()); return; }
 		atlas = Atlas {entries};
-		texture = Texture {atlas.image, Atlas::N, Atlas::N};
+		texture = Texture {atlas.getMipmaps(), Atlas::N, Atlas::N};
 	}
 
 	Dictionary(std::istream& input, std::filesystem::path path) {

@@ -74,12 +74,35 @@ struct Atlas {
 				if ('A' <= c&&c <= 'Z') rgb = hues[c - 'A'];
 			}
 
-			auto i = N * (N-1 - posY) + posX;
+			auto const i = N * (N-1 - posY) + posX;
 			image[4*i+0] = rgb[0];
 			image[4*i+1] = rgb[1];
 			image[4*i+2] = rgb[2];
 			image[4*i+3] = 255;
+			this->count++;
 		});
+	}
+
+	std::vector<std::vector<uint8_t>> getMipmaps() {
+		std::vector result (1, image);
+		for (unsigned n=N; n/2; n/=2) {
+			auto smaller = EmptyImage(n/2);
+			auto& bigger = result.back();
+			bool const average = false;
+			auto addToPixel = [&] (auto& to, auto from) {
+				to = std::min(0xFF, to + (average? from/4: from));
+			};
+			for (unsigned y=0; y<n; y++)
+			for (unsigned x=0; x<n; x++) {				
+				auto const i = (n/2) * (y/2) + (x/2);
+				auto const j = ( n ) * ( y ) + ( x );
+				addToPixel(smaller[4*i+0], bigger[4*j+0]);
+				addToPixel(smaller[4*i+1], bigger[4*j+1]);
+				addToPixel(smaller[4*i+2], bigger[4*j+2]);
+			}
+			result.push_back(smaller);
+		}
+		return result;
 	}
 
 private:
@@ -137,9 +160,11 @@ private:
 		|      x.keys._Z <<  0;
 	}
 
-	static std::vector<uint8_t> EmptyImage() {
-		std::vector<uint8_t> result (4*N*N, 0x00);
-		for (auto i=0; i<N*N; i++) result[4*i+3] = 0xFF;
+	static std::vector<uint8_t> EmptyImage(unsigned n = N) {
+		std::vector<uint8_t> result (4*n*n, 0x00);
+		for (auto i=0; i<n*n; i++) result[4*i+3] = 0xFF;
 		return result;
 	}
+
+	unsigned count = 0;
 };
