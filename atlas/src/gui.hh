@@ -28,7 +28,7 @@
 					ImGui::PushID(i++);
 					if (ImGui::Button(dict.name.c_str(), ImVec2 {-FLT_MIN, 40})) {
 						state.selectedDictionary = &dict;
-						canvas.setAtlas(dict.texture);
+						canvas.setAtlas(dict.texture.get());
 					}
 					ImGui::PopID();
 				}

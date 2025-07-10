@@ -19,14 +19,11 @@ struct Dictionary {
 	std::string name;
 	steno::Dictionary entries;
 	Atlas atlas;
-	ImTextureID texture;
+	Texture texture;
 
 	enum Type { Unknown, Text, JSON, RTF };
-	Dictionary(
-		std::istream& input,
-		std::string name, Type type,
-		TextureFn_Arg loadTexture
-	): name{name} {
+	Dictionary(std::istream& input, std::string name, Type type)
+	: name{name} {
 		std::istreambuf_iterator<char> begin {input}, end {};
 		std::vector<char> bytes {begin, end};
 		auto tryParser = std::bind_front(&Dictionary::tryParser, this, bytes);
@@ -40,14 +37,10 @@ struct Dictionary {
 		else if (tryParser(parse) || tryParser(steno::parseGuess));
 		else { std::printf("Parse failed for %s\n", name.c_str()); return; }
 		atlas = Atlas {entries};
-		texture = loadTexture(atlas.image, Atlas::N, Atlas::N);
+		texture = Texture {atlas.image, Atlas::N, Atlas::N};
 	}
 
-	Dictionary(
-		std::istream& input,
-		std::filesystem::path path,
-		TextureFn_Arg loadTexture
-	) {
+	Dictionary(std::istream& input, std::filesystem::path path) {
 		Type type = Unknown;
 		if (std::string extension = path.extension(); !extension.empty()) {
 			for (char& c : extension) c = std::tolower(c);
@@ -55,7 +48,7 @@ struct Dictionary {
 			else if (extension == ".json") type = JSON;
 			else if (extension == ".rtf" ) type = RTF ;
 		}
-		*this = Dictionary(input, path.filename(), type, loadTexture);
+		*this = Dictionary(input, path.filename(), type);
 	}
 
 	void save() const {
@@ -100,7 +93,6 @@ extern "C" { // These functions will be called from the browser.
 /* ~~ Main Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 void mainLoop(Window& window, State& state, Canvas& canvas) {
-	auto loadTexture = std::bind_front(&Window::loadTexture, &window);
 	// Handle events.
 	for (SDL_Event event; SDL_PollEvent(&event);) {
 		ImGui_ImplSDL3_ProcessEvent(&event);
@@ -108,7 +100,7 @@ void mainLoop(Window& window, State& state, Canvas& canvas) {
 		if (event.type == SDL_EVENT_DROP_FILE) {
 			std::filesystem::path path {event.drop.data};
 			if (std::ifstream file {path}) {
-				Dictionary dict {file, path, loadTexture};
+				Dictionary dict {file, path};
 				if (dict.atlas.image.empty()) continue;
 				state.dictionaries.push_back(std::move(dict));
 			}

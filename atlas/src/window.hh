@@ -122,8 +122,6 @@ public:
 	}
 
 	~Window() {
-		glDeleteTextures(textures.size(), textures.data());
-
 		ImGui_ImplOpenGL3_Shutdown();
 		ImGui_ImplSDL3_Shutdown();
 		ImGui::DestroyContext();
@@ -131,28 +129,6 @@ public:
 		SDL_GL_DestroyContext(glContext);
 		SDL_DestroyWindow(winPtr);
 		SDL_Quit();
-	}
-
-	[[nodiscard]]
-	ImTextureID loadTexture(std::span<uint8_t const> data, int W, int H) {
-		IM_ASSERT(data.size() == 4*W*H);
-
-		// Create a OpenGL texture identifier
-		GLuint texture;
-		glGenTextures(1, &texture);
-		glBindTexture(GL_TEXTURE_2D, texture);
-
-		// Setup filtering parameters for display
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-		// Upload pixels into texture
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, W, H, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
-
-		this->textures.push_back(texture);
-		return (ImTextureID)texture;
 	}
 
 private:
@@ -180,6 +156,43 @@ bool Window::RunPredicate::operator()() {
 	if (RunFunc const* val = std::get_if<RunFunc>(&userPred)) return (*val)();
 	return false;
 }
+
+/* ~~ Texture Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+class Texture {
+	GLuint ID {};
+	using ImageData = std::span<uint8_t const>;
+
+public:
+	Texture() = default;
+
+	Texture(ImageData pixels, int W, int H) {
+		// Create OpenGL texture identifier.
+		glGenTextures(1, &this->ID);
+		glBindTexture(GL_TEXTURE_2D, this->ID);
+		// Setup filtering parameters for display.
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		// Upload pixels into texture.
+		loadTexture(pixels, W, H);
+	}
+
+	ImTextureID get() const {
+		return (ImTextureID)this->ID;
+	}
+
+private:
+	void loadTexture(ImageData pixels, int W, int H, int level = 0) {
+		IM_ASSERT(W*H != 0);
+		IM_ASSERT(pixels.size() == 4*W*H);
+		glTexImage2D(
+			GL_TEXTURE_2D, level, GL_RGBA, W, H, 0,
+			GL_RGBA, GL_UNSIGNED_BYTE, pixels.data()
+		);
+	}
+};
 
 /* ~~ JavaScript Utilities ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
