@@ -83,12 +83,14 @@ struct Atlas {
 		});
 	}
 
-	std::vector<std::vector<uint8_t>> getMipmaps() {
+	std::vector<std::vector<uint8_t>> getMipmaps() const {
 		std::vector result (1, image);
 		for (unsigned n=N; n/2; n/=2) {
 			auto smaller = EmptyImage(n/2);
 			auto& bigger = result.back();
-			bool const average = false;
+			// Sparse atlases benefit from brighter bitmaps. Here we estimate
+			// when is a good time to stop adding brightness.
+			bool const average = n*n/(count+1) < 10;
 			auto addToPixel = [&] (auto& to, auto from) {
 				to = std::min(0xFF, to + (average? from/4: from));
 			};
