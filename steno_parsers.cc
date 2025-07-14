@@ -33,17 +33,6 @@ const auto rightFlags = bp::eps;
 const auto asString = bp::attr(std::string {});
 const auto asEntries = bp::attr(std::vector<Entry> {});
 
-#if 0 // For faster compilations while testing the file format parsers.
-const auto stroke_def
-	= 	bp::string_view[ bp::string("-") ]
-;
-
-const auto strokes_def
-	= 	bp::string_view[ stroke % '/' ]
-;
-
-BOOST_PARSER_DEFINE_RULES(stroke, strokes);
-#else
 const auto stroke_def
 	= 	bp::string_view[ asString >> &stenoChar
 	>>	leftFlags
@@ -99,7 +88,6 @@ BOOST_PARSER_DEFINE_RULES(
 	left, middle, right,
 	digitSeq
 );
-#endif
 
 // Useful semantic actions
 auto fromContainer = [] (auto& ctx) {
