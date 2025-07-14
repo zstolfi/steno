@@ -157,19 +157,23 @@ const auto file_def
 const auto escape
 	= bp::symbols<char>
 	{
-	  	{"/", '/'},
 	  	{"b", '\b'},
 	  	{"f", '\f'},
 	  	{"n", '\n'},
 	  	{"r", '\r'},
 	  	{"t", '\t'},
 	//	TODO: Unicode escape sequences
-	  	{"u", '?'},
 	}
 ;
 
+const auto character
+	= 	'\\' >> escape
+	| 	'\\' >> bp::char_
+	| 	bp::char_ - '"'
+;
+
 const auto string
-	= 	bp::quoted_string('"', escape)
+	= 	bp::lexeme[ '"' >> *character >> '"' ];
 ;
 
 const auto value_def
