@@ -118,6 +118,19 @@ extern "C" { // These functions will be called from the browser.
 
 /* ~~ Main Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+std::optional<std::array<unsigned, 2>>
+atlasCoordinates(State& state, ImVec2 resolution, ImVec2 mouse) {
+	if (!(0 <= mouse.x && mouse.x < resolution.x)) return {};
+	if (!(0 <= mouse.y && mouse.y < resolution.y)) return {};
+	float zoom = std::max(1.0/resolution.x, 1.0/resolution.y) / state.atlasScale;
+	ImVec2 pos {
+		(mouse.x - 0.5f*resolution.x) * zoom + state.atlasPos.x,
+		(mouse.y - 0.5f*resolution.y) * zoom + state.atlasPos.y,
+	};
+	if (!(0 <= pos.x && pos.x < 1) || !(0 <= pos.y && pos.y < 1)) return {};
+	return std::array {unsigned(2048*pos.x), unsigned(2048*(1-pos.y))};
+}
+
 void mainLoop(Window& window, State& state, Canvas& canvas) {
 	// Handle events.
 	for (SDL_Event event; SDL_PollEvent(&event);) {

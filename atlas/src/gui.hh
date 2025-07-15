@@ -1,4 +1,53 @@
 {
+	auto drawStenotype = [] (steno::Stroke stroke) {
+		ImVec4 const* Colors = ImGui::GetStyle().Colors;
+		ImVec2 const Pos = ImGui::GetCursorScreenPos();
+
+		ImVec2 const box {12, 15};
+		float const pad = 2;
+		float const radius = box.x / 2.0;
+		ImGui::Dummy(ImVec2 {10*box.x - pad, 3*box.y - pad});
+		ImDrawList* drawList = ImGui::GetWindowDrawList();
+		auto drawKey = [&] (steno::Key key, ImVec2 xy, ImVec2 wh, bool round) {
+			ImColor const KeyColors[2] = {
+				Colors[ImGuiCol_FrameBg],
+				Colors[ImGuiCol_ButtonActive],
+			};
+			bool const pressed = stroke.get(key);
+			ImVec2 const pos {box.x*xy.x + Pos.x, box.y*xy.y + Pos.y};
+			ImVec2 const scl {box.x*wh.x - pad  , box.y*wh.y - pad  };
+			drawList->AddRectFilled(
+				ImVec2 {pos.x        , pos.y        },
+				ImVec2 {pos.x + scl.x, pos.y + scl.y},
+				KeyColors[pressed],
+				round? radius: 0.0,
+				round? ImDrawFlags_RoundCornersBottom: ImDrawFlags_None
+			);
+		};
+		drawKey(steno::Key::S_, ImVec2 {0, 0}, ImVec2 {1, 2}, true);
+		drawKey(steno::Key::T_, ImVec2 {1, 0}, ImVec2 {1, 1}, false);
+		drawKey(steno::Key::K_, ImVec2 {1, 1}, ImVec2 {1, 1}, true);
+		drawKey(steno::Key::P_, ImVec2 {2, 0}, ImVec2 {1, 1}, false);
+		drawKey(steno::Key::W_, ImVec2 {2, 1}, ImVec2 {1, 1}, true);
+		drawKey(steno::Key::H_, ImVec2 {3, 0}, ImVec2 {1, 1}, false);
+		drawKey(steno::Key::R_, ImVec2 {3, 1}, ImVec2 {1, 1}, true);
+		drawKey(steno::Key::A, ImVec2 {2.3, 2}, ImVec2 {1, 1}, true);
+		drawKey(steno::Key::O, ImVec2 {3.3, 2}, ImVec2 {1, 1}, true);
+		drawKey(steno::Key::E, ImVec2 {4.7, 2}, ImVec2 {1, 1}, true);
+		drawKey(steno::Key::U, ImVec2 {5.7, 2}, ImVec2 {1, 1}, true);
+		drawKey(steno::Key::x , ImVec2 {4, 0}, ImVec2 {1, 2}, true);
+		drawKey(steno::Key::_F, ImVec2 {5, 0}, ImVec2 {1, 1}, false);
+		drawKey(steno::Key::_R, ImVec2 {5, 1}, ImVec2 {1, 1}, true);
+		drawKey(steno::Key::_P, ImVec2 {6, 0}, ImVec2 {1, 1}, false);
+		drawKey(steno::Key::_B, ImVec2 {6, 1}, ImVec2 {1, 1}, true);
+		drawKey(steno::Key::_L, ImVec2 {7, 0}, ImVec2 {1, 1}, false);
+		drawKey(steno::Key::_G, ImVec2 {7, 1}, ImVec2 {1, 1}, true);
+		drawKey(steno::Key::_T, ImVec2 {8, 0}, ImVec2 {1, 1}, false);
+		drawKey(steno::Key::_S, ImVec2 {8, 1}, ImVec2 {1, 1}, true);
+		drawKey(steno::Key::_D, ImVec2 {9, 0}, ImVec2 {1, 1}, false);
+		drawKey(steno::Key::_Z, ImVec2 {9, 1}, ImVec2 {1, 1}, true);
+	};
+
 	{ // Setup
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplSDL3_NewFrame();
@@ -51,9 +100,33 @@
 				canvas.setAtlas(dict->texture.get());
 				ImGui::SameLine();
 				if (ImGui::Button("Save")) dict->save();
+				auto const corner = ImGui::GetCursorScreenPos();
 				auto const avail = ImGui::GetContentRegionAvail();
 				canvas.rescale(avail.x, avail.y);
 				ImGui::Image(canvas.getTexture(), avail);
+
+				if (ImGui::IsMousePosValid()) {
+					ImGuiIO const& io = ImGui::GetIO();
+					auto atlasPos = atlasCoordinates(state, avail, ImVec2 {
+						io.MousePos.x - corner.x - ImGui::GetScrollX(),
+						io.MousePos.y - corner.y - ImGui::GetScrollY(),
+					});
+					if (atlasPos) {
+						auto [x, y] = *atlasPos;
+						uint32_t t = math::hilbert_inv(*atlasPos);
+						steno::Stroke stroke = Atlas::customBitOrdering_inv(t);
+						auto entry = state.selectedDictionary()->entries.find(stroke);
+						auto const NoEntry = state.selectedDictionary()->entries.end();
+						if (entry != NoEntry || io.MouseDown[0]) {
+							ImGui::BeginTooltip();
+							if (entry != NoEntry) ImGui::Text("%s", entry->second.c_str());
+							drawStenotype(stroke);
+							ImGui::Text("%s", steno::toString(stroke).c_str());
+							ImGui::Text("%u, %u", x, y);
+							ImGui::EndTooltip();
+						}
+					}
+				}
 			}
 		}
 		ImGui::EndChild();

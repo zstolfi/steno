@@ -161,6 +161,7 @@ const auto NoBrief = Brief {};
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+std::string toString(Key);
 std::string toString(Stroke);
 std::string toString(Strokes);
 std::ostream& operator<<(std::ostream&, Stroke);

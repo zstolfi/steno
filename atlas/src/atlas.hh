@@ -107,6 +107,58 @@ struct Atlas {
 		return result;
 	}
 
+	static uint32_t customBitOrdering(steno::Stroke x) {
+		return x.keys.S_ << 21
+		|      x.keys.T_ << 20
+		|      x.keys.K_ << 19
+		|      x.keys.P_ << 18
+		|      x.keys.W_ << 17
+		|      x.keys.H_ << 16
+		|      x.keys.R_ << 15
+		|      x.keys.A  << 14
+		|      x.keys.O  << 13
+		|      x.keys.E  << 12
+		|      x.keys.U  << 11
+		|      x.keys.x  << 10
+		|      x.keys._F <<  9
+		|      x.keys._R <<  8
+		|      x.keys._P <<  7
+		|      x.keys._B <<  6
+		|      x.keys._L <<  5
+		|      x.keys._G <<  4
+		|      x.keys._T <<  3
+		|      x.keys._S <<  2
+		|      x.keys._D <<  1
+		|      x.keys._Z <<  0;
+	}
+
+	static steno::Stroke customBitOrdering_inv(uint32_t x) {
+		steno::Stroke result {};
+		if (x>>21 & 1) result += steno::Stroke {"S-"};
+		if (x>>20 & 1) result += steno::Stroke {"T-"};
+		if (x>>19 & 1) result += steno::Stroke {"K-"};
+		if (x>>18 & 1) result += steno::Stroke {"P-"};
+		if (x>>17 & 1) result += steno::Stroke {"W-"};
+		if (x>>16 & 1) result += steno::Stroke {"H-"};
+		if (x>>15 & 1) result += steno::Stroke {"R-"};
+		if (x>>14 & 1) result += steno::Stroke {"A"};
+		if (x>>13 & 1) result += steno::Stroke {"O"};
+		if (x>>12 & 1) result += steno::Stroke {"E"};
+		if (x>>11 & 1) result += steno::Stroke {"U"};
+		if (x>>10 & 1) result += steno::Stroke {"*"};
+		if (x>> 9 & 1) result += steno::Stroke {"-F"};
+		if (x>> 8 & 1) result += steno::Stroke {"-R"};
+		if (x>> 7 & 1) result += steno::Stroke {"-P"};
+		if (x>> 6 & 1) result += steno::Stroke {"-B"};
+		if (x>> 5 & 1) result += steno::Stroke {"-L"};
+		if (x>> 4 & 1) result += steno::Stroke {"-G"};
+		if (x>> 3 & 1) result += steno::Stroke {"-T"};
+		if (x>> 2 & 1) result += steno::Stroke {"-S"};
+		if (x>> 1 & 1) result += steno::Stroke {"-D"};
+		if (x>> 0 & 1) result += steno::Stroke {"-Z"};
+		return result;
+	}
+
 private:
 	static constexpr std::array<std::array<uint8_t, 3>, 26> hues {{
 		/*a*/ {229,  25,  25},
@@ -136,31 +188,6 @@ private:
 		/*y*/ {229,  25, 119},
 		/*z*/ {229,  25,  72},
 	}};
-
-	static uint32_t customBitOrdering(steno::Stroke x) {
-		return x.keys.S_ << 21
-		|      x.keys.T_ << 20
-		|      x.keys.K_ << 19
-		|      x.keys.P_ << 18
-		|      x.keys.W_ << 17
-		|      x.keys.H_ << 16
-		|      x.keys.R_ << 15
-		|      x.keys.A  << 14
-		|      x.keys.O  << 13
-		|      x.keys.E  << 12
-		|      x.keys.U  << 11
-		|      x.keys.x  << 10
-		|      x.keys._F <<  9
-		|      x.keys._R <<  8
-		|      x.keys._P <<  7
-		|      x.keys._B <<  6
-		|      x.keys._L <<  5
-		|      x.keys._G <<  4
-		|      x.keys._T <<  3
-		|      x.keys._S <<  2
-		|      x.keys._D <<  1
-		|      x.keys._Z <<  0;
-	}
 
 	static std::vector<uint8_t> EmptyImage(unsigned n = N) {
 		std::vector<uint8_t> result (4*n*n, 0x00);
