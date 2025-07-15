@@ -2,8 +2,8 @@
 CC          = emcc
 CXX         = em++
 EMFLAGS     = -sUSE_SDL=3
-CXXFLAGS    = -std=c++20 -Wall -O1 -ferror-limit=20
-LDFLAGS     = --shell-file shell.html -sMAX_WEBGL_VERSION=2
+CXXFLAGS    = -std=c++20 -Wall -O3 -ferror-limit=20
+LDFLAGS     = --shell-file shell.html -sMAX_WEBGL_VERSION=2 -sASYNCIFY
 FUNCTIONS   = _setDragOver,_showDebug
 METHODS     = FS
 BOOST_LIBS  = parser

@@ -230,5 +230,21 @@ EM_JS(void, offerDownload, (char const* path_raw), {
 	}, 1000);
 });
 
+EM_ASYNC_JS(char const*, downloadDefaultDictionary, (), {
+	const urls = [
+		"https://raw.githubusercontent.com/openstenoproject/plover/refs/heads/main/plover/assets/main.json",
+		"https://raw.githubusercontent.com/openstenoproject/plover/1e4d8b3bff0b705d936f14d31d5997456c5823cf/plover/assets/main.json",
+	];
+	let file = null;
+	for (let url of urls)
+	if (file = await fetch(url)
+		.then(response => response.ok? response.blob(): null)
+	) break;
+
+	const path = "Plover default.json";
+	FS.writeFile(path, new Uint8Array(await file.arrayBuffer()));
+	return stringToNewUTF8(path);
+});
+
 } // namespace JS
 #endif

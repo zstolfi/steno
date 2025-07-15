@@ -6,7 +6,6 @@
 #include <istream>
 #include <fstream>
 #include <iterator>
-#include <list>
 
 /* ~~ App State ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -76,13 +75,40 @@ struct State {
 	bool running = true;
 	// App state:
 //	std::optional<float> transferProgress;
-	std::list<Dictionary> dictionaries;
-	Dictionary const* selectedDictionary = nullptr;
+	std::vector<Dictionary> dictionaries;
 	float atlasScale = 1.0;
 	ImVec2 atlasPos = {0.5, 0.5};
 	// Web-related state:
 	static inline bool dragOver = false;
 	static inline bool showDemoWindow = false;
+	// Getters
+	Dictionary const* selectedDictionary() const {
+		if (selectedDictionaryIndex == NoDictionaryIndex) return nullptr;
+		else return &dictionaries[selectedDictionaryIndex];
+	}
+	// Setters
+	void selectDictionary(int i) {
+		selectedDictionaryIndex = i;
+	}
+
+	void openDict(std::filesystem::path path) {
+		if (std::ifstream file {path}) {
+			Dictionary dict {file, path};
+			if (dict.atlas.image.empty()) return;
+			dictionaries.push_back(std::move(dict));
+			selectedDictionaryIndex = dictionaries.size()-1;
+		}
+		else std::printf("Unable to open %s\n", path.c_str());
+	}
+
+	void downloadDefaultDictionary() {
+		std::unique_ptr<char const> path {JS::downloadDefaultDictionary()};
+		if (path) openDict(path.get());
+	}
+
+private:
+	static constexpr int NoDictionaryIndex = -1;
+	int selectedDictionaryIndex = NoDictionaryIndex;
 };
 
 extern "C" { // These functions will be called from the browser.
@@ -97,15 +123,7 @@ void mainLoop(Window& window, State& state, Canvas& canvas) {
 	for (SDL_Event event; SDL_PollEvent(&event);) {
 		ImGui_ImplSDL3_ProcessEvent(&event);
 		if (event.type == SDL_EVENT_QUIT) state.running = false;
-		if (event.type == SDL_EVENT_DROP_FILE) {
-			std::filesystem::path path {event.drop.data};
-			if (std::ifstream file {path}) {
-				Dictionary dict {file, path};
-				if (dict.atlas.image.empty()) continue;
-				state.dictionaries.push_back(std::move(dict));
-			}
-			else std::printf("Unable to open %s\n", path.c_str());
-		}
+		if (event.type == SDL_EVENT_DROP_FILE) state.openDict(event.drop.data);
 		// Keyboard input.
 		auto pressed = [&event] (auto ... keys) {
 			return event.type == SDL_EVENT_KEY_DOWN

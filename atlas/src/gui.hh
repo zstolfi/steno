@@ -19,16 +19,23 @@
 		{
 			ImGui::SeparatorText("Dictionaries");
 			if (state.dictionaries.empty()) {
-				ImGui::Text("Drag & drop steno dictionaries to get started!");
-				ImGui::Text("Accepted: (RTF, JSON, or TXT)");
+				ImGui::Text(
+					"Drag & drop steno dictionaries to get started!\n"
+					"Accepted: (RTF, JSON, or TXT)\n"
+					"\n\n\n"
+				);
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Or,");
+				ImGui::SameLine();
+				if (ImGui::Button("use Plover's default dictionary.")) state.downloadDefaultDictionary();
 			}
 			else {
 				ImGui::Text("Number of dictionaries loaded: %zu", state.dictionaries.size());
-				for (int i=0; auto const& dict : state.dictionaries) {
-					ImGui::PushID(i++);
+				for (int i=0; i<state.dictionaries.size(); i++) {
+					auto const& dict = state.dictionaries[i];
+					ImGui::PushID(i);
 					if (ImGui::Button(dict.name.c_str(), ImVec2 {-FLT_MIN, 40})) {
-						state.selectedDictionary = &dict;
-						canvas.setAtlas(dict.texture.get());
+						state.selectDictionary(i);
 					}
 					ImGui::PopID();
 				}
@@ -40,7 +47,8 @@
 		ImGui::BeginChild("ChildRight", ImVec2 {0, 0}, ImGuiChildFlags_Borders/*, ImGuiWindowFlags_MenuBar*/);
 		{
 			ImGui::SeparatorText("Atlas");
-			if (auto const* dict = state.selectedDictionary) {
+			if (auto const* dict = state.selectedDictionary()) {
+				canvas.setAtlas(dict->texture.get());
 				ImGui::SameLine();
 				if (ImGui::Button("Save")) dict->save();
 				auto const avail = ImGui::GetContentRegionAvail();
