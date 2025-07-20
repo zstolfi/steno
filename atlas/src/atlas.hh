@@ -32,12 +32,17 @@ auto hilbert_inv(std::array<unsigned, 2> pos) -> unsigned {
 	unsigned val = 0;
 	auto& [x, y] = pos;
 
+	// Definition of the first iteration of the Hilbert curve.
+	//     curve: [3]──[2]    curve^T: [1]──[2]
+	//                  │               │    │ 
+	//            [0]──[1]             [0]  [3]
+	static constexpr int curve [2][2] = {{0, 1}, {3, 2}};
+	static constexpr int curveT[2][2] = {{0, 3}, {1, 2}};
+
 	while (x || y) {
 		unsigned s = std::max(std::bit_floor(x), std::bit_floor(y));
 		bool flip = std::countr_zero(s) & 1;
-		auto const quadrant = flip
-		?	2*(y >= s) + (x >= s) ^ (y >= s)
-		:	2*(x >= s) + (y >= s) ^ (x >= s);
+		auto const quadrant = (flip? curveT: curve) [x >= s] [y >= s];
 		switch (quadrant) {
 		case 0: break;
 		case 1: pos = { y + (flip? 0  : -s   ),  x + (flip? -s   : 0  )}; break;
