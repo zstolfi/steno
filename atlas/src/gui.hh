@@ -76,7 +76,7 @@
 				ImGui::AlignTextToFramePadding();
 				ImGui::Text("Or,");
 				ImGui::SameLine();
-				if (ImGui::Button("use Plover's default dictionary.")) state.downloadDefaultDictionary();
+				if (ImGui::Button("browse Plover's default dictionary.")) state.downloadDefaultDictionary();
 			}
 			else {
 				ImGui::Text("Number of dictionaries loaded: %zu", state.dictionaries.size());
@@ -91,7 +91,7 @@
 				auto const& dict = *state.selectedDictionary();
 				ImGui::SeparatorText(dict.name.c_str());
 				unsigned const count = dict.atlas.getCount();
-				ImGui::Text("%u entries", count);
+				ImGui::Text("%u entries displayed.", count);
 //				ImGui::Text("%u entries\t%s:", count, (count > 1000)? " 1 - 1,000": "");
 //				auto const flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter;
 //				if (ImGui::BeginTable("Entries", 2, flags, ImVec2 {400, 160})) {
