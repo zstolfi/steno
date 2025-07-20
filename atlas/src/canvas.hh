@@ -13,6 +13,7 @@ class Canvas {
 public:
 	float const* refScale {};
 	ImVec2 const* refPosition {};
+	float zoom {};
 
 	Canvas(std::filesystem::path path) {
 		if (std::ifstream file {path}) {
@@ -28,6 +29,7 @@ public:
 
 	void rescale(int w, int h) {
 		width = w, height = h;
+		zoom = std::max(1.0/w, 1.0/h);
 	}
 
 	void setAtlas(ImTextureID newAtlas) {

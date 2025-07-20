@@ -56,6 +56,7 @@ auto hilbert_inv(std::array<unsigned, 2> pos) -> unsigned {
 
 struct Atlas {
 	std::vector<uint8_t> image;
+	unsigned count = 0;
 	Atlas() = default;
 
 	static constexpr unsigned N = 2048;
@@ -82,6 +83,8 @@ struct Atlas {
 			this->count++;
 		});
 	}
+
+	unsigned getCount() const { return count; }
 
 	std::vector<std::vector<uint8_t>> getMipmaps() const {
 		std::vector result (1, image);
@@ -193,7 +196,5 @@ private:
 		std::vector<uint8_t> result (4*n*n, 0x00);
 		for (auto i=0; i<n*n; i++) result[4*i+3] = 0xFF;
 		return result;
-	}
-
-	unsigned count = 0;
+	};
 };

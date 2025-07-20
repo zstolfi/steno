@@ -88,6 +88,26 @@
 					}
 					ImGui::PopID();
 				}
+				auto const& dict = *state.selectedDictionary();
+				ImGui::SeparatorText(dict.name.c_str());
+				unsigned const count = dict.atlas.getCount();
+				ImGui::Text("%u entries", count);
+//				ImGui::Text("%u entries\t%s:", count, (count > 1000)? " 1 - 1,000": "");
+//				auto const flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter;
+//				if (ImGui::BeginTable("Entries", 2, flags, ImVec2 {400, 160})) {
+//					int const limit = 1'000;
+//					for (int i=0; auto const& [strokes, text] : dict.entries) {
+//						if (strokes.list.size() != 1) continue;
+//						if (strokes.list[0].keys.Num) continue;
+//						if (i++ == limit) break;
+//						ImGui::TableNextRow();
+//						ImGui::TableSetColumnIndex(0);
+//						ImGui::Text("%s", toString(strokes).c_str());
+//						ImGui::TableSetColumnIndex(1);
+//						ImGui::Text("%s", text.c_str());
+//					}
+//					ImGui::EndTable();
+//				}
 			}
 		}
 		ImGui::EndChild();
@@ -107,7 +127,7 @@
 
 				if (ImGui::IsMousePosValid()) {
 					ImGuiIO const& io = ImGui::GetIO();
-					auto atlasPos = atlasCoordinates(state, avail, ImVec2 {
+					auto atlasPos = atlasCoordinates(avail, ImVec2 {
 						io.MousePos.x - corner.x - ImGui::GetScrollX(),
 						io.MousePos.y - corner.y - ImGui::GetScrollY(),
 					});
@@ -117,7 +137,7 @@
 						steno::Stroke stroke = Atlas::customBitOrdering_inv(t);
 						auto entry = state.selectedDictionary()->entries.find(stroke);
 						auto const NoEntry = state.selectedDictionary()->entries.end();
-						if (entry != NoEntry || io.MouseDown[0]) {
+						if (entry != NoEntry || ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
 							ImGui::BeginTooltip();
 							if (entry != NoEntry) ImGui::Text("%s", entry->second.c_str());
 							drawStenotype(stroke);
