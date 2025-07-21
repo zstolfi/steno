@@ -1,5 +1,5 @@
 #pragma once
-#include "../../steno.hh"
+#include "steno.hh"
 #include <array>
 #include <bit>
 #include <vector>
@@ -142,28 +142,28 @@ struct Atlas {
 
 	static steno::Stroke customBitOrdering_inv(uint32_t x) {
 		steno::Stroke result {};
-		if (x>>21 & 1) result += steno::Stroke {"S-"};
-		if (x>>20 & 1) result += steno::Stroke {"T-"};
-		if (x>>19 & 1) result += steno::Stroke {"K-"};
-		if (x>>18 & 1) result += steno::Stroke {"P-"};
-		if (x>>17 & 1) result += steno::Stroke {"W-"};
-		if (x>>16 & 1) result += steno::Stroke {"H-"};
-		if (x>>15 & 1) result += steno::Stroke {"R-"};
-		if (x>>14 & 1) result += steno::Stroke {"A"};
-		if (x>>13 & 1) result += steno::Stroke {"O"};
-		if (x>>12 & 1) result += steno::Stroke {"E"};
-		if (x>>11 & 1) result += steno::Stroke {"U"};
-		if (x>>10 & 1) result += steno::Stroke {"*"};
-		if (x>> 9 & 1) result += steno::Stroke {"-F"};
-		if (x>> 8 & 1) result += steno::Stroke {"-R"};
-		if (x>> 7 & 1) result += steno::Stroke {"-P"};
-		if (x>> 6 & 1) result += steno::Stroke {"-B"};
-		if (x>> 5 & 1) result += steno::Stroke {"-L"};
-		if (x>> 4 & 1) result += steno::Stroke {"-G"};
-		if (x>> 3 & 1) result += steno::Stroke {"-T"};
-		if (x>> 2 & 1) result += steno::Stroke {"-S"};
-		if (x>> 1 & 1) result += steno::Stroke {"-D"};
-		if (x>> 0 & 1) result += steno::Stroke {"-Z"};
+		if (x>>21 & 1) result.set(steno::Key::S_);
+		if (x>>20 & 1) result.set(steno::Key::T_);
+		if (x>>19 & 1) result.set(steno::Key::K_);
+		if (x>>18 & 1) result.set(steno::Key::P_);
+		if (x>>17 & 1) result.set(steno::Key::W_);
+		if (x>>16 & 1) result.set(steno::Key::H_);
+		if (x>>15 & 1) result.set(steno::Key::R_);
+		if (x>>14 & 1) result.set(steno::Key::A );
+		if (x>>13 & 1) result.set(steno::Key::O );
+		if (x>>12 & 1) result.set(steno::Key::E );
+		if (x>>11 & 1) result.set(steno::Key::U );
+		if (x>>10 & 1) result.set(steno::Key::x );
+		if (x>> 9 & 1) result.set(steno::Key::_F);
+		if (x>> 8 & 1) result.set(steno::Key::_R);
+		if (x>> 7 & 1) result.set(steno::Key::_P);
+		if (x>> 6 & 1) result.set(steno::Key::_B);
+		if (x>> 5 & 1) result.set(steno::Key::_L);
+		if (x>> 4 & 1) result.set(steno::Key::_G);
+		if (x>> 3 & 1) result.set(steno::Key::_T);
+		if (x>> 2 & 1) result.set(steno::Key::_S);
+		if (x>> 1 & 1) result.set(steno::Key::_D);
+		if (x>> 0 & 1) result.set(steno::Key::_Z);
 		return result;
 	}
 
