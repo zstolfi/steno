@@ -133,10 +133,9 @@
 					});
 					if (atlasPos) {
 						auto [x, y] = *atlasPos;
-						uint32_t t = math::hilbert_inv(*atlasPos);
-						steno::Stroke stroke = Atlas::customBitOrdering_inv(t);
-						auto entry = state.selectedDictionary()->entries.find(stroke);
-						auto const NoEntry = state.selectedDictionary()->entries.end();
+						steno::Stroke stroke = dict->atlas.mapping.toStrokes({x, y}).list[0];
+						auto const entry = dict->entries.find(stroke);
+						auto const NoEntry = dict->entries.end();
 						if (entry != NoEntry || ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
 							ImGui::BeginTooltip();
 							if (entry != NoEntry) ImGui::Text("%s", entry->second.c_str());
