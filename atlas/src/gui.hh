@@ -91,7 +91,10 @@
 				auto const& dict = *state.selectedDictionary();
 				ImGui::SeparatorText(dict.name.c_str());
 				unsigned const count = dict.atlas.getCount();
+				ImGui::AlignTextToFramePadding();
 				ImGui::Text("%u entries displayed.", count);
+				ImGui::SameLine();
+				if (ImGui::Button("Save PNG")) dict.save();
 //				ImGui::Text("%u entries\t%s:", count, (count > 1000)? " 1 - 1,000": "");
 //				auto const flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter;
 //				if (ImGui::BeginTable("Entries", 2, flags, ImVec2 {400, 160})) {
@@ -108,6 +111,20 @@
 //					}
 //					ImGui::EndTable();
 //				}
+				{ // Instructions
+					auto const instructions = 
+						"Left Click: \tPan\n"
+						"Right Click:\tDisplay stroke\n"
+						"Scroll:     \tZoom\n"
+//						"[<] [>]:    \tSelect alternate view\n"
+					;
+					auto const size = ImGui::CalcTextSize(instructions);
+					auto const avail = ImGui::GetContentRegionAvail();
+					ImGui::SetCursorPosY(ImGui::GetCursorPosY() + avail.y - size.y);
+					ImGui::BeginChild("ChildLeftBottom", ImVec2 {0, 0});
+					ImGui::TextColored(ImVec4 {0.7, 0.7, 0.7, 1.0}, instructions);
+					ImGui::EndChild();
+				}
 			}
 		}
 		ImGui::EndChild();
@@ -118,8 +135,6 @@
 			ImGui::SeparatorText("Atlas");
 			if (auto const* dict = state.selectedDictionary()) {
 				canvas.setAtlas(dict->texture.get());
-				ImGui::SameLine();
-				if (ImGui::Button("Save")) dict->save();
 				auto const corner = ImGui::GetCursorScreenPos();
 				auto const avail = ImGui::GetContentRegionAvail();
 				canvas.rescale(avail.x, avail.y);
