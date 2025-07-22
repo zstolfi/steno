@@ -116,7 +116,7 @@
 						"Left Click: \tPan\n"
 						"Right Click:\tDisplay stroke\n"
 						"Scroll:     \tZoom\n"
-//						"[<] [>]:    \tSelect alternate view\n"
+						"[<] [>]:    \tSelect alternate view\n"
 					;
 					auto const size = ImGui::CalcTextSize(instructions);
 					auto const avail = ImGui::GetContentRegionAvail();
@@ -134,7 +134,7 @@
 		{
 			ImGui::SeparatorText("Atlas");
 			if (auto const* dict = state.selectedDictionary()) {
-				canvas.setAtlas(dict->texture.get());
+				canvas.setAtlas(dict->atlas.getTexture());
 				auto const corner = ImGui::GetCursorScreenPos();
 				auto const avail = ImGui::GetContentRegionAvail();
 				canvas.rescale(avail.x, avail.y);
@@ -148,7 +148,7 @@
 					});
 					if (atlasPos) {
 						auto [x, y] = *atlasPos;
-						steno::Stroke stroke = dict->atlas.mapping.toStrokes({x, y}).list[0];
+						steno::Stroke stroke = dict->atlas.getMapping()->toStrokes({x, y}).list[0];
 						auto const entry = dict->entries.find(stroke);
 						auto const NoEntry = dict->entries.end();
 						if (entry != NoEntry || ImGui::IsMouseDown(ImGuiMouseButton_Right)) {

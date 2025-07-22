@@ -18,7 +18,6 @@ struct Dictionary {
 	std::string name;
 	steno::Dictionary entries;
 	Atlas atlas;
-	Texture texture;
 
 	enum Type { Unknown, Text, JSON, RTF };
 	Dictionary(std::istream& input, std::string name, Type type)
@@ -36,7 +35,6 @@ struct Dictionary {
 		else if (tryParser(parse) || tryParser(steno::parseGuess));
 		else { std::printf("Parse failed for %s\n", name.c_str()); return; }
 		atlas = Atlas {entries};
-		texture = Texture {atlas.getMipmaps(), Atlas::N, Atlas::N};
 	}
 
 	Dictionary(std::istream& input, std::filesystem::path path) {
@@ -53,10 +51,10 @@ struct Dictionary {
 	void save() const {
 		std::filesystem::path imgPath {name};
 		imgPath.replace_extension("");
-		imgPath += " atlas.png";
+		imgPath += " atlas " + atlas.getMapping()->name() + ".png";
 		stbi_write_png(
 			imgPath.c_str(), Atlas::N, Atlas::N,
-			4, atlas.image.data(), 4*Atlas::N
+			4, atlas.getImage().data(), 4*Atlas::N
 		);
 		JS::offerDownload(imgPath.c_str());
 	}
@@ -86,16 +84,34 @@ struct State {
 public: // Member functions
 	// Atlas transformers
 	void aZoom(float factor) {
+		if (!selectedDictionary()) return;
 		aScale *= ::pow(2.0, factor);
 	}
 
 	void aMove(ImVec2 direction) {
+		if (!selectedDictionary()) return;
 		aPosition.x += direction.x / aScale;
 		aPosition.y += direction.y / aScale;
 	}
 
+	void aSwitch(int dir) {
+		if (auto dict = selectedDictionary()) {
+			auto& atlas = dict->atlas;
+			int count = atlas.getViewCount();
+			int i = atlas.getViewIndex() + dir;
+			while (i < 0) i += count;
+			while (i >= count) i -= count;
+			atlas.setViewIndex(i);
+		}
+	}
+
 	// Dictionary getters
 	Dictionary const* selectedDictionary() const {
+		if (selectedDictionaryIndex == NoDictionaryIndex) return nullptr;
+		else return &dictionaries[selectedDictionaryIndex];
+	}
+
+	Dictionary* selectedDictionary() {
 		if (selectedDictionaryIndex == NoDictionaryIndex) return nullptr;
 		else return &dictionaries[selectedDictionaryIndex];
 	}
@@ -108,7 +124,7 @@ public: // Member functions
 	void openDict(std::filesystem::path path) {
 		if (std::ifstream file {path}) {
 			Dictionary dict {file, path};
-			if (dict.atlas.image.empty()) return;
+			if (dict.atlas.getViewCount() == 0) return;
 			dictionaries.push_back(std::move(dict));
 			selectedDictionaryIndex = dictionaries.size()-1;
 		}
@@ -174,6 +190,11 @@ void mainLoop(Window& window, State& state, Canvas& canvas) {
 	if (pressed[SDLK_RIGHT]) state.aMove(ImVec2 {+0.125, 0});
 	if (pressed[SDLK_UP   ]) state.aMove(ImVec2 {0, -0.125});
 	if (pressed[SDLK_DOWN ]) state.aMove(ImVec2 {0, +0.125});
+	// Perspective change
+	if (pressed[SDLK_LESS   ]) state.aSwitch(-1);
+	if (pressed[SDLK_GREATER]) state.aSwitch(+1);
+	if (pressed[SDLK_COMMA  ]) state.aSwitch(-1);
+	if (pressed[SDLK_PERIOD ]) state.aSwitch(+1);
 	// Boundaries
 	state.aScale = std::clamp(state.aScale, 1.0f/8.0f, 1024.0f);
 	state.aPosition.x = std::clamp(state.aPosition.x, -2.0f, 2.0f);

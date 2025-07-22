@@ -1,5 +1,6 @@
 #pragma once
 #include "steno.hh"
+#include "window.hh" // TODO: remove dependency on Texture class
 #include <array>
 #include <bit>
 #include <vector>
@@ -59,7 +60,10 @@ auto hilbert_inv(std::array<unsigned, 2> pos) -> unsigned {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+// TODO: Possibly make this a singleton.
 struct Mapping {
+	virtual std::string name() const = 0;
+	virtual std::array<unsigned, 2> size() const = 0;
 	virtual bool displayable(steno::Strokes) const = 0;
 	virtual char summary(std::string) const = 0;
 	virtual std::array<unsigned, 2> toPosition(steno::Strokes) const = 0;
@@ -68,6 +72,14 @@ struct Mapping {
 
 template <bool BitOrder>
 struct HilbertMap final : Mapping {
+	std::string name() const {
+		return BitOrder? "by prefix": "by suffix";
+	}
+
+	std::array<unsigned, 2> size() const {
+		return {2048, 2048};
+	}
+
 	bool displayable(steno::Strokes strokes) const {
 		if (strokes.list.size() != 1) return false;
 		// Ignore number bar strokes ... for now.
@@ -100,59 +112,96 @@ using HilbertBySuffix = HilbertMap<false>;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-struct Atlas {
-	std::vector<uint8_t> image;
-	HilbertByPrefix mapping;
-	unsigned count = 0;
+class Atlas {
+	struct View {
+		// TODO: Image class (kind of like a std::mdspn)
+		Mapping* mapping;
+		std::vector<uint8_t> image;
+		Texture texture;
+		unsigned count = 0;
+
+		View() = default;
+		View(steno::Dictionary dict, Mapping* m): mapping{m}, image{EmptyImage()} {
+			std::for_each(dict.begin(), dict.end(), [this] (auto entry) {
+				auto const& [strokes, text] = entry;
+				if (!mapping->displayable(strokes)) return;
+				auto [posX, posY] = mapping->toPosition(strokes);
+
+				std::array<uint8_t, 3> rgb {255, 255, 255};
+				if (char const c = mapping->summary(text)) {
+					if ('a' <= c&&c <= 'z') rgb = hues[c - 'a'];
+					if ('A' <= c&&c <= 'Z') rgb = hues[c - 'A'];
+				}
+
+				auto const i = N * (N-1 - posY) + posX;
+				image[4*i+0] = rgb[0];
+				image[4*i+1] = rgb[1];
+				image[4*i+2] = rgb[2];
+				image[4*i+3] = 255;
+				count++;
+			});
+			// Generate mipmaps.
+			std::vector mipmaps (1, image);
+			for (unsigned n=N; n/2; n/=2) {
+				auto smaller = EmptyImage(n/2);
+				auto& bigger = mipmaps.back();
+				// Sparse atlases benefit from brighter bitmaps. Here we estimate
+				// when is a good time to stop adding brightness.
+				bool const darken = n*n/(count+1) < 10;
+				auto addToPixel = [&] (auto& to, auto from) {
+					to = std::min(0xFF, to + (darken? from/4: from));
+				};
+				for (unsigned y=0; y<n; y++)
+				for (unsigned x=0; x<n; x++) {				
+					auto const i = (n/2) * (y/2) + (x/2);
+					auto const j = ( n ) * ( y ) + ( x );
+					addToPixel(smaller[4*i+0], bigger[4*j+0]);
+					addToPixel(smaller[4*i+1], bigger[4*j+1]);
+					addToPixel(smaller[4*i+2], bigger[4*j+2]);
+				}
+				mipmaps.push_back(smaller);
+			}
+			texture = Texture {mipmaps, Atlas::N, Atlas::N};
+		}
+
+		static std::vector<uint8_t> EmptyImage(unsigned n = N) {
+			std::vector<uint8_t> result (4*n*n, 0x00);
+			for (auto i=0; i<n*n; i++) result[4*i+3] = 0xFF;
+			return result;
+		}
+	};
+
+	static inline std::array<Mapping*, 2> const Mappings = {{
+		new HilbertByPrefix,
+		new HilbertBySuffix,
+	}};
+
+	std::array<View, Mappings.size()> views;
+	std::optional<unsigned> viewIndex;
+	View const& getView() const { return views[*viewIndex]; }
+
+public:
 	Atlas() = default;
 
 	static constexpr unsigned N = 2048;
-	Atlas(steno::Dictionary dict): image{EmptyImage()} {
-		std::for_each(dict.begin(), dict.end(), [this] (auto entry) {
-			auto const& [strokes, text] = entry;
-			if (!mapping.displayable(strokes)) return;
-			auto [posX, posY] = mapping.toPosition(strokes);
-
-			std::array<uint8_t, 3> rgb {255, 255, 255};
-			if (char const c = mapping.summary(text)) {
-				if ('a' <= c&&c <= 'z') rgb = hues[c - 'a'];
-				if ('A' <= c&&c <= 'Z') rgb = hues[c - 'A'];
-			}
-
-			auto const i = N * (N-1 - posY) + posX;
-			image[4*i+0] = rgb[0];
-			image[4*i+1] = rgb[1];
-			image[4*i+2] = rgb[2];
-			image[4*i+3] = 255;
-			this->count++;
-		});
-	}
-
-	unsigned getCount() const { return count; }
-
-	std::vector<std::vector<uint8_t>> getMipmaps() const {
-		std::vector result (1, image);
-		for (unsigned n=N; n/2; n/=2) {
-			auto smaller = EmptyImage(n/2);
-			auto& bigger = result.back();
-			// Sparse atlases benefit from brighter bitmaps. Here we estimate
-			// when is a good time to stop adding brightness.
-			bool const average = n*n/(count+1) < 10;
-			auto addToPixel = [&] (auto& to, auto from) {
-				to = std::min(0xFF, to + (average? from/4: from));
-			};
-			for (unsigned y=0; y<n; y++)
-			for (unsigned x=0; x<n; x++) {				
-				auto const i = (n/2) * (y/2) + (x/2);
-				auto const j = ( n ) * ( y ) + ( x );
-				addToPixel(smaller[4*i+0], bigger[4*j+0]);
-				addToPixel(smaller[4*i+1], bigger[4*j+1]);
-				addToPixel(smaller[4*i+2], bigger[4*j+2]);
-			}
-			result.push_back(smaller);
+	Atlas(steno::Dictionary dict) {
+		for (int i=0; i<Mappings.size(); i++) {
+			views[i] = View {dict, Mappings[i]};
 		}
-		return result;
+		viewIndex = 0;
 	}
+
+	unsigned getViewCount() const { return viewIndex? Mappings.size(): 0; }
+	unsigned getViewIndex() const { return *viewIndex; }
+	void setViewIndex(unsigned i) { viewIndex = i; }
+
+	std::vector<uint8_t> const& getImage() const { return getView().image; }
+
+	Mapping const* getMapping() const { return getView().mapping; }
+
+	unsigned getCount() const { return getView().count; }
+
+	ImTextureID getTexture() const { return getView().texture.get(); }
 
 private:
 	static constexpr std::array<std::array<uint8_t, 3>, 26> hues {{
@@ -183,12 +232,6 @@ private:
 		/*y*/ {229,  25, 119},
 		/*z*/ {229,  25,  72},
 	}};
-
-	static std::vector<uint8_t> EmptyImage(unsigned n = N) {
-		std::vector<uint8_t> result (4*n*n, 0x00);
-		for (auto i=0; i<n*n; i++) result[4*i+3] = 0xFF;
-		return result;
-	};
 };
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
