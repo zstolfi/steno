@@ -88,13 +88,14 @@
 					}
 					ImGui::PopID();
 				}
-				auto const& dict = *state.selectedDictionary();
-				ImGui::SeparatorText(dict.name.c_str());
-				unsigned const count = dict.atlas.getCount();
+				auto const* dict = state.selectedDictionary();
+				ImGui::SeparatorText(dict->name.c_str());
+				auto const count = dict->atlas.getCount();
+				auto const viewName = dict->atlas.getMapping()->name();
 				ImGui::AlignTextToFramePadding();
-				ImGui::Text("%u entries displayed.", count);
+				ImGui::Text("%u entries displayed by %s.", count, viewName.c_str());
 				ImGui::SameLine();
-				if (ImGui::Button("Save PNG")) dict.save();
+				if (ImGui::Button("Save PNG")) dict->save();
 //				ImGui::Text("%u entries\t%s:", count, (count > 1000)? " 1 - 1,000": "");
 //				auto const flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter;
 //				if (ImGui::BeginTable("Entries", 2, flags, ImVec2 {400, 160})) {
@@ -116,7 +117,7 @@
 						"Left Click: \tPan\n"
 						"Right Click:\tDisplay stroke\n"
 						"Scroll:     \tZoom\n"
-						"[<] [>]:    \tSelect alternate view\n"
+						"1 or 2:     \tSelect alternate view\n"
 					;
 					auto const size = ImGui::CalcTextSize(instructions);
 					auto const avail = ImGui::GetContentRegionAvail();

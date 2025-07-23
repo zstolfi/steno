@@ -51,7 +51,7 @@ struct Dictionary {
 	void save() const {
 		std::filesystem::path imgPath {name};
 		imgPath.replace_extension("");
-		imgPath += " atlas " + atlas.getMapping()->name() + ".png";
+		imgPath += " atlas by" + atlas.getMapping()->name() + ".png";
 		stbi_write_png(
 			imgPath.c_str(), Atlas::N, Atlas::N,
 			4, atlas.getImage().data(), 4*Atlas::N
@@ -94,14 +94,20 @@ public: // Member functions
 		aPosition.y += direction.y / aScale;
 	}
 
-	void aSwitch(int dir) {
+	void aViewSet(int i) {
 		if (auto dict = selectedDictionary()) {
-			auto& atlas = dict->atlas;
-			int count = atlas.getViewCount();
-			int i = atlas.getViewIndex() + dir;
+			if (i >= dict->atlas.getViewCount()) return;
+			dict->atlas.setViewIndex(i);
+		}
+	}
+
+	void aViewSwitch(int dir) {
+		if (auto dict = selectedDictionary()) {
+			int count = dict->atlas.getViewCount();
+			int i     = dict->atlas.getViewIndex() + dir;
 			while (i < 0) i += count;
 			while (i >= count) i -= count;
-			atlas.setViewIndex(i);
+			dict->atlas.setViewIndex(i);
 		}
 	}
 
@@ -191,10 +197,12 @@ void mainLoop(Window& window, State& state, Canvas& canvas) {
 	if (pressed[SDLK_UP   ]) state.aMove(ImVec2 {0, -0.125});
 	if (pressed[SDLK_DOWN ]) state.aMove(ImVec2 {0, +0.125});
 	// Perspective change
-	if (pressed[SDLK_LESS   ]) state.aSwitch(-1);
-	if (pressed[SDLK_GREATER]) state.aSwitch(+1);
-	if (pressed[SDLK_COMMA  ]) state.aSwitch(-1);
-	if (pressed[SDLK_PERIOD ]) state.aSwitch(+1);
+	if (pressed[SDLK_1] || pressed[SDLK_KP_1]) state.aViewSet(0);
+	if (pressed[SDLK_2] || pressed[SDLK_KP_2]) state.aViewSet(1);
+	if (pressed[SDLK_LESS   ]) state.aViewSwitch(-1);
+	if (pressed[SDLK_GREATER]) state.aViewSwitch(+1);
+	if (pressed[SDLK_COMMA  ]) state.aViewSwitch(-1);
+	if (pressed[SDLK_PERIOD ]) state.aViewSwitch(+1);
 	// Boundaries
 	state.aScale = std::clamp(state.aScale, 1.0f/8.0f, 1024.0f);
 	state.aPosition.x = std::clamp(state.aPosition.x, -2.0f, 2.0f);

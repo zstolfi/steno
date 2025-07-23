@@ -73,7 +73,7 @@ struct Mapping {
 template <bool BitOrder>
 struct HilbertMap final : Mapping {
 	std::string name() const {
-		return BitOrder? "by prefix": "by suffix";
+		return BitOrder? "prefix": "suffix";
 	}
 
 	std::array<unsigned, 2> size() const {
