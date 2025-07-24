@@ -1,6 +1,6 @@
 # Steno Atlas
 
-![Atlas Screenshot](https://github.com/user-attachments/assets/a7768d38-7dcc-43cf-98f7-e421ecc4d630)
+[![Atlas Screenshot](https://github.com/user-attachments/assets/a7768d38-7dcc-43cf-98f7-e421ecc4d630)](https://zstolfi.github.io/steno/atlas/)
 
 The steno Atlas is a 2-D visualization tool for stenographic dictionary files. The prototype is live at [zstolfi.github.io/steno/atlas](https://zstolfi.github.io/steno/atlas/).
 
