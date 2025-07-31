@@ -1,9 +1,11 @@
 # Object files
 *.o
+*.a
 *.tmp
 
 # Executables
 *a.out
+examples/test
 examples/example
 examples/validate
 examples/number_builder
