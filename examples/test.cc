@@ -71,3 +71,18 @@ TEST(StenoStroke, KeyUnitAccess) {
 	EXPECT_EQ(stroke & _T, 1); EXPECT_EQ(stroke & _S, 1);
 	EXPECT_EQ(stroke & _D, 0); EXPECT_EQ(stroke & _Z, 0);
 }
+
+TEST(StenoStroke, KeyModify) {
+	steno::Stroke stroke {};
+	using enum steno::Key;
+	stroke.set(S_).set(P_).set(R_).set(O).set(U).set(_T).set(_S);
+	EXPECT_EQ(stroke, steno::Stroke {"SPROUTS"});
+}
+
+TEST(StenoStroke, SubscriptModify) {
+	steno::Stroke stroke {};
+	using enum steno::Key;
+	stroke[S_] = stroke[P_] = stroke[R_] = stroke[O]
+	= stroke[U] = stroke[_T] = stroke[_S] = true;
+	EXPECT_EQ(stroke, steno::Stroke {"SPROUTS"});
+}

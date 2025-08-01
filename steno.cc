@@ -130,19 +130,44 @@ Stroke::operator bool() const {
 	return this->bits && !this->failed();
 }
 
+uint32_t Stroke::getBits() const {
+	return this->bits;
+}
+
 bool Stroke::get(Key k) const {
 	return this->bits >> bitFromKey(k) & 1;
 }
 
-Stroke Stroke::set(Key k, bool b) {
+Stroke& Stroke::set(Key k, bool b) {
 	if (b == false) return this->unset(k);
 	this->bits |= 1 << bitFromKey(k);
 	return *this;
 }
 
-Stroke Stroke::unset(Key k) {
+Stroke& Stroke::unset(Key k) {
 	this->bits &= ~(1 << bitFromKey(k));
 	return *this;
+}
+
+Stroke::Reference::operator bool() const {
+	return parent->get(key);
+}
+
+Stroke::Reference& Stroke::Reference::operator=(bool b) {
+	parent->set(key, b);
+	return *this;
+}
+
+Stroke::Reference& Stroke::Reference::operator=(Reference const& r) {
+	return *this = (bool)r;
+}
+
+bool Stroke::operator[](Key k) const {
+	return this->get(k);
+}
+
+Stroke::Reference Stroke::operator[](Key k) {
+	return Stroke::Reference {this, k};
 }
 
 Stroke Stroke::operator+=(Stroke other) {

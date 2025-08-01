@@ -31,7 +31,7 @@ enum struct Key {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-struct Stroke {
+class Stroke {
 	//                          keys        flags  fail-bit
 	//                ┌──────────┴──────────┐┌┴┐     │
 	//                #STKPWHRAO*EUFRPBLGTSDZ!~~     X
@@ -39,6 +39,9 @@ struct Stroke {
 
 public:
 	Stroke() = default;
+	Stroke(Stroke const&) = default;
+	Stroke& operator=(Stroke const&) = default;
+
 	Stroke(std::string_view);
 	Stroke(FromBits_Arg, std::bitset<23>);
 	Stroke(FromBitsReversed_Arg, std::bitset<23>);
@@ -49,9 +52,26 @@ public:
 	bool failed() const;
 	operator bool() const;
 
+	uint32_t getBits() const;
+
 	bool get(Key) const;
-	Stroke set(Key, bool = true);
-	Stroke unset(Key);
+	Stroke& set(Key, bool = true);
+	Stroke& unset(Key);
+
+	class Reference {
+		Stroke* parent;
+		Key key;
+
+	public:
+		Reference(Reference const&) = default;
+		Reference(Stroke* p, Key k): parent{p}, key{k} {}
+		operator bool() const;
+		Reference& operator=(bool);
+		Reference& operator=(Reference const&);
+	};
+
+	bool operator[](Key) const;
+	Reference operator[](Key);
 
 	Stroke operator+=(Stroke);
 	Stroke operator-=(Stroke);
