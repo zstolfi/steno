@@ -334,3 +334,7 @@ std::ostream& operator<<(std::ostream& os, Strokes xx) {
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 } // namespace steno
+
+std::size_t std::hash<steno::Stroke>::operator()(steno::Stroke const& x) const {
+	return std::hash<decltype(x.getBits())> {}(x.getBits());
+}

@@ -309,3 +309,6 @@ const auto NoStrokes = Strokes {};
 const auto NoBrief = Brief {};
 
 } // namespace steno
+
+template <> struct std::hash<steno::Stroke>
+{ std::size_t operator()(steno::Stroke const&) const; };

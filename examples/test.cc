@@ -165,3 +165,21 @@ TEST(StenoStroke, BitXor) {
 	EXPECT_EQ(stroke ^= steno::Stroke {"EU"}, rate);
 	EXPECT_EQ(stroke ^= steno::Stroke {"EU"}, rat);
 }
+
+#include <map>
+#include <unordered_map>
+TEST(StenoStroke, UseWithMaps) {
+	steno::Stroke const array[] = {{"A"}, {"A"}, {"-B"}, {"A"}};
+
+	std::map<steno::Stroke, int> count;
+	for (auto stroke : array) count[stroke]++;
+	EXPECT_EQ(count[{"A" }], 3);
+	EXPECT_EQ(count[{"-B"}], 1);
+	EXPECT_EQ(count[{"KR"}], 0);
+
+	std::unordered_map<steno::Stroke, bool> seen;
+	for (auto stroke : array) seen[stroke] = true;
+	EXPECT_EQ(seen[{"A" }], true);
+	EXPECT_EQ(seen[{"-B"}], true);
+	EXPECT_EQ(seen[{"KR"}], false);
+}
