@@ -1,7 +1,11 @@
 #include "steno.hh"
 #include <algorithm>
-#include <array>
 #include <cctype>
+
+namespace /*detail*/ {
+	constexpr auto FailKey = steno::Key(31);
+	inline constexpr auto bitFromKey(steno::Key k) { return 31-int(k); }
+}
 
 namespace steno {
 
@@ -111,32 +115,33 @@ Stroke::Stroke(std::string_view str) {
 }
 
 Stroke::Stroke(FromBits_Arg, std::bitset<23> b) {
-	// 0b00011000100001110100000
-	// = #STKPWHRAO*EUFRPBLGTSDZ
-	for (unsigned i=0; i<b.size(); i++) this->bits[i] = b[22 - i];
+	for (unsigned i=0; i<b.size(); i++) if (b[22-i]) this->set(Key(i));
 }
 
 Stroke::Stroke(FromBitsReversed_Arg, std::bitset<23> b) {
-	// 0b00000101110000100011000
-	// = ZDSTGLBPRFUE*OARHWPKTS#
-	for (unsigned i=0; i<b.size(); i++) this->bits[i] = b[i];
+	for (unsigned i=0; i<b.size(); i++) if (b[i]) this->set(Key(i));
 }
 
 bool Stroke::failed() const {
-	return this->keys.FailedConstruction;
+	return this->get(FailKey);
+}
+
+Stroke::operator bool() const {
+	return this->bits && !this->failed();
 }
 
 bool Stroke::get(Key k) const {
-	return this->bits[static_cast<int>(k)];
+	return this->bits >> bitFromKey(k) & 1;
 }
 
-Stroke Stroke::set(Key k) {
-	this->bits[static_cast<int>(k)] = true;
+Stroke Stroke::set(Key k, bool b) {
+	if (b == false) return this->unset(k);
+	this->bits |= 1 << bitFromKey(k);
 	return *this;
 }
 
 Stroke Stroke::unset(Key k) {
-	this->bits[static_cast<int>(k)] = false;
+	this->bits &= ~(1 << bitFromKey(k));
 	return *this;
 }
 
@@ -146,22 +151,22 @@ Stroke Stroke::operator+=(Stroke other) {
 }
 
 Stroke Stroke::operator-=(Stroke other) {
-	bool failState = this->keys.FailedConstruction;
+	bool failState = this->failed();
 	this->bits &= ~other.bits;
-	this->keys.FailedConstruction = failState;
+	this->set(FailKey, failState);
 	return *this;
 }
 
 Stroke Stroke::operator&=(Stroke other) {
-	bool failState = this->keys.FailedConstruction;
+	bool failState = this->failed();
 	this->bits &= other.bits;
-	this->keys.FailedConstruction = failState;
+	this->set(FailKey, failState);
 	return *this;
 }
 
 void Stroke::failConstruction(std::string_view str) {
-	if (str != "") std::cout << str << "\n";
-	this->keys.FailedConstruction = true;
+//	if (str != "") std::cout << str << "\n";
+	this->set(FailKey);
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -182,7 +187,7 @@ Strokes::Strokes(std::string_view str) {
 	auto push = [&](unsigned i, unsigned j) {
 		// if (i == j) return false;
 		this->list.emplace_back(str.substr(i, j-i));
-		if (this->list.back().keys.FailedConstruction) return false;
+		if (this->list.back().failed()) return false;
 		return true;
 	};
 
@@ -333,16 +338,16 @@ std::string toString(Key k) {
 }
 
 std::string toString(Stroke x) {
-	if (x.keys.OpenLeft) {
-		x.keys.OpenLeft = false;
+	if (x.get(Key::OpenLeft)) {
+		x.unset(Key::OpenLeft);
 		auto result = '~' + toString(x);
 		auto i = result.find(' ');
 		if (i != result.npos) result.erase(i, 1);
 		return result;
 	}
 
-	if (x.keys.OpenRight) {
-		x.keys.OpenRight = false;
+	if (x.get(Key::OpenRight)) {
+		x.unset(Key::OpenRight);
 		auto result = toString(x) + '~';
 		auto i = result.rfind(' ');
 		if (i != result.npos) result.erase(i, 1);
@@ -351,9 +356,9 @@ std::string toString(Stroke x) {
 
 	std::string result = "#STKPWHRAO*EUFRPBLGTSDZ ";
 	for (unsigned i=0; i<result.size(); i++) {
-		if (x.bits[i] == false) result[i] = ' ';
+		if (x.get(Key(i)) == false) result[i] = ' ';
 	}
-	if (!x.keys.A && !x.keys.O && !x.keys.x && !x.keys.E && !x.keys.U) {
+	if (!(x & Stroke {"AO*EU"})) {
 		result[10] = '-';
 	}
 	return result;

@@ -1,8 +1,8 @@
 #pragma once
 #include <iostream>
-#include <bitset>
 #include <string>
 #include <string_view>
+#include <bitset>
 #include <vector>
 #include <map>
 #include <span>
@@ -16,31 +16,26 @@ constexpr struct FromBits_Arg {} FromBits;
 constexpr struct FromBitsReversed_Arg {} FromBitsReversed;
 
 enum struct Key {
+	// Number Bar
 	Num = 0,
+	// Initial Consonants
 	S_, T_, K_, P_, W_, H_, R_,
+	// Vowels
 	A, O, x, E, U,
+	// Final Consonants
 	_F, _R, _P, _B, _L, _G, _T, _S, _D, _Z,
+	// Flags
 	Mark = 23, OpenLeft, OpenRight,
 //	FailedConstruction = 31
 };
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-union Stroke {
-	std::bitset<32> bits {};
-	struct {
-		/* Number Bar: */
-		unsigned Num:1;
-		/* Initial Consonants: */
-		unsigned S_:1, T_:1, K_:1, P_:1, W_:1, H_:1, R_:1;
-		/* Vowels: */
-		unsigned A:1, O:1, x:1, E:1, U:1;
-		/* Final Consonants: */
-		unsigned _F:1, _R:1, _P:1, _B:1, _L:1, _G:1, _T:1, _S:1, _D:1, _Z:1;
-		/* Flags: */
-		unsigned Mark:1, OpenLeft:1, OpenRight:1;
-		unsigned /*padding*/:5, FailedConstruction:1;
-	} keys;
+struct Stroke {
+	//                          keys        flags  fail-bit
+	//                ┌──────────┴──────────┐┌┴┐     │
+	//                #STKPWHRAO*EUFRPBLGTSDZ!~~     X
+	uint32_t bits = 0b00000000000000000000000000000000;
 
 public:
 	Stroke() = default;
@@ -48,20 +43,16 @@ public:
 	Stroke(FromBits_Arg, std::bitset<23>);
 	Stroke(FromBitsReversed_Arg, std::bitset<23>);
 
-	bool operator==(const Stroke other) const {
-		return this->bits
-		==     other.bits;
-	}
-	auto operator<=>(const Stroke other) const {
-		return this->bits.to_ulong()
-		<=>    other.bits.to_ulong();
-	}
+	bool operator==(Stroke const&) const = default;
+	auto operator<=>(Stroke const&) const = default;
 
 	bool failed() const;
+	operator bool() const;
 
 	bool get(Key) const;
-	Stroke set(Key);
+	Stroke set(Key, bool = true);
 	Stroke unset(Key);
+
 	Stroke operator+=(Stroke);
 	Stroke operator-=(Stroke);
 	Stroke operator&=(Stroke);
@@ -69,6 +60,24 @@ public:
 private:
 	void failConstruction(std::string_view = "");
 };
+
+namespace KeyUnit {
+	static steno::Stroke const
+		Num {"#"},
+		S_ {"S-"},
+		T_ {"T-"}, K_ {"K-"},
+		P_ {"P-"}, W_ {"W-"},
+		H_ {"H-"}, R_ {"R-"},
+		A  {"A"} , O  {"O"} ,
+		x  {"*"},
+		E  {"E"} , U  {"U"} ,
+		_F {"-F"}, _R {"-R"},
+		_P {"-P"}, _B {"-B"},
+		_L {"-L"}, _G {"-G"},
+		_T {"-T"}, _S {"-S"},
+		_D {"-D"}, _Z {"-Z"}
+	;
+}
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
