@@ -111,8 +111,14 @@ public:
 	Strokes& prepend(Strokes);
 	Strokes& operator|=(Strokes);
 
-private:
-	using List_t = decltype(list);
+public:
+	using value_type = Stroke;
+	using reference = Stroke&;
+	using const_reference = Stroke const&;
+	using iterator = Stroke*;
+	using const_iterator = Stroke const*;
+	using difference_type = std::ptrdiff_t;
+	using size_type = std::size_t;
 };
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */

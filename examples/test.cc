@@ -1,6 +1,9 @@
 #include "steno.hh"
 #include <gtest/gtest.h>
 
+/* ~~ Stroke Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+// Modeled after https://cppreference.com/w/cpp/utility/bitset
+
 TEST(StenoStroke, EmptyConstruction) {
 	steno::Stroke stroke;
 	EXPECT_EQ(stroke, steno::NoStroke);
@@ -182,4 +185,32 @@ TEST(StenoStroke, UseWithMaps) {
 	EXPECT_EQ(seen[{"A" }], true);
 	EXPECT_EQ(seen[{"-B"}], true);
 	EXPECT_EQ(seen[{"KR"}], false);
+}
+
+/* ~~ Strokes Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+// Modeled after https://en.cppreference.com/w/cpp/named_req/SequenceContainer
+
+#include <iterator>
+#include <concepts>
+TEST(StenoStrokes, ContainerTypeRequirements) {
+	using C  = steno::Strokes;
+	using T  = steno::Stroke;
+	using I  = steno::Strokes::iterator;
+	using IC = steno::Strokes::const_iterator;
+	using I_Traits  = std::iterator_traits<I>;
+	using IC_Traits = std::iterator_traits<IC>;
+	// Container
+	EXPECT_TRUE((std::same_as<C::value_type     , T       >));
+	EXPECT_TRUE((std::same_as<C::reference      , T&      >));
+	EXPECT_TRUE((std::same_as<C::const_reference, T const&>));
+	EXPECT_TRUE((std::same_as<C::difference_type, std::ptrdiff_t>));
+	EXPECT_TRUE((std::same_as<C::size_type      , std::size_t>));
+	// Iterator
+	EXPECT_TRUE((std::contiguous_iterator<I>));
+	EXPECT_TRUE((std::contiguous_iterator<IC>));
+	EXPECT_TRUE((std::convertible_to<I, IC>));
+	EXPECT_TRUE((std::same_as<I_Traits::value_type, T>));
+	EXPECT_TRUE((std::same_as<IC_Traits::value_type, T>));
+	EXPECT_TRUE((std::same_as<I_Traits::difference_type, C::difference_type>));
+	EXPECT_TRUE((std::same_as<IC_Traits::difference_type, C::difference_type>));
 }

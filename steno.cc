@@ -119,15 +119,15 @@ void Stroke::failConstruction(std::string_view str) {
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 Strokes::Strokes(Stroke x) {
-	this->list = List_t {x};
+	this->list = decltype(list) {x};
 }
 
 Strokes::Strokes(std::span<const Stroke> span) {
-	this->list = List_t (span.begin(), span.end());
+	this->list = decltype(list) (span.begin(), span.end());
 }
 
 Strokes::Strokes(std::initializer_list<Stroke> il) {
-	this->list = List_t (il.begin(), il.end());
+	this->list = decltype(list) (il.begin(), il.end());
 }
 
 Strokes::Strokes(std::string_view str) {
