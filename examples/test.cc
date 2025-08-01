@@ -159,8 +159,9 @@ TEST(StenoStroke, BitXor) {
 	EXPECT_EQ(stroke1 ^ steno::NoStroke, stroke1);
 	EXPECT_EQ(stroke1 ^ stroke2, stroke2 ^ stroke1);
 	
-	steno::Stroke rat  {"RA  T"};
-	steno::Stroke rate {"RAEUT"};
-	EXPECT_EQ(rat ^= steno::Stroke {"EU"}, rate);
-	EXPECT_EQ(rat ^= steno::Stroke {"EU"}, rat);
+	steno::Stroke const rat  {"RA  T"};
+	steno::Stroke const rate {"RAEUT"};
+	steno::Stroke stroke {rat};
+	EXPECT_EQ(stroke ^= steno::Stroke {"EU"}, rate);
+	EXPECT_EQ(stroke ^= steno::Stroke {"EU"}, rat);
 }
