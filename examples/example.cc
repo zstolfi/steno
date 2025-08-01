@@ -13,9 +13,9 @@ int main() {
 	std::cout << "passed!\n";
 
 	std::cout << "Empty stroke constructors ... ";
-	assert(valid(steno::Stroke {"-"}));
-	assert(valid(steno::Stroke {" "}));
-	assert(valid(steno::Stroke {""}));
+	assert( valid(steno::Stroke {"-"}));
+	assert(!valid(steno::Stroke {" "}));
+	assert(!valid(steno::Stroke {""}));
 	std::cout << "passed!\n";
 
 	std::cout << "Number zero constructors ... ";

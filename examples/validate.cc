@@ -9,7 +9,7 @@ int main() {
 		else {
 			std::cout << line << "\tACCEPT!\t";
 			std::cout << "|" << steno::toString(stroke) << "|\t";
-			std::cout <<  stroke.bits << "\n";
+			std::cout << std::bitset<32>(stroke.getBits()) << "\n";
 		}
 	}
 	std::cout << "# ........ Program End ........ #\n";
