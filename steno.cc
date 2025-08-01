@@ -5,6 +5,7 @@
 namespace /*detail*/ {
 	constexpr auto FailKey = steno::Key(31);
 	inline constexpr auto bitFromKey(steno::Key k) { return 31-int(k); }
+	constexpr auto FlagsMask = 0b00000000000000000000000'111111111;
 }
 
 namespace steno {
@@ -170,23 +171,47 @@ Stroke::Reference Stroke::operator[](Key k) {
 	return Stroke::Reference {this, k};
 }
 
-Stroke Stroke::operator+=(Stroke other) {
+Stroke Stroke::operator~() const {
+	Stroke result {};
+	result.bits = ~this->bits & ~FlagsMask;
+	return result;
+}
+
+Stroke& Stroke::operator+=(Stroke other) {
+	auto flags = other.getFlags();
 	this->bits |= other.bits;
+	this->setFlags(flags);
 	return *this;
 }
 
-Stroke Stroke::operator-=(Stroke other) {
-	bool failState = this->failed();
+Stroke& Stroke::operator-=(Stroke other) {
+	auto flags = other.getFlags();
 	this->bits &= ~other.bits;
-	this->set(FailKey, failState);
+	this->setFlags(flags);
 	return *this;
 }
 
-Stroke Stroke::operator&=(Stroke other) {
-	bool failState = this->failed();
+Stroke& Stroke::operator&=(Stroke other) {
+	auto flags = other.getFlags();
 	this->bits &= other.bits;
-	this->set(FailKey, failState);
+	this->setFlags(flags);
 	return *this;
+}
+
+Stroke& Stroke::operator^=(Stroke other) {
+	auto flags = other.getFlags();
+	this->bits ^= other.bits;
+	this->setFlags(flags);
+	return *this;
+}
+
+uint32_t Stroke::getFlags() const {
+	return this->bits & FlagsMask;
+}
+
+void Stroke::setFlags(uint32_t flags) {
+	this->bits &= ~FlagsMask;
+	this->bits |= flags;
 }
 
 void Stroke::failConstruction(std::string_view str) {
@@ -340,6 +365,8 @@ Brief   operator|(Strokes xx, Brief   b ) { return Brief {"", xx} |= b; }
 Brief   operator|(Brief b   , Strokes xx) { return b |= Brief {"", xx}; }
 
 Stroke  operator&(Stroke  x , Stroke  y ) { return x &= y; }
+
+Stroke  operator^(Stroke  x , Stroke  y ) { return x ^= y; }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 

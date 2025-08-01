@@ -15,6 +15,8 @@ namespace steno {
 constexpr struct FromBits_Arg {} FromBits;
 constexpr struct FromBitsReversed_Arg {} FromBitsReversed;
 
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
 enum struct Key {
 	// Number Bar
 	Num = 0,
@@ -29,13 +31,11 @@ enum struct Key {
 //	FailedConstruction = 31
 };
 
-/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
 class Stroke {
-	//                          keys        flags  fail-bit
-	//                ┌──────────┴──────────┐┌┴┐     │
-	//                #STKPWHRAO*EUFRPBLGTSDZ!~~     X
-	uint32_t bits = 0b00000000000000000000000000000000;
+	//                          keys        flags/resv'd  
+	//                ┌──────────┴──────────┐ ┌──┴───┐ ┌─ fail-bit
+	//                #STKPWHRAO*EUFRPBLGTSDZ !~~      X
+	uint32_t bits = 0b00000000000000000000000'00000000'0;
 
 public:
 	Stroke() = default;
@@ -73,11 +73,15 @@ public:
 	bool operator[](Key) const;
 	Reference operator[](Key);
 
-	Stroke operator+=(Stroke);
-	Stroke operator-=(Stroke);
-	Stroke operator&=(Stroke);
+	Stroke operator~() const;
+	Stroke& operator+=(Stroke);
+	Stroke& operator-=(Stroke);
+	Stroke& operator&=(Stroke);
+	Stroke& operator^=(Stroke);
 
 private:
+	uint32_t getFlags() const;
+	void setFlags(uint32_t);
 	void failConstruction(std::string_view = "");
 };
 
@@ -182,13 +186,12 @@ Brief   operator|(Strokes, Brief  );
 Brief   operator|(Brief  , Strokes);
 // Subset of keys:
 Stroke  operator&(Stroke , Stroke );
-
+// Toggling keys:
+Stroke  operator^(Stroke , Stroke );
 
 const auto NoStroke = Stroke {};
 const auto NoStrokes = Strokes {};
 const auto NoBrief = Brief {};
-
-/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 std::string toString(Key);
 std::string toString(Stroke);

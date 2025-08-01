@@ -86,3 +86,81 @@ TEST(StenoStroke, SubscriptModify) {
 	= stroke[U] = stroke[_T] = stroke[_S] = true;
 	EXPECT_EQ(stroke, steno::Stroke {"SPROUTS"});
 }
+
+TEST(StenoStroke, UnaryNegate) {
+	steno::Stroke leftHand {"STKPWHRAO"};
+	EXPECT_EQ(  leftHand .getBits(), 0b01111111110000000000000000000000);
+	EXPECT_EQ((~leftHand).getBits(), 0b10000000001111111111111000000000);
+}
+
+TEST(StenoStroke, Addition) {
+	auto two               = steno::Stroke {" T  W   O             "};
+	auto dollars           = steno::Stroke {"         -          DZ"};
+	EXPECT_EQ(two + dollars, steno::Stroke {" T  W   O           DZ"});
+
+	auto one               = steno::Stroke {"    W      U  PB      "};
+	auto hundred           = steno::Stroke {"     H     U  PB      "};
+	EXPECT_EQ(one + hundred, steno::Stroke {"    WH     U  PB      "});
+
+	EXPECT_EQ( steno::NoStroke +  steno::NoStroke,  steno::NoStroke);
+	EXPECT_EQ( steno::NoStroke + ~steno::NoStroke, ~steno::NoStroke);
+	EXPECT_EQ(~steno::NoStroke +  steno::NoStroke, ~steno::NoStroke);
+	EXPECT_EQ(~steno::NoStroke + ~steno::NoStroke, ~steno::NoStroke);
+
+	steno::Stroke test {};
+	EXPECT_EQ(test += steno::Stroke {"-" }, steno::Stroke {"-"});
+	EXPECT_EQ(test += steno::Stroke {"T-"}, steno::Stroke {"T-"});
+	EXPECT_EQ(test += steno::Stroke {"E" }, steno::Stroke {"TE"});
+	EXPECT_EQ(test += steno::Stroke {"-S"}, steno::Stroke {"TES"});
+	EXPECT_EQ(test += steno::Stroke {"*" }, steno::Stroke {"T*ES"});
+
+	// TODO: Chaining
+}
+
+TEST(StenoStroke, Subtraction) {
+	steno::Stroke stroke {"SPROUTS"};
+	EXPECT_EQ(stroke - steno::Stroke {"#"}, stroke);
+	EXPECT_EQ(stroke - steno::Stroke {"-"}, steno::Stroke {"SPROUTS"});
+	EXPECT_EQ(stroke - steno::Stroke {"-S"}, steno::Stroke {"SPROUT"});
+	EXPECT_EQ(stroke - steno::Stroke {"SPR-S"}, steno::Stroke {"OUT"});
+
+	steno::Stroke test {"T*ES"};
+	EXPECT_EQ(test -= steno::Stroke {"-" }, steno::Stroke {"T*ES"});
+	EXPECT_EQ(test -= steno::Stroke {"T-"}, steno::Stroke {"*ES"});
+	EXPECT_EQ(test -= steno::Stroke {"E" }, steno::Stroke {"*S"});
+	EXPECT_EQ(test -= steno::Stroke {"-S"}, steno::Stroke {"*"});
+	EXPECT_EQ(test -= steno::Stroke {"*" }, steno::Stroke {"-"});
+}
+
+TEST(StenoStroke, BitAnd) {
+	steno::Stroke stroke {"SPROUTS"};
+	steno::Stroke const LeftHand  {"STKPWHRAO"};
+	steno::Stroke const RightHand {"*EUFRPBLGTSDZ"};
+	EXPECT_EQ(stroke & LeftHand , steno::Stroke {"SPRO"});
+	EXPECT_EQ(stroke & RightHand, steno::Stroke {"UTS"});
+
+	steno::Stroke shouldYouHave {"SHAO*UF"};
+	steno::Stroke const Vowel {"AOEU"};
+	steno::Stroke const Consonant {"STKPWHR*FRPBLGTSDZ"};
+	EXPECT_EQ(shouldYouHave & LeftHand             , steno::Stroke{"SHAO"});
+	EXPECT_EQ(shouldYouHave & RightHand & Vowel    , steno::Stroke{"U"});
+	EXPECT_EQ(shouldYouHave & RightHand & Consonant, steno::Stroke{"*F"});
+
+	EXPECT_EQ(stroke &= ~steno::NoStroke, stroke);
+	EXPECT_EQ(stroke &= steno::NoStroke, steno::NoStroke);
+	EXPECT_EQ(stroke, steno::NoStroke);
+}
+
+TEST(StenoStroke, BitXor) {
+	steno::Stroke stroke1 {"SPROUTS"};
+	steno::Stroke stroke2 {"KPAFRPL"};
+	EXPECT_EQ(stroke1 ^ stroke1, steno::NoStroke);
+	EXPECT_EQ(stroke2 ^ stroke2, steno::NoStroke);
+	EXPECT_EQ(stroke1 ^ steno::NoStroke, stroke1);
+	EXPECT_EQ(stroke1 ^ stroke2, stroke2 ^ stroke1);
+	
+	steno::Stroke rat  {"RA  T"};
+	steno::Stroke rate {"RAEUT"};
+	EXPECT_EQ(rat ^= steno::Stroke {"EU"}, rate);
+	EXPECT_EQ(rat ^= steno::Stroke {"EU"}, rat);
+}
