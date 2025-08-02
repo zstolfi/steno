@@ -87,29 +87,29 @@ private:
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-struct Strokes {
+struct Phrase {
 	std::vector<Stroke> list {};
 
 public:
-	Strokes() = default;
-	Strokes(Stroke);
-	Strokes(std::span<const Stroke>);
-	Strokes(std::initializer_list<Stroke>);
-	Strokes(std::string_view);
+	Phrase() = default;
+	Phrase(Stroke);
+	Phrase(std::span<const Stroke>);
+	Phrase(std::initializer_list<Stroke>);
+	Phrase(std::string_view);
 
-	bool operator== (const Strokes xx) const { return list ==  xx.list; }
-	auto operator<=>(const Strokes xx) const { return list <=> xx.list; }
+	bool operator== (const Phrase xx) const { return list ==  xx.list; }
+	auto operator<=>(const Phrase xx) const { return list <=> xx.list; }
 
 	bool failed() const;
 
 	Stroke& operator[](std::size_t);
 	Stroke  operator[](std::size_t) const;
 
-	Strokes& append (Stroke );
-	Strokes& prepend(Stroke );
-	Strokes& append (Strokes);
-	Strokes& prepend(Strokes);
-	Strokes& operator|=(Strokes);
+	Phrase& append (Stroke);
+	Phrase& prepend(Stroke);
+	Phrase& append (Phrase);
+	Phrase& prepend(Phrase);
+	Phrase& operator|=(Phrase);
 
 public:
 	using value_type = Stroke;
@@ -124,12 +124,12 @@ public:
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 struct Brief {
-	Strokes strokes {};
+	Phrase strokes {};
 	std::string text {};
 
 public:
 	Brief() = default;
-	Brief(std::string_view, Strokes);
+	Brief(std::string_view, Phrase);
 	Brief(std::string_view, Brief);
 
 	bool operator==(const Brief& b) const = default;
@@ -146,32 +146,32 @@ private:
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-using Dictionary = std::map<steno::Strokes, std::string>;
+using Dictionary = std::map<steno::Phrase, std::string>;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 // Multiple keys at the same time:
-Stroke  operator+(Stroke , Stroke );
-Strokes operator+(Strokes, Stroke );
-Strokes operator+(Stroke , Strokes);
-Brief   operator+(Brief  , Brief  );
-Brief   operator+(Strokes, Brief  );
-Brief   operator+(Brief  , Strokes);
-Brief   operator+(std::string, Brief);
-Brief   operator+(Brief, std::string);
+Stroke operator+(Stroke, Stroke);
+Phrase operator+(Phrase, Stroke);
+Phrase operator+(Stroke, Phrase);
+Brief  operator+(Brief , Brief );
+Brief  operator+(Phrase, Brief );
+Brief  operator+(Brief , Phrase);
+Brief  operator+(std::string, Brief);
+Brief  operator+(Brief, std::string);
 
 // Removing keys:
-Stroke  operator-(Stroke , Stroke );
-Strokes operator-(Strokes, Stroke );
+Stroke operator-(Stroke, Stroke);
+Phrase operator-(Phrase, Stroke);
 
 // Multiple strokes in order:
-Strokes operator|(Stroke , Stroke );
-Strokes operator|(Strokes, Stroke );
-Strokes operator|(Stroke , Strokes);
-Strokes operator|(Strokes, Strokes);
-Brief   operator|(Brief  , Brief  );
-Brief   operator|(Strokes, Brief  );
-Brief   operator|(Brief  , Strokes);
+Phrase operator|(Stroke, Stroke);
+Phrase operator|(Phrase, Stroke);
+Phrase operator|(Stroke, Phrase);
+Phrase operator|(Phrase, Phrase);
+Brief  operator|(Brief , Brief );
+Brief  operator|(Phrase, Brief );
+Brief  operator|(Brief , Phrase);
 // Subset of keys:
 Stroke  operator&(Stroke , Stroke );
 // Toggling keys:
@@ -179,9 +179,9 @@ Stroke  operator^(Stroke , Stroke );
 
 std::string toString(Key);
 std::string toString(Stroke);
-std::string toString(Strokes);
+std::string toString(Phrase);
 std::ostream& operator<<(std::ostream&, Stroke);
-std::ostream& operator<<(std::ostream&, Strokes);
+std::ostream& operator<<(std::ostream&, Phrase);
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -311,7 +311,7 @@ namespace KeyUnit {
 }
 
 const auto NoStroke = Stroke {};
-const auto NoStrokes = Strokes {};
+const auto NoPhrase = Phrase  {};
 const auto NoBrief = Brief {};
 
 } // namespace steno

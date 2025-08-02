@@ -118,19 +118,19 @@ void Stroke::failConstruction(std::string_view str) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-Strokes::Strokes(Stroke x) {
+Phrase::Phrase(Stroke x) {
 	this->list = decltype(list) {x};
 }
 
-Strokes::Strokes(std::span<const Stroke> span) {
+Phrase::Phrase(std::span<const Stroke> span) {
 	this->list = decltype(list) (span.begin(), span.end());
 }
 
-Strokes::Strokes(std::initializer_list<Stroke> il) {
+Phrase::Phrase(std::initializer_list<Stroke> il) {
 	this->list = decltype(list) (il.begin(), il.end());
 }
 
-Strokes::Strokes(std::string_view str) {
+Phrase::Phrase(std::string_view str) {
 	auto push = [&](unsigned i, unsigned j) {
 		// if (i == j) return false;
 		this->list.emplace_back(str.substr(i, j-i));
@@ -146,43 +146,43 @@ Strokes::Strokes(std::string_view str) {
 	push(i, str.size());
 }
 
-bool Strokes::failed() const {
+bool Phrase::failed() const {
 	return std::any_of(
 		list.begin(), list.end(),
 		[](auto x) { return x.failed(); }
 	);
 }
 
-Stroke& Strokes::operator[](std::size_t i) /* */ { return this->list[i]; }
-Stroke  Strokes::operator[](std::size_t i) const { return this->list[i]; }
+Stroke& Phrase::operator[](std::size_t i) /* */ { return this->list[i]; }
+Stroke  Phrase::operator[](std::size_t i) const { return this->list[i]; }
 
-Strokes& Strokes::append(Stroke x) {
+Phrase& Phrase::append(Stroke x) {
 	this->list.insert(this->list.end(), x);
 	return *this;
 }
 
-Strokes& Strokes::prepend(Stroke x) {
+Phrase& Phrase::prepend(Stroke x) {
 	this->list.insert(this->list.begin(), x);
 	return *this;
 }
 
-Strokes& Strokes::append(Strokes xx) {
+Phrase& Phrase::append(Phrase xx) {
 	this->list.insert(this->list.end(), xx.list.begin(), xx.list.end());
 	return *this;
 }
 
-Strokes& Strokes::prepend(Strokes xx) {
+Phrase& Phrase::prepend(Phrase xx) {
 	this->list.insert(this->list.begin(), xx.list.begin(), xx.list.end());
 	return *this;
 }
 
-Strokes& Strokes::operator|=(Strokes xx) {
+Phrase& Phrase::operator|=(Phrase xx) {
 	return append(xx);
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-Brief::Brief(std::string_view str, Strokes xx): strokes{xx}, text{str} { normalize(); }
+Brief::Brief(std::string_view str, Phrase xx): strokes{xx}, text{str} { normalize(); }
 Brief::Brief(std::string_view str, Brief b): strokes{b.strokes}, text{str} { normalize(); }
 
 bool Brief::failed() const {
@@ -235,13 +235,13 @@ void Brief::normalize() {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-Stroke  operator+(Stroke  x , Stroke  y ) { return x += y ; }
-Strokes operator+(Strokes xx, Stroke  y ) { return xx.list.back() += y; }
-Strokes operator+(Stroke  x , Strokes yy) { return yy.list.front() += x; }
-Brief   operator+(Brief   a , Brief   b ) { return a += b; }
-Brief   operator+(Strokes xx, Brief   b ) { return Brief {"", xx} += b; }
-Brief   operator+(Brief   b , Strokes xx) { return b += Brief {"", xx}; }
-Brief   operator+(std::string s, Brief b) {
+Stroke operator+(Stroke x , Stroke y ) { return x += y ; }
+Phrase operator+(Phrase xx, Stroke y ) { return xx.list.back() += y; }
+Phrase operator+(Stroke x , Phrase yy) { return yy.list.front() += x; }
+Brief  operator+(Brief  a , Brief  b ) { return a += b; }
+Brief  operator+(Phrase xx, Brief  b ) { return Brief {"", xx} += b; }
+Brief  operator+(Brief  b , Phrase xx) { return b += Brief {"", xx}; }
+Brief  operator+(std::string s, Brief b) {
 	if (s=="~") { b.text = s + b.text; return b; }
 	else return Brief {s, {"-"}} += b;
 }
@@ -250,16 +250,16 @@ Brief   operator+(Brief b, std::string s) {
 	else return b += Brief {s, {"-"}};
 }
 
-Stroke  operator-(Stroke  x , Stroke  y ) { return x -= y; }
-Strokes operator-(Strokes xx, Stroke  y ) { return xx.list.back() -= y; }
+Stroke operator-(Stroke x , Stroke  y) { return x -= y; }
+Phrase operator-(Phrase xx, Stroke  y) { return xx.list.back() -= y; }
 
-Strokes operator|(Stroke  x , Stroke  y ) { return Strokes {x, y}; }
-Strokes operator|(Strokes xx, Stroke  y ) { return xx.append(y); }
-Strokes operator|(Stroke  x , Strokes yy) { return yy.prepend(x); }
-Strokes operator|(Strokes xx, Strokes yy) { return xx.append(yy); }
-Brief   operator|(Brief   a , Brief   b ) { return a |= b; }
-Brief   operator|(Strokes xx, Brief   b ) { return Brief {"", xx} |= b; }
-Brief   operator|(Brief b   , Strokes xx) { return b |= Brief {"", xx}; }
+Phrase operator|(Stroke x , Stroke y ) { return Phrase {x, y}; }
+Phrase operator|(Phrase xx, Stroke y ) { return xx.append(y); }
+Phrase operator|(Stroke x , Phrase yy) { return yy.prepend(x); }
+Phrase operator|(Phrase xx, Phrase yy) { return xx.append(yy); }
+Brief  operator|(Brief  a , Brief  b ) { return a |= b; }
+Brief  operator|(Phrase xx, Brief  b ) { return Brief {"", xx} |= b; }
+Brief  operator|(Brief  b , Phrase xx) { return b |= Brief {"", xx}; }
 
 Stroke  operator&(Stroke  x , Stroke  y ) { return x &= y; }
 
@@ -313,7 +313,7 @@ std::string toString(Stroke x) {
 	return result;
 }
 
-std::string toString(Strokes xx) {
+std::string toString(Phrase xx) {
 	std::string result = "";
 	for (int i=0; auto stroke : xx.list) {
 		if (i++) result += '/';
@@ -326,7 +326,7 @@ std::ostream& operator<<(std::ostream& os, Stroke x) {
 	return os << toString(x);
 }
 
-std::ostream& operator<<(std::ostream& os, Strokes xx) {
+std::ostream& operator<<(std::ostream& os, Phrase xx) {
 	return os << toString(xx);
 }
 

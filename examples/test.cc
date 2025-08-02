@@ -187,16 +187,16 @@ TEST(StenoStroke, UseWithMaps) {
 	EXPECT_EQ(seen[{"KR"}], false);
 }
 
-/* ~~ Strokes Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ Phrase Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 // Modeled after https://en.cppreference.com/w/cpp/named_req/SequenceContainer
 
 #include <iterator>
 #include <concepts>
-TEST(StenoStrokes, ContainerTypeRequirements) {
-	using C  = steno::Strokes;
+TEST(StenoPhrase, ContainerTypeRequirements) {
+	using C  = steno::Phrase;
 	using T  = steno::Stroke;
-	using I  = steno::Strokes::iterator;
-	using IC = steno::Strokes::const_iterator;
+	using I  = steno::Phrase::iterator;
+	using IC = steno::Phrase::const_iterator;
 	using I_Traits  = std::iterator_traits<I>;
 	using IC_Traits = std::iterator_traits<IC>;
 	// Container
