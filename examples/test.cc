@@ -214,3 +214,61 @@ TEST(StenoPhrase, ContainerTypeRequirements) {
 	EXPECT_TRUE((std::same_as<I_Traits::difference_type, C::difference_type>));
 	EXPECT_TRUE((std::same_as<IC_Traits::difference_type, C::difference_type>));
 }
+
+TEST(StenoPhrase, ContainerStatementRequirements) {
+	{
+		steno::Phrase a;
+		steno::Phrase b = steno::Phrase();
+		EXPECT_TRUE(a.empty());
+		EXPECT_TRUE(b.empty());
+		EXPECT_EQ(a, steno::NoPhrase);
+		EXPECT_EQ(b, steno::NoPhrase);
+	} {
+		auto v = steno::Phrase {"STEPB/OE"};
+		steno::Phrase a(v);
+		steno::Phrase b = steno::Phrase(v);
+		EXPECT_EQ(a, v);
+		EXPECT_EQ(b, v);
+	}
+}
+
+template <class Result>
+void ExpectExpression(auto&& expression, auto&& postCondition = []{}) {
+	EXPECT_TRUE((std::same_as<Result, decltype(expression)>));
+	postCondition();
+}
+
+TEST(StenoPhrase, ContainerExpressionRequirements) {
+	using C = steno::Phrase;
+	auto v = steno::Phrase {"STEPB/OE"};
+	auto lhs = steno::Phrase {};
+	ExpectExpression<C >(C()    , [&] { EXPECT_TRUE(C().empty()); });
+	ExpectExpression<C >(C(v)   , [&] { EXPECT_EQ(C(v), v);       });
+	ExpectExpression<C&>(lhs = v, [&] { EXPECT_EQ(lhs, v);        });
+
+	auto       mv = steno::Phrase {"PHAOUT/ABL"};
+	auto const cv = steno::Phrase {"KOPB/STAPBT"};
+	ExpectExpression<C::iterator      >(mv.begin());
+	ExpectExpression<C::const_iterator>(cv.begin());
+	ExpectExpression<C::iterator      >(mv.end());
+	ExpectExpression<C::const_iterator>(cv.end());
+	ExpectExpression<C::const_iterator>(v.cbegin());
+	ExpectExpression<C::const_iterator>(v.cend());
+
+	{
+		auto u = steno::Phrase {"U"};
+		auto v = steno::Phrase {"SR"};
+		auto i = v.begin();
+		auto j = v.end();
+		ExpectExpression<std::strong_ordering>(i <=> j);
+		ExpectExpression<bool>(u == v);
+		ExpectExpression<bool>(u != v);
+
+		auto const one = steno::Phrase {"WUPB"};
+		auto const two = steno::Phrase {"TWO"};
+		auto lhs = one;
+		auto rhs = two;
+		lhs.swap(rhs);       EXPECT_EQ(lhs, two); EXPECT_EQ(rhs, one);
+		std::swap(lhs, rhs); EXPECT_EQ(lhs, one); EXPECT_EQ(rhs, two);
+	}
+}
