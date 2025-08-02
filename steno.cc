@@ -215,6 +215,11 @@ std::size_t Phrase::max_size() const { return strokes.max_size(); }
 
 bool Phrase::empty() const { return strokes.empty(); }
 
+// Sequence specific methods
+Phrase::Phrase(std::size_t n, steno::Stroke t) {
+	strokes = std::vector<Stroke> (n, t);
+}
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 //Brief::Brief(std::string_view str, Phrase xx): strokes{xx}, text{str} { normalize(); }

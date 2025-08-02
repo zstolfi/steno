@@ -7,6 +7,7 @@
 #include <map>
 #include <span>
 #include <initializer_list>
+#include <iterator>
 
 namespace steno {
 
@@ -137,6 +138,12 @@ public:
 	std::size_t size() const;
 	std::size_t max_size() const;
 	bool empty() const;
+
+public:
+	// Sequence specific methods
+	Phrase(std::size_t, steno::Stroke);
+	template <std::input_iterator I>
+	Phrase(I first, I last) { strokes = std::vector<Stroke> (first, last); }
 };
 
 /* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */

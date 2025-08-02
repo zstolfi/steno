@@ -192,7 +192,7 @@ TEST(StenoStroke, UseWithMaps) {
 
 #include <iterator>
 #include <concepts>
-TEST(StenoPhrase, ContainerTypeRequirements) {
+TEST(StenoPhrase, ContainerTypes) {
 	using C  = steno::Phrase;
 	using T  = steno::Stroke;
 	using I  = steno::Phrase::iterator;
@@ -215,18 +215,19 @@ TEST(StenoPhrase, ContainerTypeRequirements) {
 	EXPECT_TRUE((std::same_as<IC_Traits::difference_type, C::difference_type>));
 }
 
-TEST(StenoPhrase, ContainerStatementRequirements) {
+TEST(StenoPhrase, ContainerStatements) {
+	using C = steno::Phrase;
 	{
-		steno::Phrase a;
-		steno::Phrase b = steno::Phrase();
+		C a;
+		C b = C();
 		EXPECT_TRUE(a.empty());
 		EXPECT_TRUE(b.empty());
 		EXPECT_EQ(a, steno::NoPhrase);
 		EXPECT_EQ(b, steno::NoPhrase);
 	} {
-		auto v = steno::Phrase {"STEPB/OE"};
-		steno::Phrase a(v);
-		steno::Phrase b = steno::Phrase(v);
+		auto v = C {"STEPB/OE"};
+		C a(v);
+		C b = C(v);
 		EXPECT_EQ(a, v);
 		EXPECT_EQ(b, v);
 	}
@@ -239,7 +240,7 @@ TEST(StenoPhrase, ContainerStatementRequirements) {
 }
 
 #pragma clang diagnostic push
-TEST(StenoPhrase, ContainerExpressionRequirements) {
+TEST(StenoPhrase, ContainerExpressions) {
 	using C = steno::Phrase;
 	auto v = steno::Phrase {"STEPB/OE"};
 	auto lhs = steno::Phrase {};
@@ -281,3 +282,23 @@ TEST(StenoPhrase, ContainerExpressionRequirements) {
 	EXPECT_EXPRESSION(v.empty()   , bool        );
 }
 #pragma clang diagnostic pop
+
+#include <list>
+TEST(StenoPhrase, SequenceStatements) {
+	using C = steno::Phrase;
+	for (C::size_type n : {0, 1, 10, 10000}) {
+		auto const t = steno::Stroke {"PWHRA*PBG"};
+		C c(n, t);
+		EXPECT_EQ(std::distance(c.begin(), c.end()), n);
+	} {
+		std::list<steno::Stroke> const foreign {
+			{" TK       EUFR   G    "}, // "differing"
+			{"          EU      T   "}, // "iterator"
+			{" T     AO EU  P    S  "}, // "types"
+		};
+		auto i = foreign.begin();
+		auto j = foreign.end();
+		C c(i, j);
+		EXPECT_EQ(std::distance(c.begin(), c.end()), std::distance(i, j));
+	}
+}
