@@ -127,7 +127,6 @@ public:
 	using difference_type = std::ptrdiff_t;
 	using size_type = std::size_t;
 	// Container specific methods
-	bool empty() const;
 	Stroke*       begin();
 	Stroke const* begin() const;
 	Stroke const* cbegin() const;
@@ -135,6 +134,9 @@ public:
 	Stroke const* end() const;
 	Stroke const* cend() const;
 	void swap(Phrase&);
+	std::size_t size() const;
+	std::size_t max_size() const;
+	bool empty() const;
 };
 
 /* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */

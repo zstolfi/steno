@@ -256,7 +256,6 @@ TEST(StenoPhrase, ContainerExpressionRequirements) {
 	EXPECT_EXPRESSION(cv.end()  , C::const_iterator);
 	EXPECT_EXPRESSION(v.cbegin(), C::const_iterator);
 	EXPECT_EXPRESSION(v.cend()  , C::const_iterator);
-
 	{
 		auto u = steno::Phrase {"U"};
 		auto v = steno::Phrase {"SR"};
@@ -277,5 +276,8 @@ TEST(StenoPhrase, ContainerExpressionRequirements) {
 			EXPECT_EQ(lhs, one); EXPECT_EQ(rhs, two)
 		);
 	}
+	EXPECT_EXPRESSION(v.size()    , C::size_type);
+	EXPECT_EXPRESSION(v.max_size(), C::size_type);
+	EXPECT_EXPRESSION(v.empty()   , bool        );
 }
 #pragma clang diagnostic pop

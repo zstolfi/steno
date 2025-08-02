@@ -201,8 +201,6 @@ Phrase& Phrase::operator|=(Phrase xx) {
 }
 
 // Container specific methods
-bool Phrase::empty() const { return strokes.empty(); }
-
 Stroke*       Phrase::begin ()       { return &*strokes.begin();  }
 Stroke const* Phrase::begin () const { return &*strokes.begin();  }
 Stroke const* Phrase::cbegin() const { return &*strokes.cbegin(); }
@@ -211,6 +209,11 @@ Stroke const* Phrase::end   () const { return &*strokes.end();    }
 Stroke const* Phrase::cend  () const { return &*strokes.cend();   }
 
 void Phrase::swap(Phrase& other) { std::swap(*this, other); }
+
+std::size_t Phrase::size() const { return strokes.size(); }
+std::size_t Phrase::max_size() const { return strokes.max_size(); }
+
+bool Phrase::empty() const { return strokes.empty(); }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
