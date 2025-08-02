@@ -232,43 +232,48 @@ TEST(StenoPhrase, ContainerStatementRequirements) {
 	}
 }
 
-template <class Result>
-void ExpectExpression(auto&& expression, auto&& postCondition = []{}) {
-	EXPECT_TRUE((std::same_as<Result, decltype(expression)>));
-	postCondition();
+#define EXPECT_EXPRESSION(Expression, Type, ... ) {                            \
+	EXPECT_TRUE((std::same_as<Type, decltype(Expression)>));                   \
+	Expression;                                                                \
+	__VA_ARGS__; /*PostCondition*/                                             \
 }
 
 TEST(StenoPhrase, ContainerExpressionRequirements) {
 	using C = steno::Phrase;
 	auto v = steno::Phrase {"STEPB/OE"};
 	auto lhs = steno::Phrase {};
-	ExpectExpression<C >(C()    , [&] { EXPECT_TRUE(C().empty()); });
-	ExpectExpression<C >(C(v)   , [&] { EXPECT_EQ(C(v), v);       });
-	ExpectExpression<C&>(lhs = v, [&] { EXPECT_EQ(lhs, v);        });
+	EXPECT_EXPRESSION(C()    , C , EXPECT_TRUE(C().empty()));
+	EXPECT_EXPRESSION(C(v)   , C , EXPECT_EQ(C(v), v)      );
+	EXPECT_EXPRESSION(lhs = v, C&, EXPECT_EQ(lhs, v)       );
+	EXPECT_EXPRESSION(v.~C() , void);
 
 	auto       mv = steno::Phrase {"PHAOUT/ABL"};
 	auto const cv = steno::Phrase {"KOPB/STAPBT"};
-	ExpectExpression<C::iterator      >(mv.begin());
-	ExpectExpression<C::const_iterator>(cv.begin());
-	ExpectExpression<C::iterator      >(mv.end());
-	ExpectExpression<C::const_iterator>(cv.end());
-	ExpectExpression<C::const_iterator>(v.cbegin());
-	ExpectExpression<C::const_iterator>(v.cend());
+	EXPECT_EXPRESSION(mv.begin(), C::iterator      );
+	EXPECT_EXPRESSION(cv.begin(), C::const_iterator);
+	EXPECT_EXPRESSION(mv.end()  , C::iterator      );
+	EXPECT_EXPRESSION(cv.end()  , C::const_iterator);
+	EXPECT_EXPRESSION(v.cbegin(), C::const_iterator);
+	EXPECT_EXPRESSION(v.cend()  , C::const_iterator);
 
 	{
 		auto u = steno::Phrase {"U"};
 		auto v = steno::Phrase {"SR"};
 		auto i = v.begin();
 		auto j = v.end();
-		ExpectExpression<std::strong_ordering>(i <=> j);
-		ExpectExpression<bool>(u == v);
-		ExpectExpression<bool>(u != v);
+		EXPECT_EXPRESSION(i <=> j, std::strong_ordering);
+		EXPECT_EXPRESSION(u == v, bool);
+		EXPECT_EXPRESSION(u != v, bool);
 
 		auto const one = steno::Phrase {"WUPB"};
 		auto const two = steno::Phrase {"TWO"};
 		auto lhs = one;
 		auto rhs = two;
-		lhs.swap(rhs);       EXPECT_EQ(lhs, two); EXPECT_EQ(rhs, one);
-		std::swap(lhs, rhs); EXPECT_EQ(lhs, one); EXPECT_EQ(rhs, two);
+		EXPECT_EXPRESSION(lhs.swap(rhs), void,
+			EXPECT_EQ(lhs, two); EXPECT_EQ(rhs, one)
+		);
+		EXPECT_EXPRESSION(std::swap(lhs, rhs), void,
+			EXPECT_EQ(lhs, one); EXPECT_EQ(rhs, two)
+		);
 	}
 }
