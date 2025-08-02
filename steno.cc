@@ -203,6 +203,15 @@ Phrase& Phrase::operator|=(Phrase xx) {
 // Container specific methods
 bool Phrase::empty() const { return strokes.empty(); }
 
+Stroke*       Phrase::begin ()       { return &*strokes.begin();  }
+Stroke const* Phrase::begin () const { return &*strokes.begin();  }
+Stroke const* Phrase::cbegin() const { return &*strokes.cbegin(); }
+Stroke*       Phrase::end   ()       { return &*strokes.end();    }
+Stroke const* Phrase::end   () const { return &*strokes.end();    }
+Stroke const* Phrase::cend  () const { return &*strokes.cend();   }
+
+void Phrase::swap(Phrase& other) { std::swap(*this, other); }
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 //Brief::Brief(std::string_view str, Phrase xx): strokes{xx}, text{str} { normalize(); }

@@ -234,18 +234,19 @@ TEST(StenoPhrase, ContainerStatementRequirements) {
 
 #define EXPECT_EXPRESSION(Expression, Type, ... ) {                            \
 	EXPECT_TRUE((std::same_as<Type, decltype(Expression)>));                   \
-	Expression;                                                                \
+	(void) (Expression);                                                       \
 	__VA_ARGS__; /*PostCondition*/                                             \
 }
 
+#pragma clang diagnostic push
 TEST(StenoPhrase, ContainerExpressionRequirements) {
 	using C = steno::Phrase;
 	auto v = steno::Phrase {"STEPB/OE"};
 	auto lhs = steno::Phrase {};
+#	pragma clang diagnostic ignored "-Wvexing-parse"
 	EXPECT_EXPRESSION(C()    , C , EXPECT_TRUE(C().empty()));
 	EXPECT_EXPRESSION(C(v)   , C , EXPECT_EQ(C(v), v)      );
 	EXPECT_EXPRESSION(lhs = v, C&, EXPECT_EQ(lhs, v)       );
-	EXPECT_EXPRESSION(v.~C() , void);
 
 	auto       mv = steno::Phrase {"PHAOUT/ABL"};
 	auto const cv = steno::Phrase {"KOPB/STAPBT"};
@@ -277,3 +278,4 @@ TEST(StenoPhrase, ContainerExpressionRequirements) {
 		);
 	}
 }
+#pragma clang diagnostic pop

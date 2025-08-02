@@ -128,6 +128,13 @@ public:
 	using size_type = std::size_t;
 	// Container specific methods
 	bool empty() const;
+	Stroke*       begin();
+	Stroke const* begin() const;
+	Stroke const* cbegin() const;
+	Stroke*       end();
+	Stroke const* end() const;
+	Stroke const* cend() const;
+	void swap(Phrase&);
 };
 
 /* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
