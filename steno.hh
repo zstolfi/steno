@@ -10,12 +10,12 @@
 
 namespace steno {
 
-/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ API Flags ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 constexpr struct FromBits_Arg {} FromBits;
 constexpr struct FromBitsReversed_Arg {} FromBitsReversed;
 
-/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ Key ID's ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 enum struct Key {
 	// Number Bar
@@ -31,6 +31,8 @@ enum struct Key {
 //	FailedConstruction = 31
 };
 
+/* ~~ Stroke Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
 class Stroke {
 	//                          keys        flags/resv'd  
 	//                ┌──────────┴──────────┐ ┌──┴───┐ ┌─ fail-bit
@@ -38,26 +40,23 @@ class Stroke {
 	uint32_t bits = 0b00000000000000000000000'00000000'0;
 
 public:
+	// Default construction/assignment
 	Stroke() = default;
 	Stroke(Stroke const&) = default;
 	Stroke& operator=(Stroke const&) = default;
-
+	// Class constructors
 	constexpr Stroke(std::string_view);
 	Stroke(FromBits_Arg, std::bitset<23>);
 	Stroke(FromBitsReversed_Arg, std::bitset<23>);
-
-	bool operator==(Stroke const&) const = default;
-	auto operator<=>(Stroke const&) const = default;
-
+	// Fail-state query
 	bool failed() const;
 	operator bool() const;
-
+	// Getters and Setters
 	uint32_t getBits() const;
-
 	bool get(Key) const;
 	Stroke& set(Key, bool = true);
 	Stroke& unset(Key);
-
+	// Key proxy class
 	class Reference {
 		Stroke* parent;
 		Key key;
@@ -69,10 +68,13 @@ public:
 		Reference& operator=(bool);
 		Reference& operator=(Reference const&);
 	};
-
+	// Subscript operator
 	bool operator[](Key) const;
 	Reference operator[](Key);
-
+	// Comparison
+	bool operator==(Stroke const&) const = default;
+	auto operator<=>(Stroke const&) const = default;
+	// Key manipulation
 	Stroke operator~() const;
 	Stroke& operator+=(Stroke);
 	Stroke& operator-=(Stroke);
@@ -85,33 +87,38 @@ private:
 	void failConstruction(std::string_view = "");
 };
 
-/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ Phrase Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-struct Phrase {
-	std::vector<Stroke> list {};
+class Phrase {
+	std::vector<Stroke> strokes {};
 
 public:
+	// Default construction/assignment
 	Phrase() = default;
+	Phrase(Phrase const&) = default;
+	Phrase& operator=(Phrase const&) = default;
+	// Class constructors
+	Phrase(std::string_view);
 	Phrase(Stroke);
 	Phrase(std::span<const Stroke>);
 	Phrase(std::initializer_list<Stroke>);
-	Phrase(std::string_view);
-
-	bool operator== (const Phrase xx) const { return list ==  xx.list; }
-	auto operator<=>(const Phrase xx) const { return list <=> xx.list; }
-
+	// Fail-state query
 	bool failed() const;
-
-	Stroke& operator[](std::size_t);
-	Stroke  operator[](std::size_t) const;
-
-	Phrase& append (Stroke);
-	Phrase& prepend(Stroke);
+	operator bool() const;
+	// Getters and Setters
+	std::vector<Stroke>& getStrokes();
 	Phrase& append (Phrase);
 	Phrase& prepend(Phrase);
+	Stroke& operator[](std::size_t);
+	Stroke  operator[](std::size_t) const;
+	// Comparison
+	bool operator== (Phrase const& xx) const = default;
+	auto operator<=>(Phrase const& xx) const = default;
+	// Phrase concatenation
 	Phrase& operator|=(Phrase);
 
 public:
+	// Container specific types
 	using value_type = Stroke;
 	using reference = Stroke&;
 	using const_reference = Stroke const&;
@@ -119,34 +126,36 @@ public:
 	using const_iterator = Stroke const*;
 	using difference_type = std::ptrdiff_t;
 	using size_type = std::size_t;
+	// Container specific methods
+	bool empty() const;
 };
+
+/* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+//struct Brief {
+//	Phrase strokes {};
+//	std::string text {};
+
+//public:
+//	Brief() = default;
+//	Brief(std::string_view, Phrase);
+//	Brief(std::string_view, Brief);
+
+//	bool operator==(const Brief& b) const = default;
+
+//	bool failed() const;
+
+//	Brief& operator+=(Brief);
+//	Brief& operator|=(Brief);
+
+//private:
+//	void appendText(std::string);
+//	void normalize();
+//};
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-struct Brief {
-	Phrase strokes {};
-	std::string text {};
-
-public:
-	Brief() = default;
-	Brief(std::string_view, Phrase);
-	Brief(std::string_view, Brief);
-
-	bool operator==(const Brief& b) const = default;
-
-	bool failed() const;
-
-	Brief& operator+=(Brief);
-	Brief& operator|=(Brief);
-
-private:
-	void appendText(std::string);
-	void normalize();
-};
-
-/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
-using Dictionary = std::map<steno::Phrase, std::string>;
+//using Dictionary = std::map<steno::Phrase, std::string>;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -154,11 +163,11 @@ using Dictionary = std::map<steno::Phrase, std::string>;
 Stroke operator+(Stroke, Stroke);
 Phrase operator+(Phrase, Stroke);
 Phrase operator+(Stroke, Phrase);
-Brief  operator+(Brief , Brief );
-Brief  operator+(Phrase, Brief );
-Brief  operator+(Brief , Phrase);
-Brief  operator+(std::string, Brief);
-Brief  operator+(Brief, std::string);
+//Brief  operator+(Brief , Brief );
+//Brief  operator+(Phrase, Brief );
+//Brief  operator+(Brief , Phrase);
+//Brief  operator+(std::string, Brief);
+//Brief  operator+(Brief, std::string);
 
 // Removing keys:
 Stroke operator-(Stroke, Stroke);
@@ -169,9 +178,9 @@ Phrase operator|(Stroke, Stroke);
 Phrase operator|(Phrase, Stroke);
 Phrase operator|(Stroke, Phrase);
 Phrase operator|(Phrase, Phrase);
-Brief  operator|(Brief , Brief );
-Brief  operator|(Phrase, Brief );
-Brief  operator|(Brief , Phrase);
+//Brief  operator|(Brief , Brief );
+//Brief  operator|(Phrase, Brief );
+//Brief  operator|(Brief , Phrase);
 // Subset of keys:
 Stroke  operator&(Stroke , Stroke );
 // Toggling keys:
@@ -311,8 +320,8 @@ namespace KeyUnit {
 }
 
 const auto NoStroke = Stroke {};
-const auto NoPhrase = Phrase  {};
-const auto NoBrief = Brief {};
+const auto NoPhrase = Phrase {};
+//const auto NoBrief = Brief {};
 
 } // namespace steno
 
