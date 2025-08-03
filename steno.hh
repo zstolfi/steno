@@ -94,10 +94,12 @@ class Phrase {
 	std::vector<Stroke> strokes {};
 
 public:
-	// Default construction/assignment
+	// Default construction/assignment/movement
 	Phrase() = default;
 	Phrase(Phrase const&) = default;
+	Phrase(Phrase&&     ) = default;
 	Phrase& operator=(Phrase const&) = default;
+	Phrase& operator=(Phrase&&     ) = default;
 	// Class constructors
 	Phrase(std::string_view);
 	Phrase(Stroke);
@@ -110,8 +112,6 @@ public:
 	std::vector<Stroke>& getStrokes();
 	Phrase& append (Phrase);
 	Phrase& prepend(Phrase);
-	Stroke& operator[](std::size_t);
-	Stroke  operator[](std::size_t) const;
 	// Comparison
 	bool operator== (Phrase const& xx) const = default;
 	auto operator<=>(Phrase const& xx) const = default;
@@ -123,27 +123,44 @@ public:
 	using value_type = Stroke;
 	using reference = Stroke&;
 	using const_reference = Stroke const&;
-	using iterator = Stroke*;
-	using const_iterator = Stroke const*;
+	using iterator = decltype(strokes)::iterator;
+	using const_iterator = decltype(strokes)::const_iterator;
 	using difference_type = std::ptrdiff_t;
 	using size_type = std::size_t;
 	// Container specific methods
-	Stroke*       begin();
-	Stroke const* begin() const;
-	Stroke const* cbegin() const;
-	Stroke*       end();
-	Stroke const* end() const;
-	Stroke const* cend() const;
-	void swap(Phrase&);
-	std::size_t size() const;
-	std::size_t max_size() const;
-	bool empty() const;
+	auto begin ()       { return strokes.begin (); }
+	auto begin () const { return strokes.begin (); }
+	auto cbegin() const { return strokes.cbegin(); }
+	auto end   ()       { return strokes.end   (); }
+	auto end   () const { return strokes.end   (); }
+	auto cend  () const { return strokes.cend  (); }
+	void swap(Phrase& other) { std::swap(*this, other); };
+	std::size_t size    () const { return strokes.size    (); }
+	std::size_t max_size() const { return strokes.max_size(); }
+	bool        empty   () const { return strokes.empty   (); }
 
 public:
 	// Sequence specific methods
-	Phrase(std::size_t, steno::Stroke);
+	Phrase(std::size_t n, Stroke t): strokes(n, t) {}
 	template <std::input_iterator I>
-	Phrase(I first, I last) { strokes = std::vector<Stroke> (first, last); }
+	Phrase(I first, I last): strokes(first, last) {}
+	auto emplace(auto&& ... args) { return strokes.emplace(args ... ); }
+	auto insert (auto&& ... args) { return strokes.insert (args ... ); }
+	auto erase  (auto&& ... args) { return strokes.erase  (args ... ); }
+	auto clear  (auto&& ... args) { return strokes.clear  (args ... ); }
+	auto assign (auto&& ... args) { return strokes.assign (args ... ); }
+	// Vector specific methods
+	auto& front  ()       { return strokes.front(); }
+	auto& front  () const { return strokes.front(); }
+	auto& back   ()       { return strokes.back (); }
+	auto& back   () const { return strokes.back (); }
+	auto  emplace_back(auto&& ... args)     { strokes.emplace_back(args ... ); }
+	auto  push_back   (auto&& ... args)     { strokes.push_back   (args ... ); }
+	auto  pop_back    ()                    { strokes.pop_back    ();          }
+	auto& operator[]  (std::size_t n)       { return strokes[n];               }
+	auto& operator[]  (std::size_t n) const { return strokes[n];               }
+	auto& at          (std::size_t n)       { return strokes.at(n);            }
+	auto& at          (std::size_t n) const { return strokes.at(n);            }
 };
 
 /* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */

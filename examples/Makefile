@@ -59,4 +59,4 @@ test.o : test.cc $(GTEST_INC)
 
 # ~~~~ Commands ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 clean :
-	rm -f *.o gtest.a gtest_main.a
+	rm -f *.o *.a test example validate #number_builder

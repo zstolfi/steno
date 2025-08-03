@@ -190,6 +190,10 @@ TEST(StenoStroke, UseWithMaps) {
 /* ~~ Phrase Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 // Modeled after https://en.cppreference.com/w/cpp/named_req/SequenceContainer
 
+// Double parentheses required so our '<' isn't parsed as a less-than.
+#define EXPECT_SAME_TYPE(T, U) EXPECT_TRUE((std::same_as<T, U>))
+#define EXPECT_CONCEPT(C, ...) EXPECT_TRUE((C<__VA_ARGS__>))
+
 #include <iterator>
 #include <concepts>
 TEST(StenoPhrase, ContainerTypes) {
@@ -200,19 +204,19 @@ TEST(StenoPhrase, ContainerTypes) {
 	using I_Traits  = std::iterator_traits<I>;
 	using IC_Traits = std::iterator_traits<IC>;
 	// Container
-	EXPECT_TRUE((std::same_as<C::value_type     , T       >));
-	EXPECT_TRUE((std::same_as<C::reference      , T&      >));
-	EXPECT_TRUE((std::same_as<C::const_reference, T const&>));
-	EXPECT_TRUE((std::same_as<C::difference_type, std::ptrdiff_t>));
-	EXPECT_TRUE((std::same_as<C::size_type      , std::size_t>));
+	EXPECT_SAME_TYPE(C::value_type     , T             );
+	EXPECT_SAME_TYPE(C::reference      , T&            );
+	EXPECT_SAME_TYPE(C::const_reference, T const&      );
+	EXPECT_SAME_TYPE(C::difference_type, std::ptrdiff_t);
+	EXPECT_SAME_TYPE(C::size_type      , std::size_t   );
 	// Iterator
-	EXPECT_TRUE((std::contiguous_iterator<I>));
-	EXPECT_TRUE((std::contiguous_iterator<IC>));
-	EXPECT_TRUE((std::convertible_to<I, IC>));
-	EXPECT_TRUE((std::same_as<I_Traits::value_type, T>));
-	EXPECT_TRUE((std::same_as<IC_Traits::value_type, T>));
-	EXPECT_TRUE((std::same_as<I_Traits::difference_type, C::difference_type>));
-	EXPECT_TRUE((std::same_as<IC_Traits::difference_type, C::difference_type>));
+	EXPECT_CONCEPT(std::contiguous_iterator, I);
+	EXPECT_CONCEPT(std::contiguous_iterator, IC);
+	EXPECT_CONCEPT(std::convertible_to, I, IC);
+	EXPECT_SAME_TYPE(I_Traits::value_type, T);
+	EXPECT_SAME_TYPE(IC_Traits::value_type, T);
+	EXPECT_SAME_TYPE(I_Traits::difference_type, C::difference_type);
+	EXPECT_SAME_TYPE(IC_Traits::difference_type, C::difference_type);
 }
 
 TEST(StenoPhrase, ContainerStatements) {
@@ -234,7 +238,7 @@ TEST(StenoPhrase, ContainerStatements) {
 }
 
 #define EXPECT_EXPRESSION(Expression, Type, ... ) {                            \
-	EXPECT_TRUE((std::same_as<Type, decltype(Expression)>));                   \
+	EXPECT_SAME_TYPE(Type, decltype(Expression));                              \
 	(void) (Expression);                                                       \
 	__VA_ARGS__; /*PostCondition*/                                             \
 }
@@ -242,15 +246,15 @@ TEST(StenoPhrase, ContainerStatements) {
 #pragma clang diagnostic push
 TEST(StenoPhrase, ContainerExpressions) {
 	using C = steno::Phrase;
-	auto v = steno::Phrase {"STEPB/OE"};
-	auto lhs = steno::Phrase {};
+	auto v = C {"STEPB/OE"};
+	auto lhs = C {};
 #	pragma clang diagnostic ignored "-Wvexing-parse"
 	EXPECT_EXPRESSION(C()    , C , EXPECT_TRUE(C().empty()));
 	EXPECT_EXPRESSION(C(v)   , C , EXPECT_EQ(C(v), v)      );
 	EXPECT_EXPRESSION(lhs = v, C&, EXPECT_EQ(lhs, v)       );
 
-	auto       mv = steno::Phrase {"PHAOUT/ABL"};
-	auto const cv = steno::Phrase {"KOPB/STAPBT"};
+	auto       mv = C {"PHAOUT/ABL"};
+	auto const cv = C {"KOPB/STAPBT"};
 	EXPECT_EXPRESSION(mv.begin(), C::iterator      );
 	EXPECT_EXPRESSION(cv.begin(), C::const_iterator);
 	EXPECT_EXPRESSION(mv.end()  , C::iterator      );
@@ -258,8 +262,8 @@ TEST(StenoPhrase, ContainerExpressions) {
 	EXPECT_EXPRESSION(v.cbegin(), C::const_iterator);
 	EXPECT_EXPRESSION(v.cend()  , C::const_iterator);
 	{
-		auto u = steno::Phrase {"U"};
-		auto v = steno::Phrase {"SR"};
+		auto u = C {"U"};
+		auto v = C {"SR"};
 		auto i = v.begin();
 		auto j = v.end();
 		EXPECT_EXPRESSION(i <=> j, std::strong_ordering);
@@ -287,7 +291,7 @@ TEST(StenoPhrase, ContainerExpressions) {
 TEST(StenoPhrase, SequenceStatements) {
 	using C = steno::Phrase;
 	for (C::size_type n : {0, 1, 10, 10000}) {
-		auto const t = steno::Stroke {"PWHRA*PBG"};
+		auto const t = C::value_type {"PWHRA*PBG"};
 		C c(n, t);
 		EXPECT_EQ(std::distance(c.begin(), c.end()), n);
 	} {
@@ -301,4 +305,44 @@ TEST(StenoPhrase, SequenceStatements) {
 		C c(i, j);
 		EXPECT_EQ(std::distance(c.begin(), c.end()), std::distance(i, j));
 	}
+}
+
+TEST(StenoPhrase, SequenceExpressions) {
+	using C = steno::Phrase;
+	auto v = C {"STEPB/OE/TPRAEUZ"};
+	auto const cv = C {"KO*PBS/TPRAEUZ"};
+	auto i = cv.begin();
+	auto j = cv.end();
+	auto il = std::initializer_list<C::value_type> {{"1"}, {"2"}, {"3"}};
+	auto n = C::size_type {2};
+	auto t = C::value_type {"STROEBG"};
+	EXPECT_EXPRESSION(C(il) , C , EXPECT_EQ(C(il), C(il.begin(), il.end())));
+	EXPECT_EXPRESSION(v = il, C&, EXPECT_EQ(v, C(il)));
+	C::const_iterator p, q, q1, q2;
+	auto pq = [&] { q = v.begin(); p = v.end(); q1 = q; q2 = q+1; };
+	pq(); EXPECT_EXPRESSION(v.emplace(p, "123"), C::iterator);
+	pq(); EXPECT_EXPRESSION(v.insert(p, t)     , C::iterator);
+	pq(); EXPECT_EXPRESSION(v.insert(p, n, t)  , C::iterator);
+	pq(); EXPECT_EXPRESSION(v.insert(p, i, j)  , C::iterator);
+	pq(); EXPECT_EXPRESSION(v.insert(p, il)    , C::iterator);
+	pq(); EXPECT_EXPRESSION(v.erase(q)         , C::iterator);
+	pq(); EXPECT_EXPRESSION(v.erase(q1, q2)    , C::iterator);
+	EXPECT_EXPRESSION(v.clear()     , void, EXPECT_TRUE(v.empty()   ));
+	EXPECT_EXPRESSION(v.assign(i, j), void, EXPECT_TRUE(v == C(i, j)));
+	EXPECT_EXPRESSION(v.assign(il)  , void, EXPECT_TRUE(v == C(il)  ));
+	EXPECT_EXPRESSION(v.assign(n, t), void, EXPECT_TRUE(v == C(n, t)));
+	// Vector specific
+	EXPECT_EXPRESSION(v .front(), C::reference);
+	EXPECT_EXPRESSION(cv.front(), C::const_reference);
+	EXPECT_EXPRESSION(v .back() , C::reference);
+	EXPECT_EXPRESSION(cv.back() , C::const_reference);
+	EXPECT_EXPRESSION(v.emplace_back("123"), void);
+	EXPECT_EXPRESSION(v.push_back(t)       , void);
+	EXPECT_EXPRESSION(v.pop_back()         , void);
+	EXPECT_EXPRESSION(v [n], C::reference);
+	EXPECT_EXPRESSION(cv[n], C::const_reference);
+	EXPECT_EXPRESSION(v .at(C::size_type {0}), C::reference);
+	EXPECT_EXPRESSION(cv.at(C::size_type {0}), C::const_reference);
+	EXPECT_THROW(v .at(v .size()), std::out_of_range);
+	EXPECT_THROW(cv.at(cv.size()), std::out_of_range);
 }
