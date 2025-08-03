@@ -41,38 +41,46 @@ TEST(StenoStroke, BadInputString) {
 
 TEST(StenoStroke, KeyAccess) {
 	steno::Stroke stroke {"SPROUTS"};
-	using enum steno::Key;
-	EXPECT_EQ(stroke.get(Num), 0);
-	EXPECT_EQ(stroke.get(S_), 1);
-	EXPECT_EQ(stroke.get(T_), 0); EXPECT_EQ(stroke.get(K_), 0);
-	EXPECT_EQ(stroke.get(P_), 1); EXPECT_EQ(stroke.get(W_), 0);
-	EXPECT_EQ(stroke.get(H_), 0); EXPECT_EQ(stroke.get(R_), 1);
-	EXPECT_EQ(stroke.get(A ), 0); EXPECT_EQ(stroke.get(O ), 1);
-	EXPECT_EQ(stroke.get(x ), 0);
-	EXPECT_EQ(stroke.get(E ), 0); EXPECT_EQ(stroke.get(U ), 1);
-	EXPECT_EQ(stroke.get(_F), 0); EXPECT_EQ(stroke.get(_R), 0);
-	EXPECT_EQ(stroke.get(_P), 0); EXPECT_EQ(stroke.get(_B), 0);
-	EXPECT_EQ(stroke.get(_L), 0); EXPECT_EQ(stroke.get(_G), 0);
-	EXPECT_EQ(stroke.get(_T), 1); EXPECT_EQ(stroke.get(_S), 1);
-	EXPECT_EQ(stroke.get(_D), 0); EXPECT_EQ(stroke.get(_Z), 0);
+	using namespace steno::Key;
+	EXPECT_EQ(
+	 	stroke.get(Num) << 22
+	|	stroke.get(S_) << 21
+	|	stroke.get(T_) << 20    |    stroke.get(K_) << 19
+	|	stroke.get(P_) << 18    |    stroke.get(W_) << 17
+	|	stroke.get(H_) << 16    |    stroke.get(R_) << 15
+	|	stroke.get(A ) << 14    |    stroke.get(O ) << 13
+	|	stroke.get(x ) << 12
+	|	stroke.get(E ) << 11    |    stroke.get(U ) << 10
+	|	stroke.get(_F) <<  9    |    stroke.get(_R) <<  8
+	|	stroke.get(_P) <<  7    |    stroke.get(_B) <<  6
+	|	stroke.get(_L) <<  5    |    stroke.get(_G) <<  4
+	|	stroke.get(_T) <<  3    |    stroke.get(_S) <<  2
+	|	stroke.get(_D) <<  1    |    stroke.get(_Z) <<  0,
+	//#STKPWHRAO*EUFRPBLGTSDZ
+	// S  P  R O  U      TS  
+	0b01001001010010000001100);
 }
 
 TEST(StenoStroke, KeyUnitAccess) {
 	steno::Stroke stroke {"SPROUTS"};
-	using namespace steno::KeyUnit;
-	EXPECT_EQ(stroke & Num, 0);
-	EXPECT_EQ(stroke & S_, 1);
-	EXPECT_EQ(stroke & T_, 0); EXPECT_EQ(stroke & K_, 0);
-	EXPECT_EQ(stroke & P_, 1); EXPECT_EQ(stroke & W_, 0);
-	EXPECT_EQ(stroke & H_, 0); EXPECT_EQ(stroke & R_, 1);
-	EXPECT_EQ(stroke & A , 0); EXPECT_EQ(stroke & O , 1);
-	EXPECT_EQ(stroke & x , 0);
-	EXPECT_EQ(stroke & E , 0); EXPECT_EQ(stroke & U , 1);
-	EXPECT_EQ(stroke & _F, 0); EXPECT_EQ(stroke & _R, 0);
-	EXPECT_EQ(stroke & _P, 0); EXPECT_EQ(stroke & _B, 0);
-	EXPECT_EQ(stroke & _L, 0); EXPECT_EQ(stroke & _G, 0);
-	EXPECT_EQ(stroke & _T, 1); EXPECT_EQ(stroke & _S, 1);
-	EXPECT_EQ(stroke & _D, 0); EXPECT_EQ(stroke & _Z, 0);
+	using namespace steno::Key;
+	EXPECT_EQ(
+	 	(stroke & Num) << 22
+	|	(stroke & S_) << 21
+	|	(stroke & T_) << 20    |    (stroke & K_) << 19
+	|	(stroke & P_) << 18    |    (stroke & W_) << 17
+	|	(stroke & H_) << 16    |    (stroke & R_) << 15
+	|	(stroke & A ) << 14    |    (stroke & O ) << 13
+	|	(stroke & x ) << 12
+	|	(stroke & E ) << 11    |    (stroke & U ) << 10
+	|	(stroke & _F) <<  9    |    (stroke & _R) <<  8
+	|	(stroke & _P) <<  7    |    (stroke & _B) <<  6
+	|	(stroke & _L) <<  5    |    (stroke & _G) <<  4
+	|	(stroke & _T) <<  3    |    (stroke & _S) <<  2
+	|	(stroke & _D) <<  1    |    (stroke & _Z) <<  0,
+	//#STKPWHRAO*EUFRPBLGTSDZ
+	// S  P  R O  U      TS  
+	0b01001001010010000001100);
 }
 
 TEST(StenoStroke, KeyModify) {
@@ -92,8 +100,8 @@ TEST(StenoStroke, SubscriptModify) {
 
 TEST(StenoStroke, UnaryNegate) {
 	steno::Stroke leftHand {"STKPWHRAO"};
-	EXPECT_EQ(  leftHand .getBits(), 0b01111111110000000000000000000000);
-	EXPECT_EQ((~leftHand).getBits(), 0b10000000001111111111111000000000);
+	EXPECT_EQ(  leftHand .getBits(), 0b01111111110000000000000'000000000);
+	EXPECT_EQ((~leftHand).getBits(), 0b10000000001111111111111'000000000);
 }
 
 TEST(StenoStroke, Addition) {

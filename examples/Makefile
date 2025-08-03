@@ -54,7 +54,7 @@ gtest_main.a : gtest-all.o gtest_main.o
 test : test.o steno.o gtest_main.a
 	$(CXX) $(LDFLAGS) $^ -o $@
 
-test.o : test.cc $(GTEST_INC)
+test.o : test.cc $(STENO)/steno.cc $(STENO)/steno.hh $(GTEST_INC)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # ~~~~ Commands ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
