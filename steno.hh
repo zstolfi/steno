@@ -18,19 +18,9 @@ constexpr struct FromBitsReversed_Arg {} FromBitsReversed;
 
 /* ~~ Key ID's ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-enum struct Key {
-	// Number Bar
-	Num = 0,
-	// Initial Consonants
-	S_, T_, K_, P_, W_, H_, R_,
-	// Vowels
-	A, O, x, E, U,
-	// Final Consonants
-	_F, _R, _P, _B, _L, _G, _T, _S, _D, _Z,
-	// Flags
-	Mark = 23, OpenLeft, OpenRight,
-//	FailedConstruction = 31
-};
+// TODO: Prevent KeyUnits from being constructed by the user
+//     : Have KeyUnit a separate class convertable to Stroke.
+using KeyUnit = class Stroke const&;
 
 /* ~~ Stroke Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -39,6 +29,9 @@ class Stroke {
 	//                ┌──────────┴──────────┐ ┌──┴───┐ ┌─ fail-bit
 	//                #STKPWHRAO*EUFRPBLGTSDZ !~~      X
 	uint32_t bits = 0b00000000000000000000000'00000000'0;
+	static constexpr unsigned KeyCount = 23;
+	static constexpr unsigned PadCount = 9;
+	static_assert(KeyCount + PadCount == 32);
 
 public:
 	// Default construction/assignment
@@ -47,31 +40,31 @@ public:
 	Stroke& operator=(Stroke const&) = default;
 	// Class constructors
 	constexpr Stroke(std::string_view);
-	Stroke(FromBits_Arg, std::bitset<23>);
-	Stroke(FromBitsReversed_Arg, std::bitset<23>);
+	constexpr Stroke(FromBits_Arg, std::bitset<23> const);
+	constexpr Stroke(FromBitsReversed_Arg, std::bitset<23> const);
 	// Fail-state query
 	bool failed() const;
 	operator bool() const;
 	// Getters and Setters
 	uint32_t getBits() const;
-	bool get(Key) const;
-	Stroke& set(Key, bool = true);
-	Stroke& unset(Key);
+	bool get(KeyUnit) const;
+	Stroke& set(KeyUnit, bool = true);
+	Stroke& unset(KeyUnit);
 	// Key proxy class
 	class Reference {
 		Stroke* parent;
-		Key key;
+		KeyUnit key;
 
 	public:
 		Reference(Reference const&) = default;
-		Reference(Stroke* p, Key k): parent{p}, key{k} {}
+		Reference(Stroke* p, KeyUnit k): parent{p}, key{k} {}
 		operator bool() const;
 		Reference& operator=(bool);
 		Reference& operator=(Reference const&);
 	};
 	// Subscript operator
-	bool operator[](Key) const;
-	Reference operator[](Key);
+	bool operator[](KeyUnit) const;
+	Reference operator[](KeyUnit);
 	// Comparison
 	bool operator==(Stroke const&) const = default;
 	auto operator<=>(Stroke const&) const = default;
@@ -109,7 +102,7 @@ public:
 	bool failed() const;
 	operator bool() const;
 	// Getters and Setters
-	std::vector<Stroke>& getStrokes();
+	std::vector<Stroke> const& getStrokes() const;
 	Phrase& append (Phrase);
 	Phrase& prepend(Phrase);
 	// Comparison
@@ -194,8 +187,8 @@ public:
 
 // Multiple keys at the same time:
 Stroke operator+(Stroke, Stroke);
-Phrase operator+(Phrase, Stroke);
-Phrase operator+(Stroke, Phrase);
+//Phrase operator+(Phrase, Stroke);
+//Phrase operator+(Stroke, Phrase);
 //Brief  operator+(Brief , Brief );
 //Brief  operator+(Phrase, Brief );
 //Brief  operator+(Brief , Phrase);
@@ -204,7 +197,7 @@ Phrase operator+(Stroke, Phrase);
 
 // Removing keys:
 Stroke operator-(Stroke, Stroke);
-Phrase operator-(Phrase, Stroke);
+//Phrase operator-(Phrase, Stroke);
 
 // Multiple strokes in order:
 Phrase operator|(Stroke, Stroke);
@@ -219,18 +212,57 @@ Stroke  operator&(Stroke , Stroke );
 // Toggling keys:
 Stroke  operator^(Stroke , Stroke );
 
-std::string toString(Key);
-std::string toString(Stroke);
-std::string toString(Phrase);
-std::ostream& operator<<(std::ostream&, Stroke);
-std::ostream& operator<<(std::ostream&, Phrase);
+//std::string toString(Key);
+//std::string toString(Stroke);
+//std::string toString(Phrase);
+//std::ostream& operator<<(std::ostream&, Stroke);
+//std::ostream& operator<<(std::ostream&, Phrase);
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+constexpr Stroke::Stroke(FromBits_Arg, std::bitset<23> const b) {
+	for (unsigned i=0; i<b.size(); i++) if (b[i]) {
+		this->bits |= 1 << (i + Stroke::PadCount);
+	}
+}
+
+constexpr Stroke::Stroke(FromBitsReversed_Arg, std::bitset<23> const b) {
+	for (unsigned i=0; i<b.size(); i++) if (b[22-i]) {
+		this->bits |= 1 << (i + Stroke::PadCount);
+	}
+}
+
+namespace Key {
+	static constexpr std::remove_cvref_t<steno::KeyUnit>
+	Num {FromBits, 0b10000000000000000000000},
+	S_  {FromBits, 0b01000000000000000000000},
+	T_  {FromBits, 0b00100000000000000000000},
+	K_  {FromBits, 0b00010000000000000000000},
+	P_  {FromBits, 0b00001000000000000000000},
+	W_  {FromBits, 0b00000100000000000000000},
+	H_  {FromBits, 0b00000010000000000000000},
+	R_  {FromBits, 0b00000001000000000000000},
+	A   {FromBits, 0b00000000100000000000000},
+	O   {FromBits, 0b00000000010000000000000},
+	x   {FromBits, 0b00000000001000000000000},
+	E   {FromBits, 0b00000000000100000000000},
+	U   {FromBits, 0b00000000000010000000000},
+	_F  {FromBits, 0b00000000000001000000000},
+	_R  {FromBits, 0b00000000000000100000000},
+	_P  {FromBits, 0b00000000000000010000000},
+	_B  {FromBits, 0b00000000000000001000000},
+	_L  {FromBits, 0b00000000000000000100000},
+	_G  {FromBits, 0b00000000000000000010000},
+	_T  {FromBits, 0b00000000000000000001000},
+	_S  {FromBits, 0b00000000000000000000100},
+	_D  {FromBits, 0b00000000000000000000010},
+	_Z  {FromBits, 0b00000000000000000000001};
+}
+
 constexpr Stroke::Stroke(std::string_view str) {
 	enum State {
-		Mk, /*!*/    Begin = Mk,
-		Ol, /*~*/
+//		Mk, /*!*/
+//		Ol, /*~*/
 		Nm, /*#*/
 		S_,
 		T_, K_,
@@ -244,11 +276,11 @@ constexpr Stroke::Stroke(std::string_view str) {
 		_L, _G,
 		_T, _S,
 		_D, _Z,
-		Or, /*~*/    End = Or+1
+//		Or, /*~*/
+		Begin = Nm, End = _Z+1
 	};
 
 	auto next = [] (State s) { return (s == End)? End: State(int(s)+1); };
-	auto bitFromKey = [] (Key k) { return 31-int(k); };
 
 	//   On the left is every state's possible next valid input. This creates
 	// a broken triangle we can play billiards on to parse our string.
@@ -283,10 +315,10 @@ constexpr Stroke::Stroke(std::string_view str) {
 	for (State state {Begin}; char c : str) if (c != ' ' && c != '\t') {
 		valid = true;
 		if (state == End) valid = false;
-		auto accept = [&] (State s, Key k, char keyChar, char numChar = '\0') {
-			if (c == keyChar || c == numChar) {
-				if (c == numChar) this->bits |= 1 << bitFromKey(Key::Num);
-				if (c == keyChar) this->bits |= 1 << bitFromKey(k);
+		auto accept = [&] (State s, KeyUnit k, char cKey, char cNum = '\0') {
+			if (c == cKey || c == cNum) {
+				if (c == cNum) this->bits |= Key::Num.bits;
+				if (c == cKey) this->bits |= k.bits;
 				state = next(s);
 				return true;
 			}
@@ -294,8 +326,8 @@ constexpr Stroke::Stroke(std::string_view str) {
 		};
 		switch (state) {
 			using enum State;
-			case Mk: if (accept(End,Key::Mark    ,'!')); else
-			case Ol: if (accept(Ol, Key::OpenLeft,'~')); else
+//			case Mk: if (accept(End,Key::Mark    ,'!')); else
+//			case Ol: if (accept(Ol, Key::OpenLeft,'~')); else
 			case Nm: if (accept(Nm, Key::Num,'#'     )); else
 			case S_: if (accept(S_, Key::S_, 'S', '1')); else
 			case T_: if (accept(T_, Key::T_, 'T', '2')); else
@@ -326,30 +358,12 @@ constexpr Stroke::Stroke(std::string_view str) {
 			case _S: if (accept(_S, Key::_S, 'S'     )); else
 			case _D: if (accept(_D, Key::_D, 'D'     )); else
 			case _Z: if (accept(_Z, Key::_Z, 'Z'     )); else
-			case Or: if (accept(Or,Key::OpenRight,'~')); else
+//			case Or: if (accept(Or,Key::OpenRight,'~')); else
 			default: valid = false;
 		}
 		if (!valid) break;
 	}
 	if (!valid) failConstruction(str);
-}
-
-namespace KeyUnit {
-	constexpr static steno::Stroke
-		Num {"#"},
-		S_ {"S-"},
-		T_ {"T-"}, K_ {"K-"},
-		P_ {"P-"}, W_ {"W-"},
-		H_ {"H-"}, R_ {"R-"},
-		A  {"A"} , O  {"O"} ,
-		x  {"*"},
-		E  {"E"} , U  {"U"} ,
-		_F {"-F"}, _R {"-R"},
-		_P {"-P"}, _B {"-B"},
-		_L {"-L"}, _G {"-G"},
-		_T {"-T"}, _S {"-S"},
-		_D {"-D"}, _Z {"-Z"}
-	;
 }
 
 const auto NoStroke = Stroke {};
