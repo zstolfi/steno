@@ -70,10 +70,15 @@ public:
 	auto operator<=>(Stroke const&) const = default;
 	// Key manipulation
 	Stroke operator~() const;
-	Stroke& operator+=(Stroke);
-	Stroke& operator-=(Stroke);
-	Stroke& operator&=(Stroke);
-	Stroke& operator^=(Stroke);
+	Stroke& operator+=(Stroke const&);
+	Stroke& operator-=(Stroke const&);
+	Stroke& operator&=(Stroke const&);
+	Stroke& operator^=(Stroke const&);
+
+	friend Stroke operator+(Stroke, Stroke const&);
+	friend Stroke operator-(Stroke, Stroke const&);
+	friend Stroke operator&(Stroke, Stroke const&);
+	friend Stroke operator^(Stroke, Stroke const&);
 
 private:
 	uint32_t getFlags() const;
@@ -186,7 +191,6 @@ public:
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 // Multiple keys at the same time:
-Stroke operator+(Stroke, Stroke);
 //Phrase operator+(Phrase, Stroke);
 //Phrase operator+(Stroke, Phrase);
 //Brief  operator+(Brief , Brief );
@@ -196,7 +200,6 @@ Stroke operator+(Stroke, Stroke);
 //Brief  operator+(Brief, std::string);
 
 // Removing keys:
-Stroke operator-(Stroke, Stroke);
 //Phrase operator-(Phrase, Stroke);
 
 // Multiple strokes in order:
@@ -208,9 +211,7 @@ Phrase operator|(Phrase, Phrase);
 //Brief  operator|(Phrase, Brief );
 //Brief  operator|(Brief , Phrase);
 // Subset of keys:
-Stroke  operator&(Stroke , Stroke );
 // Toggling keys:
-Stroke  operator^(Stroke , Stroke );
 
 //std::string toString(Key);
 //std::string toString(Stroke);

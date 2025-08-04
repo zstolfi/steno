@@ -67,32 +67,48 @@ Stroke Stroke::operator~() const {
 	return result;
 }
 
-Stroke& Stroke::operator+=(Stroke other) {
+Stroke& Stroke::operator+=(Stroke const& other) {
 	auto flags = other.getFlags();
 	this->bits |= other.bits;
 	this->setFlags(flags);
 	return *this;
 }
 
-Stroke& Stroke::operator-=(Stroke other) {
+Stroke& Stroke::operator-=(Stroke const& other) {
 	auto flags = other.getFlags();
 	this->bits &= ~other.bits;
 	this->setFlags(flags);
 	return *this;
 }
 
-Stroke& Stroke::operator&=(Stroke other) {
+Stroke& Stroke::operator&=(Stroke const& other) {
 	auto flags = other.getFlags();
 	this->bits &= other.bits;
 	this->setFlags(flags);
 	return *this;
 }
 
-Stroke& Stroke::operator^=(Stroke other) {
+Stroke& Stroke::operator^=(Stroke const& other) {
 	auto flags = other.getFlags();
 	this->bits ^= other.bits;
 	this->setFlags(flags);
 	return *this;
+}
+
+Stroke operator+(Stroke lhs, Stroke const& rhs) {
+	lhs += rhs; return lhs;
+}
+
+Stroke operator-(Stroke lhs, Stroke const& rhs) {
+	lhs -= rhs; return lhs;
+}
+
+Stroke operator&(Stroke lhs, Stroke const& rhs) {
+	lhs &= rhs; return lhs;
+}
+
+Stroke operator^(Stroke lhs, Stroke const& rhs) {
+	lhs ^= rhs; return lhs;
 }
 
 // Internal
@@ -234,7 +250,6 @@ Phrase& Phrase::operator|=(Phrase xx) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-Stroke operator+(Stroke x , Stroke y ) { return x += y ; }
 //Phrase operator+(Phrase xx, Stroke y ) { return xx.getStrokes().back() += y; }
 //Phrase operator+(Stroke x , Phrase yy) { return yy.getStrokes().front() += x; }
 //Brief  operator+(Brief  a , Brief  b ) { return a += b; }
@@ -249,7 +264,6 @@ Stroke operator+(Stroke x , Stroke y ) { return x += y ; }
 //	else return b += Brief {s, {"-"}};
 //}
 
-Stroke operator-(Stroke x , Stroke  y) { return x -= y; }
 //Phrase operator-(Phrase xx, Stroke  y) { return xx.getStrokes().back() -= y; }
 
 Phrase operator|(Stroke x , Stroke y ) { return Phrase {x, y}; }
@@ -259,10 +273,6 @@ Phrase operator|(Phrase xx, Phrase yy) { return xx.append(yy); }
 //Brief  operator|(Brief  a , Brief  b ) { return a |= b; }
 //Brief  operator|(Phrase xx, Brief  b ) { return Brief {"", xx} |= b; }
 //Brief  operator|(Brief  b , Phrase xx) { return b |= Brief {"", xx}; }
-
-Stroke  operator&(Stroke  x , Stroke  y ) { return x &= y; }
-
-Stroke  operator^(Stroke  x , Stroke  y ) { return x ^= y; }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 

@@ -39,7 +39,7 @@ TEST(StenoStroke, BadInputString) {
 	// TODO
 }
 
-TEST(StenoStroke, KeyAccess) {
+TEST(StenoStroke, KeyAccessGet) {
 	steno::Stroke stroke {"SPROUTS"};
 	using namespace steno::Key;
 	EXPECT_EQ(
@@ -61,7 +61,7 @@ TEST(StenoStroke, KeyAccess) {
 	0b01001001010010000001100);
 }
 
-TEST(StenoStroke, KeyUnitAccess) {
+TEST(StenoStroke, KeyAccessBitAnd) {
 	steno::Stroke stroke {"SPROUTS"};
 	using namespace steno::Key;
 	EXPECT_EQ(
@@ -78,6 +78,28 @@ TEST(StenoStroke, KeyUnitAccess) {
 	|	(stroke & _L) <<  5    |    (stroke & _G) <<  4
 	|	(stroke & _T) <<  3    |    (stroke & _S) <<  2
 	|	(stroke & _D) <<  1    |    (stroke & _Z) <<  0,
+	//#STKPWHRAO*EUFRPBLGTSDZ
+	// S  P  R O  U      TS  
+	0b01001001010010000001100);
+}
+
+TEST(StenoStroke, KeyAccessSubscript) {
+	steno::Stroke stroke {"SPROUTS"};
+	using namespace steno::Key;
+	EXPECT_EQ(
+	 	stroke[Num] << 22
+	|	stroke[S_] << 21
+	|	stroke[T_] << 20    |    stroke[K_] << 19
+	|	stroke[P_] << 18    |    stroke[W_] << 17
+	|	stroke[H_] << 16    |    stroke[R_] << 15
+	|	stroke[A ] << 14    |    stroke[O ] << 13
+	|	stroke[x ] << 12
+	|	stroke[E ] << 11    |    stroke[U ] << 10
+	|	stroke[_F] <<  9    |    stroke[_R] <<  8
+	|	stroke[_P] <<  7    |    stroke[_B] <<  6
+	|	stroke[_L] <<  5    |    stroke[_G] <<  4
+	|	stroke[_T] <<  3    |    stroke[_S] <<  2
+	|	stroke[_D] <<  1    |    stroke[_Z] <<  0,
 	//#STKPWHRAO*EUFRPBLGTSDZ
 	// S  P  R O  U      TS  
 	0b01001001010010000001100);
