@@ -1,6 +1,18 @@
 #include "steno.hh"
 #include <gtest/gtest.h>
 
+/* ~~ Key Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+TEST(StenoKey, Addition) {
+	steno::Stroke stroke {"PAT"};
+	using enum steno::Key;
+	EXPECT_EQ(stroke +  _S, steno::Stroke {"PATS"});
+	EXPECT_EQ(stroke += _S, steno::Stroke {"PATS"});
+	EXPECT_EQ(stroke -  _S, steno::Stroke {"PAT"});
+	EXPECT_EQ(stroke -= _S, steno::Stroke {"PAT"});
+	EXPECT_EQ(S_ + P_ + R_ + O + U + _T + _S, steno::Stroke {"SPROUTS"});
+}
+
 /* ~~ Stroke Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 // Modeled after https://cppreference.com/w/cpp/utility/bitset
 

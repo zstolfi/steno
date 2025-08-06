@@ -127,6 +127,26 @@ void Stroke::failConstruction(std::string_view str) {
 	this->bits |= FailBit;
 }
 
+Stroke operator~(Key k) {
+	return ~Stroke {k};
+}
+
+Stroke operator+(Key lhs, Key rhs) {
+	return Stroke {lhs} + Stroke {rhs};
+}
+
+Stroke operator-(Key lhs, Key rhs) {
+	return Stroke {lhs} - Stroke {rhs};
+}
+
+Stroke operator&(Key lhs, Key rhs) {
+	return Stroke {lhs} & Stroke {rhs};
+}
+
+Stroke operator^(Key lhs, Key rhs) {
+	return Stroke {lhs} ^ Stroke {rhs};
+}
+
 /* ~~ Phrase Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 // Class constructors

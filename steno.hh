@@ -95,7 +95,6 @@ public:
 	Stroke& operator-=(Stroke const&);
 	Stroke& operator&=(Stroke const&);
 	Stroke& operator^=(Stroke const&);
-
 	friend Stroke operator+(Stroke, Stroke const&);
 	friend Stroke operator-(Stroke, Stroke const&);
 	friend Stroke operator&(Stroke, Stroke const&);
@@ -107,6 +106,11 @@ private:
 	void failConstruction(std::string_view = "");
 };
 
+Stroke operator~(Key);
+Stroke operator+(Key, Key);
+Stroke operator-(Key, Key);
+Stroke operator&(Key, Key);
+Stroke operator^(Key, Key);
 /* ~~ Phrase Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 class Phrase {
