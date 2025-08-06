@@ -18,9 +18,28 @@ constexpr struct FromBitsReversed_Arg {} FromBitsReversed;
 
 /* ~~ Key ID's ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-// TODO: Prevent KeyUnits from being constructed by the user
-//     : Have KeyUnit a separate class convertable to Stroke.
-using KeyUnit = class Stroke const&;
+enum class Key : uint32_t {
+		// Number Bar
+		Num = 1u<<31,
+		// Initial Consonants
+		S_ = 1u<<30,
+		T_ = 1u<<29, K_ = 1u<<28,
+		P_ = 1u<<27, W_ = 1u<<26,
+		H_ = 1u<<25, R_ = 1u<<24,
+		// Vowels & Asterisk
+		A  = 1u<<23, O  = 1u<<22,
+		x  = 1u<<21,
+		E  = 1u<<20, U  = 1u<<19,
+		// Final Consonants
+		_F = 1u<<18, _R = 1u<<17,
+		_P = 1u<<16, _B = 1u<<15,
+		_L = 1u<<14, _G = 1u<<13,
+		_T = 1u<<12, _S = 1u<<11,
+		_D = 1u<<10, _Z = 1u<< 9,
+		// Flags
+//		Mark = 1<<8, OpenLeft = 1<<7, OpenRight = 1<<0,
+};
+
 
 /* ~~ Stroke Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -39,6 +58,7 @@ public:
 	Stroke(Stroke const&) = default;
 	Stroke& operator=(Stroke const&) = default;
 	// Class constructors
+	constexpr Stroke(Key);
 	constexpr Stroke(std::string_view);
 	constexpr Stroke(FromBits_Arg, std::bitset<23> const);
 	constexpr Stroke(FromBitsReversed_Arg, std::bitset<23> const);
@@ -47,24 +67,24 @@ public:
 	operator bool() const;
 	// Getters and Setters
 	uint32_t getBits() const;
-	bool get(KeyUnit) const;
-	Stroke& set(KeyUnit, bool = true);
-	Stroke& unset(KeyUnit);
+	bool get(Key) const;
+	Stroke& set(Key, bool = true);
+	Stroke& unset(Key);
 	// Key proxy class
 	class Reference {
 		Stroke* parent;
-		KeyUnit key;
+		Key key;
 
 	public:
 		Reference(Reference const&) = default;
-		Reference(Stroke* p, KeyUnit k): parent{p}, key{k} {}
+		Reference(Stroke* p, Key k): parent{p}, key{k} {}
 		operator bool() const;
 		Reference& operator=(bool);
 		Reference& operator=(Reference const&);
 	};
 	// Subscript operator
-	bool operator[](KeyUnit) const;
-	Reference operator[](KeyUnit);
+	bool operator[](Key) const;
+	Reference operator[](Key);
 	// Comparison
 	bool operator==(Stroke const&) const = default;
 	auto operator<=>(Stroke const&) const = default;
@@ -221,6 +241,10 @@ Phrase operator|(Phrase, Phrase);
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+constexpr Stroke::Stroke(Key k) {
+	this->bits = (uint32_t)k;
+}
+
 constexpr Stroke::Stroke(FromBits_Arg, std::bitset<23> const b) {
 	for (unsigned i=0; i<b.size(); i++) if (b[i]) {
 		this->bits |= 1 << (i + Stroke::PadCount);
@@ -231,33 +255,6 @@ constexpr Stroke::Stroke(FromBitsReversed_Arg, std::bitset<23> const b) {
 	for (unsigned i=0; i<b.size(); i++) if (b[22-i]) {
 		this->bits |= 1 << (i + Stroke::PadCount);
 	}
-}
-
-namespace Key {
-	static constexpr std::remove_cvref_t<steno::KeyUnit>
-	Num {FromBits, 0b10000000000000000000000},
-	S_  {FromBits, 0b01000000000000000000000},
-	T_  {FromBits, 0b00100000000000000000000},
-	K_  {FromBits, 0b00010000000000000000000},
-	P_  {FromBits, 0b00001000000000000000000},
-	W_  {FromBits, 0b00000100000000000000000},
-	H_  {FromBits, 0b00000010000000000000000},
-	R_  {FromBits, 0b00000001000000000000000},
-	A   {FromBits, 0b00000000100000000000000},
-	O   {FromBits, 0b00000000010000000000000},
-	x   {FromBits, 0b00000000001000000000000},
-	E   {FromBits, 0b00000000000100000000000},
-	U   {FromBits, 0b00000000000010000000000},
-	_F  {FromBits, 0b00000000000001000000000},
-	_R  {FromBits, 0b00000000000000100000000},
-	_P  {FromBits, 0b00000000000000010000000},
-	_B  {FromBits, 0b00000000000000001000000},
-	_L  {FromBits, 0b00000000000000000100000},
-	_G  {FromBits, 0b00000000000000000010000},
-	_T  {FromBits, 0b00000000000000000001000},
-	_S  {FromBits, 0b00000000000000000000100},
-	_D  {FromBits, 0b00000000000000000000010},
-	_Z  {FromBits, 0b00000000000000000000001};
 }
 
 constexpr Stroke::Stroke(std::string_view str) {
@@ -321,10 +318,10 @@ constexpr Stroke::Stroke(std::string_view str) {
 	for (State state {Begin}; char c : str) if (!in(c, " \t")) {
 		valid = true;
 		auto require = [&] (bool condition) { return !(valid = condition); };
-		auto accept = [&] (State s, KeyUnit k, char cKey, char cNum = '\0') {
+		auto accept = [&] (State s, Key k, char cKey, char cNum = '\0') {
 			bool match = (c == cKey) || (c == cNum);
-			if (c == cKey) this->bits |= k.bits;
-			if (c == cNum) this->bits |= k.bits | Key::Num.bits;
+			if (c == cKey) this->bits |= (uint32_t)k;
+			if (c == cNum) this->bits |= (uint32_t)k | (uint32_t)Key::Num;
 			if (match) state = next(s);
 			return match;
 		};

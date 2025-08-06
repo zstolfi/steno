@@ -25,16 +25,17 @@ uint32_t Stroke::getBits() const {
 	return this->bits;
 }
 
-bool Stroke::get(KeyUnit k) const {
-	return *this & k;
+bool Stroke::get(Key k) const {
+	return *this & Stroke {k};
 }
 
-Stroke& Stroke::set(KeyUnit k, bool b) {
-	return b ? (*this += k) : (*this -= k);
+Stroke& Stroke::set(Key k, bool b) {
+	if (!b) return unset(k);
+	return *this += Stroke {k};
 }
 
-Stroke& Stroke::unset(KeyUnit k) {
-	return *this -= k;
+Stroke& Stroke::unset(Key k) {
+	return *this -= Stroke {k};
 }
 
 // Key proxy class
@@ -52,11 +53,11 @@ Stroke::Reference& Stroke::Reference::operator=(Reference const& r) {
 }
 
 // Subscript operator
-bool Stroke::operator[](KeyUnit k) const {
+bool Stroke::operator[](Key k) const {
 	return this->get(k);
 }
 
-Stroke::Reference Stroke::operator[](KeyUnit k) {
+Stroke::Reference Stroke::operator[](Key k) {
 	return Stroke::Reference {this, k};
 }
 
