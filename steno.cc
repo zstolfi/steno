@@ -346,5 +346,18 @@ Phrase operator|(Phrase xx, Phrase yy) { return xx.append(yy); }
 } // namespace steno
 
 std::size_t std::hash<steno::Stroke>::operator()(steno::Stroke const& x) const {
-	return std::hash<decltype(x.getBits())> {}(x.getBits());
+	return std::hash<uint32_t> {} (x.bits);
+}
+
+// https://stackoverflow.com/a/72073933
+std::size_t std::hash<steno::Phrase>::operator()(steno::Phrase const& x) const {
+	std::size_t seed = x.size();
+	for (auto stroke : x) {
+		uint32_t n = stroke.bits;
+		n = ((n >> 16) ^ n) & 0x45D9F3B;
+		n = ((n >> 16) ^ n) & 0x45D9F3B;
+		n = (n >> 16) ^ n;
+		seed ^= x + 0x9E3779B9 + (seed << 6) + (seed >> 2);
+	}
+	return seed;
 }

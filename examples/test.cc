@@ -253,6 +253,24 @@ TEST(StenoStroke, UseWithMaps) {
 /* ~~ Phrase Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 // Modeled after https://en.cppreference.com/w/cpp/named_req/SequenceContainer
 
+#include <map>
+#include <unordered_map>
+TEST(StenoPhrase, UseWithMaps) {
+	steno::Phrase const array[] = {{"1"}, {"1"}, {"2"}, {"1"}};
+
+	std::map<steno::Phrase, int> count;
+	for (auto phrase : array) count[phrase]++;
+	EXPECT_EQ(count[{"1"}], 3);
+	EXPECT_EQ(count[{"2"}], 1);
+	EXPECT_EQ(count[{"3"}], 0);
+
+	std::unordered_map<steno::Phrase, bool> seen;
+	for (auto phrase : array) seen[phrase] = true;
+	EXPECT_EQ(seen[{"1"}], true);
+	EXPECT_EQ(seen[{"2"}], true);
+	EXPECT_EQ(seen[{"3"}], false);
+}
+
 // Double parentheses required so our '<' isn't parsed as a less-than.
 #define EXPECT_SAME_TYPE(T, U) EXPECT_TRUE((std::same_as<T, U>))
 #define EXPECT_CONCEPT(C, ...) EXPECT_TRUE((C<__VA_ARGS__>))

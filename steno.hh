@@ -88,6 +88,7 @@ public:
 	// Comparison
 	bool operator==(Stroke const&) const = default;
 	auto operator<=>(Stroke const&) const = default;
+	template <class T> friend struct std::hash;
 	// Key manipulation
 	Stroke operator~() const;
 	Stroke& operator+=(Stroke const&);
@@ -131,8 +132,9 @@ public:
 	Phrase& append (Phrase);
 	Phrase& prepend(Phrase);
 	// Comparison
-	bool operator== (Phrase const& xx) const = default;
-	auto operator<=>(Phrase const& xx) const = default;
+	bool operator== (Phrase const&) const = default;
+	auto operator<=>(Phrase const&) const = default;
+	template <class T> friend struct std::hash;
 	// Phrase concatenation
 	Phrase& operator|=(Phrase);
 
@@ -370,3 +372,6 @@ const auto NoPhrase = Phrase {};
 
 template <> struct std::hash<steno::Stroke>
 { std::size_t operator()(steno::Stroke const&) const; };
+
+template <> struct std::hash<steno::Phrase>
+{ std::size_t operator()(steno::Phrase const&) const; };
