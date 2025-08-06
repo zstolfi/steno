@@ -180,6 +180,7 @@ Phrase::Phrase(std::initializer_list<Stroke> il) {
 
 // Fail-state query
 bool Phrase::failed() const {
+	// TODO: Decide whether containing an empty stroke is an error.
 	return std::any_of(
 		strokes.begin(), strokes.end(),
 		[](auto x) { return x.failed(); }
@@ -216,58 +217,85 @@ Phrase& Phrase::operator|=(Phrase xx) {
 	return append(xx);
 }
 
-/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-//Brief::Brief(std::string_view str, Phrase xx): strokes{xx}, text{str} { normalize(); }
-//Brief::Brief(std::string_view str, Brief b): strokes{b.strokes}, text{str} { normalize(); }
+// Class constructors
+Brief::Brief(Phrase const& p, std::string_view s)
+: strokes{p}, text{s} { normalize(); }
 
-//bool Brief::failed() const {
-//	return std::any_of(
-//		strokes.list.begin(), strokes.list.end(),
-//		[](auto xx) { return xx.failed(); }
-//	);
-//}
+Brief::Brief(Brief const& b, std::string_view s)
+: strokes{b.strokes}, text{s} { normalize(); }
 
-//Brief& Brief::operator+=(Brief other) {
-//	if (this->strokes.list.empty()) this->strokes = other.strokes;
-//	else if  (!other.strokes.list.empty()) {
-//		this->strokes.list.back() += other.strokes.list.front();
-//		std::copy(
-//			other.strokes.list.begin()+1, other.strokes.list.end(),
-//			std::back_inserter(this->strokes.list)
-//		);
-//	}
-//	appendText(other.text);
-//	return *this;
-//}
+// Fail-state query
+bool Brief::failed() const {
+	return std::any_of(
+		strokes.begin(), strokes.end(),
+		[](auto s) { return !s; }
+	);
+}
 
-//Brief& Brief::operator|=(Brief other) {
-//	this->strokes |= other.strokes;
-//	appendText(other.text);
-//	return *this;
-//}
+Brief::operator bool() const {
+	return !strokes.empty() && !failed();
+}
 
-//void Brief::appendText(std::string str) {
-//	if (this->text.empty()) { this->text = str; return; }
-//	if (str.empty()) return;
+// Getters and Setters
+Phrase& Brief::getStrokes() {
+	return strokes;
+}
 
-//	bool endGlue = this->text.back() == '~';
-//	bool startGlue = str.front() == '~';
+Phrase const& Brief::getStrokes() const {
+	return strokes;
+}
 
-//	if (!startGlue && !endGlue) this->text += ' ' + str;
-//	else {
-//		if (endGlue) this->text.pop_back();
-//		this->text.insert(this->text.size(), str, startGlue? 1: 0);
-//	}
-//}
+std::string& Brief::getText() {
+	return text;
+}
 
-//void Brief::normalize() {
-//	// Remove empty strokes.
-//	this->strokes.list.erase(
-//		std::remove(this->strokes.list.begin(), this->strokes.list.end(), NoStroke),
-//		this->strokes.list.end()
-//	);
-//}
+std::string const& Brief::getText() const {
+	return text;
+}
+
+Brief& Brief::setStrokes(Phrase const& p) {
+	strokes = p;
+	return *this;
+}
+
+Brief& Brief::setText(std::string_view s) {
+	text = s;
+	return *this;
+}
+
+// Concatenation
+Brief& Brief::operator|=(Brief other) {
+	this->strokes |= other.strokes;
+	appendText(other.text);
+	return *this;
+}
+
+void Brief::appendText(std::string_view str) {
+	if (text.empty()) { text = str; return; }
+	if (str.empty()) return;
+
+	bool endGlue = text.back() == '~';
+	bool startGlue = str.front() == '~';
+
+	if (!startGlue && !endGlue) text += ' ', text += str;
+	else {
+		if (endGlue) text.pop_back();
+		text.insert(text.size(), str, startGlue? 1: 0);
+	}
+}
+
+void Brief::normalize() {
+	// Remove empty strokes.
+	strokes.erase(
+		std::remove(strokes.begin(), strokes.end(), NoStroke),
+		strokes.end()
+	);
+	// Remove leading or trailing whitespace.
+	text = text.substr(text.find_first_not_of(" \t\n\r"));
+	text = text.substr(0, text.find_last_not_of(" \t\n\r"));
+}
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 

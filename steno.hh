@@ -8,6 +8,8 @@
 #include <span>
 #include <initializer_list>
 #include <iterator>
+#include <utility>
+#include <type_traits>
 
 namespace steno {
 
@@ -132,6 +134,7 @@ public:
 	bool failed() const;
 	operator bool() const;
 	// Getters and Setters
+	std::vector<Stroke>      & getStrokes();
 	std::vector<Stroke> const& getStrokes() const;
 	Phrase& append (Phrase);
 	Phrase& prepend(Phrase);
@@ -189,24 +192,38 @@ public:
 
 /* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-//struct Brief {
-//	Phrase strokes {};
-//	std::string text {};
+class Brief {
+	Phrase strokes {};
+	std::string text {};
 
-//public:
-//	Brief() = default;
-//	Brief(std::string_view, Phrase);
-//	Brief(std::string_view, Brief);
-
-//	bool operator==(const Brief& b) const = default;
-
-//	bool failed() const;
-
-//	Brief& operator+=(Brief);
-//	Brief& operator|=(Brief);
+public:
+	// Default construction/assignment/movement
+	Brief() = default;
+	Brief(Brief const&) = default;
+	Brief(Brief&&     ) = default;
+	Brief& operator=(Brief const&) = default;
+	Brief& operator=(Brief&&     ) = default;
+	// Class constructors
+	Brief(Phrase const&, std::string_view);
+	Brief(Brief const&, std::string_view);
+	// Fail-state query
+	bool failed() const;
+	operator bool() const;
+	// Getters and Setters
+	Phrase& getStrokes();
+	Phrase const& getStrokes() const;
+	std::string& getText();
+	std::string const& getText() const;
+	Brief& setStrokes(Phrase const&);
+	Brief& setText(std::string_view);
+	// Comparison
+	bool operator== (Brief const&) const = default;
+	auto operator<=>(Brief const&) const = default;
+	// Concatenation
+	Brief& operator|=(Brief);
 
 private:
-	void appendText(std::string);
+	void appendText(std::string_view);
 	void normalize();
 };
 
@@ -370,12 +387,21 @@ constexpr Stroke::Stroke(std::string_view str) {
 
 const auto NoStroke = Stroke {};
 const auto NoPhrase = Phrase {};
-//const auto NoBrief = Brief {};
+const auto NoBrief = Brief {};
 
 } // namespace steno
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 template <> struct std::hash<steno::Stroke>
 { std::size_t operator()(steno::Stroke const&) const; };
 
 template <> struct std::hash<steno::Phrase>
 { std::size_t operator()(steno::Phrase const&) const; };
+
+template <> struct std::tuple_size<steno::Brief>
+: std::integral_constant<size_t, 2> {};
+
+template <std::size_t I> struct std::tuple_element<I, steno::Brief>
+: std::conditional<I == 0, steno::Phrase, std::string>
+{ static_assert(I < 2); };
