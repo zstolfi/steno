@@ -13,10 +13,17 @@ TEST(StenoStroke, EmptyConstruction) {
 }
 
 TEST(StenoStroke, GoodInputString) {
-	// We can't EXPECT_TRUE for the empty stroke, it's treated like (bool)0.
+	// We can't EXPECT_TRUE for the empty stroke, it's treated like 0.
+	EXPECT_FALSE(steno::Stroke {"-"});
 	EXPECT_FALSE(steno::Stroke {"-"}.failed());
 	EXPECT_TRUE(steno::Stroke {"#STKPWHRAO*EUFRPBLGTSDZ"}); // All keys
-	EXPECT_TRUE(steno::Stroke {"   KP   A    FRP L     "}); // "example"
+	EXPECT_TRUE(steno::Stroke {" STKPWHR  -            "}); // Left
+	EXPECT_TRUE(steno::Stroke {"        AO*EU          "}); // Middle
+	EXPECT_TRUE(steno::Stroke {"          -  FRPBLGTSDZ"}); // Right
+	EXPECT_TRUE(steno::Stroke {" S                     "}); // ┬─ S key only
+	EXPECT_TRUE(steno::Stroke {" S        -            "}); // ┘
+	EXPECT_TRUE(steno::Stroke {"#                      "}); // ┬─ Num. bar only
+	EXPECT_TRUE(steno::Stroke {"#         -            "}); // ┘
 	EXPECT_TRUE(steno::Stroke {" S  P  R O  U      TS  "}); // "sprouts"
 	EXPECT_TRUE(steno::Stroke {"        A       B      "}); // A B
 	EXPECT_TRUE(steno::Stroke {"   K   R  -          D "}); // C D
@@ -28,6 +35,29 @@ TEST(StenoStroke, GoodInputString) {
 	EXPECT_TRUE(steno::Stroke {"  T       * UF         "}); // T U V
 	EXPECT_TRUE(steno::Stroke {"     W    -     B G S  "}); // W X
 	EXPECT_TRUE(steno::Stroke {"   K W R  -           Z"}); // Y Z
+	// Numbers
+	EXPECT_TRUE(steno::Stroke {"1"});
+	EXPECT_TRUE(steno::Stroke {"2"});
+	EXPECT_TRUE(steno::Stroke {"3"});
+	EXPECT_TRUE(steno::Stroke {"4"});
+	EXPECT_TRUE(steno::Stroke {"5"});
+	EXPECT_TRUE(steno::Stroke {"0"});
+	EXPECT_TRUE(steno::Stroke {"6"});
+	EXPECT_TRUE(steno::Stroke {"7"});
+	EXPECT_TRUE(steno::Stroke {"8"});
+	EXPECT_TRUE(steno::Stroke {"9"});
+	// Optional hyphen for purely numeric input
+	EXPECT_TRUE(steno::Stroke {"1-"});
+	EXPECT_TRUE(steno::Stroke {"2-"});
+	EXPECT_TRUE(steno::Stroke {"3-"});
+	EXPECT_TRUE(steno::Stroke {"4-"});
+	EXPECT_TRUE(steno::Stroke {"-6"});
+	EXPECT_TRUE(steno::Stroke {"-7"});
+	EXPECT_TRUE(steno::Stroke {"-8"});
+	EXPECT_TRUE(steno::Stroke {"-9"});
+	EXPECT_TRUE(steno::Stroke {"1234-6789"});
+	// Compound
+	EXPECT_TRUE(steno::Stroke {"12HOURS"});
 }
 
 TEST(StenoStroke, BadInputString) {
@@ -36,6 +66,9 @@ TEST(StenoStroke, BadInputString) {
 	EXPECT_TRUE(steno::Stroke {" "}.failed());
 	EXPECT_TRUE(steno::Stroke {"--"}.failed());
 	EXPECT_TRUE(steno::Stroke {"##"}.failed());
+	EXPECT_TRUE(steno::Stroke {"SS"}.failed());
+	EXPECT_TRUE(steno::Stroke {"TT"}.failed());
+	EXPECT_TRUE(steno::Stroke {"RR"}.failed());
 	// TODO
 }
 

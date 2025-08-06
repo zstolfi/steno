@@ -179,10 +179,10 @@ public:
 //	Brief& operator+=(Brief);
 //	Brief& operator|=(Brief);
 
-//private:
-//	void appendText(std::string);
-//	void normalize();
-//};
+private:
+	void appendText(std::string);
+	void normalize();
+};
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -282,6 +282,11 @@ constexpr Stroke::Stroke(std::string_view str) {
 	};
 
 	auto next = [] (State s) { return (s == End)? End: State(int(s)+1); };
+	auto in = [] (char c, std::string_view s) { return s.find(c) != s.npos; };
+	bool const Numeric = std::all_of(
+		str.begin(), str.end(),
+		[&] (char c) { return in(c, " \t" "0123456789"); }
+	);
 
 	//   On the left is every state's possible next valid input. This creates
 	// a broken triangle we can play billiards on to parse our string.
@@ -313,17 +318,15 @@ constexpr Stroke::Stroke(std::string_view str) {
 	// _Z:                         Z                                 Z
 
 	bool valid = false;
-	for (State state {Begin}; char c : str) if (c != ' ' && c != '\t') {
+	for (State state {Begin}; char c : str) if (!in(c, " \t")) {
 		valid = true;
-		if (state == End) valid = false;
+		auto require = [&] (bool condition) { return !(valid = condition); };
 		auto accept = [&] (State s, KeyUnit k, char cKey, char cNum = '\0') {
-			if (c == cKey || c == cNum) {
-				if (c == cNum) this->bits |= Key::Num.bits;
-				if (c == cKey) this->bits |= k.bits;
-				state = next(s);
-				return true;
-			}
-			return false;
+			bool match = (c == cKey) || (c == cNum);
+			if (c == cKey) this->bits |= k.bits;
+			if (c == cNum) this->bits |= k.bits | Key::Num.bits;
+			if (match) state = next(s);
+			return match;
 		};
 		switch (state) {
 			using enum State;
@@ -338,13 +341,8 @@ constexpr Stroke::Stroke(std::string_view str) {
 			case H_: if (accept(H_, Key::H_, 'H', '4')); else
 			case R_: if (accept(R_, Key::R_, 'R'     )); else
 			case A : if (accept(A , Key::A , 'A', '5')); else
-			/*    */ if (accept(O , Key::O , 'O', '0')); else
-			/*    */ if (accept(x , Key::x , '*'     )); else
-			/*    */ if (accept(E , Key::E , 'E'     )); else
-			/*    */ if (accept(U , Key::U , 'U'     )); else
-			/*    */ if (c == '-') state = _F;
-			/*    */ else valid = false;
-			break;
+			/*    */ if (c == '-') state = _F;           else
+			/*    */ if (require(Numeric || in(c, "O*EU" "0"))); else
 			case O : if (accept(O , Key::O , 'O', '0')); else
 			case x : if (accept(x , Key::x , '*'     )); else
 			case E : if (accept(E , Key::E , 'E'     )); else
