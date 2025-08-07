@@ -10,6 +10,8 @@
 #include <iterator>
 #include <utility>
 #include <type_traits>
+#include <algorithm>
+#include <cstdint>
 
 namespace steno {
 

@@ -1,6 +1,4 @@
 #include "steno.hh"
-#include <algorithm>
-#include <cctype>
 
 namespace /*detail*/ {
 	constexpr auto FailBit   = 0b00000000000000000000000'000000001;
