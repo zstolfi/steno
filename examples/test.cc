@@ -504,7 +504,10 @@ TEST(StenoBrief, Getters) {
 
 TEST(StenoBrief, StructuredBinding) {
 	steno::Brief brief {{"AP/EL"}, "apple"};
-	auto [strokes, text] = brief;
+	  [[maybe_unused]] auto        [strokes, text] = brief;  
+	{ [[maybe_unused]] auto      & [strokes, text] = brief; }
+	{ [[maybe_unused]] auto const  [strokes, text] = brief; }
+	{ [[maybe_unused]] auto const& [strokes, text] = brief; }
 	EXPECT_EQ(strokes.size(), 2);
 	EXPECT_EQ(strokes[0], steno::Stroke {"AP"});
 	EXPECT_EQ(strokes[1], steno::Stroke {"EL"});

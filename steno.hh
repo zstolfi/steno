@@ -218,10 +218,9 @@ public:
 	Phrase const& phrase() const;
 	std::string&       text();
 	std::string const& text() const;
-	template <std::size_t I> auto&& get()      &  { return get_impl<I>(*this); }
-	template <std::size_t I> auto&& get() const&  { return get_impl<I>(*this); }
-	template <std::size_t I> auto&& get()      && { return get_impl<I>(*this); }
-	template <std::size_t I> auto&& get() const&& { return get_impl<I>(*this); }
+	template <std::size_t I> friend auto&& get(Brief&);
+	template <std::size_t I> friend auto&& get(Brief const&);
+	template <std::size_t I> friend auto&& get(Brief&&);
 	// Comparison
 	bool operator== (Brief const&) const = default;
 	auto operator<=>(Brief const&) const = default;
@@ -234,11 +233,12 @@ public:
 
 private:
 	Brief& normalize();
-	template <std::size_t I, class T> auto&& get_impl(T&& t) {
-		static_assert(I < 2);
-		if constexpr (I == 0) return std::forward<T>(t).m_phrase;
-		if constexpr (I == 1) return std::forward<T>(t).m_text;
-	}
+	template <std::size_t I> auto&& get_impl() &
+	{ if constexpr (I==0) return m_phrase; if constexpr (I==1) return m_text; }
+	template <std::size_t I> auto&& get_impl() const&
+	{ if constexpr (I==0) return m_phrase; if constexpr (I==1) return m_text; }
+	template <std::size_t I> auto&& get_impl() &&
+	{ if constexpr (I==0) return m_phrase; if constexpr (I==1) return m_text; }
 };
 
 // Phrase promotion
@@ -391,3 +391,9 @@ template <> struct std::tuple_size<steno::Brief>
 template <std::size_t I> struct std::tuple_element<I, steno::Brief>
 : std::conditional<I == 0, steno::Phrase, std::string>
 { static_assert(I < 2); };
+
+namespace steno {
+template <std::size_t I> auto&& get(Brief&       b) { return b.get_impl<I>(); }
+template <std::size_t I> auto&& get(Brief const& b) { return b.get_impl<I>(); }
+template <std::size_t I> auto&& get(Brief&&      b) { return b.get_impl<I>(); }
+}
