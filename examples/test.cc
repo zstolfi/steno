@@ -439,3 +439,24 @@ TEST(StenoPhrase, SequenceExpressions) {
 	EXPECT_THROW(v .at(v .size()), std::out_of_range);
 	EXPECT_THROW(cv.at(cv.size()), std::out_of_range);
 }
+
+/* ~~ Brief Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+TEST(StenoBrief, Construction) {
+	steno::Brief apple1 {{"AP/EL"}, "apple"};
+	EXPECT_EQ(apple1.getStrokes(), steno::Phrase {"AP/EL"});
+	EXPECT_EQ(apple1.getText(), "apple");
+
+	steno::Brief apple2 {apple1, "Apple ]["};
+	EXPECT_EQ(apple2.getStrokes(), steno::Phrase {"AP/EL"});
+	EXPECT_EQ(apple2.getText(), "Apple ][");
+}
+
+TEST(StenoBrief, StructuredBinding) {
+	steno::Brief brief {{"AP/EL"}, "apple"};
+	auto [strokes, text] = brief;
+	EXPECT_EQ(strokes.size(), 2);
+	EXPECT_EQ(strokes[0], steno::Stroke {"AP"});
+	EXPECT_EQ(strokes[1], steno::Stroke {"EL"});
+	EXPECT_EQ(text, "apple");
+}

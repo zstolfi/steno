@@ -301,8 +301,10 @@ void Brief::normalize() {
 		strokes.end()
 	);
 	// Remove leading or trailing whitespace.
-	text = text.substr(text.find_first_not_of(" \t\n\r"));
-	text = text.substr(0, text.find_last_not_of(" \t\n\r"));
+	constexpr std::string_view Whitespace {" \t\n\r"};
+	auto i = text.find_first_not_of(Whitespace);
+	auto j = text.find_last_not_of(Whitespace);
+	text = (i != text.npos)? text.substr(i, j-i + 1): "";
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */

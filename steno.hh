@@ -215,6 +215,10 @@ public:
 	std::string const& getText() const;
 	Brief& setStrokes(Phrase const&);
 	Brief& setText(std::string_view);
+	template <std::size_t I> auto&& get()      &  { return get_impl<I>(*this); }
+	template <std::size_t I> auto&& get() const&  { return get_impl<I>(*this); }
+	template <std::size_t I> auto&& get()      && { return get_impl<I>(*this); }
+	template <std::size_t I> auto&& get() const&& { return get_impl<I>(*this); }
 	// Comparison
 	bool operator== (Brief const&) const = default;
 	auto operator<=>(Brief const&) const = default;
@@ -225,6 +229,11 @@ public:
 private:
 	void appendText(std::string_view);
 	void normalize();
+	template <std::size_t I, class T> auto&& get_impl(T&& t) {
+		static_assert(I < 2);
+		if constexpr (I == 0) return std::forward<T>(t).getStrokes();
+		if constexpr (I == 1) return std::forward<T>(t).getText();
+	}
 };
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
