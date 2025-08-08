@@ -139,8 +139,6 @@ public:
 	// Getters and Setters
 	std::vector<Stroke>&       strokes();
 	std::vector<Stroke> const& strokes() const;
-	Phrase& append (Phrase);
-	Phrase& prepend(Phrase);
 	// Comparison
 	bool operator== (Phrase const&) const = default;
 	auto operator<=>(Phrase const&) const = default;
@@ -235,7 +233,6 @@ public:
 	friend Brief operator+(std::string_view, Brief);
 
 private:
-	Brief& appendText(std::string_view);
 	Brief& normalize();
 	template <std::size_t I, class T> auto&& get_impl(T&& t) {
 		static_assert(I < 2);

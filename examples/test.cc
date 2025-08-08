@@ -482,18 +482,18 @@ TEST(StenoBrief, Construction) {
 }
 
 TEST(StenoBrief, Getters) {
-	steno::Brief brief {{"1/2"}, "one two"};
+	steno::Brief brief {{"1/2"}, "one, two"};
 	EXPECT_EQ(brief.phrase(), steno::Phrase {"1/2"});
-	EXPECT_EQ(brief.text(), "one two");
+	EXPECT_EQ(brief.text(), "one, two");
 
 	brief.phrase() |= steno::Stroke {"3"};
-	brief.text() += " three";
+	brief.text() += ", three";
 	EXPECT_EQ(brief.phrase(), steno::Phrase {"1/2/3"});
-	EXPECT_EQ(brief.text(), "one two three");
+	EXPECT_EQ(brief.text(), "one, two, three");
 
-	brief |= steno::Brief {{"4"}, "four"};
+	brief |= steno::Brief {{"4"}, ", four"};
 	EXPECT_EQ(brief.phrase(), steno::Phrase {"1/2/3/4"});
-	EXPECT_EQ(brief.text(), "one two three four");
+	EXPECT_EQ(brief.text(), "one, two, three, four");
 
 	using enum steno::Key;
 	steno::Brief const ab {{"A/-B"}, "\tayy bee\t"};

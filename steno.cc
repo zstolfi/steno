@@ -195,25 +195,13 @@ std::vector<Stroke> const& Phrase::strokes() const {
 	return m_strokes;
 }
 
-Phrase& Phrase::append(Phrase p) {
+// Concatenation
+Phrase& Phrase::operator|=(Phrase p) {
 	m_strokes.insert(
 		m_strokes.end(),
 		p.m_strokes.begin(), p.m_strokes.end()
 	);
 	return *this;
-}
-
-Phrase& Phrase::prepend(Phrase p) {
-	m_strokes.insert(
-		m_strokes.begin(),
-		p.m_strokes.begin(), p.m_strokes.end()
-	);
-	return *this;
-}
-
-// Concatenation
-Phrase& Phrase::operator|=(Phrase p) {
-	return append(p);
 }
 
 Phrase operator|(Phrase lhs, Phrase const& rhs) {
@@ -266,7 +254,8 @@ std::string const& Brief::text() const {
 // Concatenation
 Brief& Brief::operator|=(Brief other) {
 	m_phrase |= other.m_phrase;
-	return appendText(other.m_text);
+	m_text += other.m_text;
+	return *this;
 }
 
 Brief operator|(Brief lhs, Brief const& rhs) {
@@ -274,34 +263,21 @@ Brief operator|(Brief lhs, Brief const& rhs) {
 }
 
 Brief& Brief::operator+=(std::string_view str) {
-	return appendText(str);
+	m_text += str;
+	return *this;
 }
 
 Brief operator+(Brief b, std::string_view str) {
-	return b.appendText(str);
+	b += str; return b;
 }
 
 Brief operator+(std::string_view str, Brief b) {
 	Brief result {b.m_phrase, str};
-	return result.appendText(b.m_text);
+	return result += str;
 }
 
 
 // Internal
-Brief& Brief::appendText(std::string_view str) {
-	if (m_text.empty()) { m_text = str; return *this; }
-	if (str.empty()) return *this;
-
-	bool endGlue = m_text.back() == '~';
-	bool startGlue = str.front() == '~';
-
-	if (!startGlue && !endGlue) m_text += ' ', m_text += str;
-	else {
-		if (endGlue) m_text.pop_back();
-		m_text.insert(m_text.size(), str, startGlue? 1: 0);
-	}
-	return *this;
-}
 
 Brief& Brief::normalize() {
 	// Remove empty m_phrase.
