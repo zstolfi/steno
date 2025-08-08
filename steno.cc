@@ -186,15 +186,6 @@ Phrase::operator bool() const {
 	return !m_strokes.empty() && !failed();
 }
 
-// Getters and Setters
-std::vector<Stroke>& Phrase::strokes() {
-	return m_strokes;
-}
-
-std::vector<Stroke> const& Phrase::strokes() const {
-	return m_strokes;
-}
-
 // Concatenation
 Phrase& Phrase::operator|=(Phrase p) {
 	m_strokes.insert(

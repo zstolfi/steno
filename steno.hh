@@ -136,9 +136,6 @@ public:
 	// Fail-state query
 	bool failed() const;
 	operator bool() const;
-	// Getters and Setters
-	std::vector<Stroke>&       strokes();
-	std::vector<Stroke> const& strokes() const;
 	// Comparison
 	bool operator== (Phrase const&) const = default;
 	auto operator<=>(Phrase const&) const = default;

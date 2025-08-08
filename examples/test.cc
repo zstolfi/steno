@@ -271,18 +271,18 @@ TEST(StenoStroke, UseWithMaps) {
 /* ~~ Phrase Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 // Modeled after https://en.cppreference.com/w/cpp/named_req/SequenceContainer
 
-TEST(StenoPhrase, Getters) {
+TEST(StenoPhrase, StrokeModify) {
 	steno::Phrase p1 {"PHAOUT/ABL"};
-	EXPECT_EQ(p1.strokes()[0], steno::Stroke {"   P H AO  U      T   "});
-	EXPECT_EQ(p1.strokes()[1], steno::Stroke {"       A       BL     "});
+	EXPECT_EQ(p1[0], steno::Stroke {"   P H AO  U      T   "});
+	EXPECT_EQ(p1[1], steno::Stroke {"       A       BL     "});
 	
-	p1.strokes()[1] = {"AEUTD"};
-	EXPECT_EQ(p1.strokes()[0], steno::Stroke {"   P H AO  U      T   "});
-	EXPECT_EQ(p1.strokes()[1], steno::Stroke {"       A  EU      T D "});
+	p1[1] = {"AEUTD"};
+	EXPECT_EQ(p1[0], steno::Stroke {"   P H AO  U      T   "});
+	EXPECT_EQ(p1[1], steno::Stroke {"       A  EU      T D "});
 	
 	steno::Phrase const p2 {"KOPB/STAPBT"};
-	EXPECT_EQ(p2.strokes()[0], steno::Stroke {"  K     O     PB      "});
-	EXPECT_EQ(p2.strokes()[1], steno::Stroke {"ST     A      PB  T   "});
+	EXPECT_EQ(p2[0], steno::Stroke {"  K     O     PB      "});
+	EXPECT_EQ(p2[1], steno::Stroke {"ST     A      PB  T   "});
 }
 
 TEST(StenoPhrase, Concatenation) {
