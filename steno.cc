@@ -11,16 +11,16 @@ namespace steno {
 
 // Fail-state query
 bool Stroke::failed() const {
-	return this->bits & FailBit;
+	return bits & FailBit;
 }
 
 Stroke::operator bool() const {
-	return this->bits && !this->failed();
+	return bits && !failed();
 }
 
 // Getters and Setters
 uint32_t Stroke::getBits() const {
-	return this->bits;
+	return bits;
 }
 
 bool Stroke::get(Key k) const {
@@ -52,7 +52,7 @@ Stroke::Reference& Stroke::Reference::operator=(Reference const& r) {
 
 // Subscript operator
 bool Stroke::operator[](Key k) const {
-	return this->get(k);
+	return get(k);
 }
 
 Stroke::Reference Stroke::operator[](Key k) {
@@ -62,35 +62,35 @@ Stroke::Reference Stroke::operator[](Key k) {
 // Key manipulation
 Stroke Stroke::operator~() const {
 	Stroke result {};
-	result.bits = ~this->bits & ~FlagsMask;
+	result.bits = ~bits & ~FlagsMask;
 	return result;
 }
 
 Stroke& Stroke::operator+=(Stroke const& other) {
-	auto flags = other.getFlags();
-	this->bits |= other.bits;
-	this->setFlags(flags);
+	auto flags = getFlags();
+	bits |= other.bits;
+	setFlags(flags);
 	return *this;
 }
 
 Stroke& Stroke::operator-=(Stroke const& other) {
-	auto flags = other.getFlags();
-	this->bits &= ~other.bits;
-	this->setFlags(flags);
+	auto flags = getFlags();
+	bits &= ~other.bits;
+	setFlags(flags);
 	return *this;
 }
 
 Stroke& Stroke::operator&=(Stroke const& other) {
-	auto flags = other.getFlags();
-	this->bits &= other.bits;
-	this->setFlags(flags);
+	auto flags = getFlags();
+	bits &= other.bits;
+	setFlags(flags);
 	return *this;
 }
 
 Stroke& Stroke::operator^=(Stroke const& other) {
-	auto flags = other.getFlags();
-	this->bits ^= other.bits;
-	this->setFlags(flags);
+	auto flags = getFlags();
+	bits ^= other.bits;
+	setFlags(flags);
 	return *this;
 }
 
@@ -112,19 +112,20 @@ Stroke operator^(Stroke lhs, Stroke const& rhs) {
 
 // Internal
 uint32_t Stroke::getFlags() const {
-	return this->bits & FlagsMask;
+	return bits & FlagsMask;
 }
 
 void Stroke::setFlags(uint32_t flags) {
-	this->bits &= ~FlagsMask;
-	this->bits |= flags;
+	bits &= ~FlagsMask;
+	bits |= flags;
 }
 
 void Stroke::failConstruction(std::string_view str) {
 //	if (str != "") std::cout << str << "\n";
-	this->bits |= FailBit;
+	bits |= FailBit;
 }
 
+// Key promotion
 Stroke operator~(Key k) {
 	return ~Stroke {k};
 }
@@ -151,8 +152,8 @@ Stroke operator^(Key lhs, Key rhs) {
 Phrase::Phrase(std::string_view str) {
 	auto push = [&](unsigned i, unsigned j) {
 		// if (i == j) return false;
-		this->strokes.emplace_back(str.substr(i, j-i));
-		if (this->strokes.back().failed()) return false;
+		strokes.emplace_back(str.substr(i, j-i));
+		if (strokes.back().failed()) return false;
 		return true;
 	};
 
@@ -165,15 +166,11 @@ Phrase::Phrase(std::string_view str) {
 }
 
 Phrase::Phrase(Stroke x) {
-	this->strokes = decltype(strokes) {x};
+	strokes = std::vector<Stroke> {x};
 }
 
-Phrase::Phrase(std::span<const Stroke> span) {
-	this->strokes = decltype(strokes) (span.begin(), span.end());
-}
-
-Phrase::Phrase(std::initializer_list<Stroke> il) {
-	this->strokes = decltype(strokes) (il.begin(), il.end());
+Phrase::Phrase(std::span<Stroke const> span) {
+	strokes = std::vector<Stroke> (span.begin(), span.end());
 }
 
 // Fail-state query
@@ -186,33 +183,41 @@ bool Phrase::failed() const {
 }
 
 Phrase::operator bool() const {
-	return !this->strokes.empty() && !this->failed();
+	return !strokes.empty() && !failed();
 }
 
 // Getters and Setters
+std::vector<Stroke>& Phrase::getStrokes() {
+	return strokes;
+}
+
 std::vector<Stroke> const& Phrase::getStrokes() const {
-	return this->strokes;
+	return strokes;
 }
 
-Phrase& Phrase::append(Phrase xx) {
-	this->strokes.insert(
-		this->strokes.end(),
-		xx.strokes.begin(), xx.strokes.end()
+Phrase& Phrase::append(Phrase p) {
+	strokes.insert(
+		strokes.end(),
+		p.strokes.begin(), p.strokes.end()
 	);
 	return *this;
 }
 
-Phrase& Phrase::prepend(Phrase xx) {
-	this->strokes.insert(
-		this->strokes.begin(),
-		xx.strokes.begin(), xx.strokes.end()
+Phrase& Phrase::prepend(Phrase p) {
+	strokes.insert(
+		strokes.begin(),
+		p.strokes.begin(), p.strokes.end()
 	);
 	return *this;
 }
 
-// Phrase concatenation
-Phrase& Phrase::operator|=(Phrase xx) {
-	return append(xx);
+// Concatenation
+Phrase& Phrase::operator|=(Phrase p) {
+	return append(p);
+}
+
+Phrase operator|(Phrase lhs, Phrase const& rhs) {
+	lhs |= rhs; return lhs;
 }
 
 /* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -265,11 +270,16 @@ Brief& Brief::setText(std::string_view s) {
 
 // Concatenation
 Brief& Brief::operator|=(Brief other) {
-	this->strokes |= other.strokes;
+	strokes |= other.strokes;
 	appendText(other.text);
 	return *this;
 }
 
+Brief operator|(Brief lhs, Brief const& rhs) {
+	lhs |= rhs; return lhs;
+}
+
+// Internal
 void Brief::appendText(std::string_view str) {
 	if (text.empty()) { text = str; return; }
 	if (str.empty()) return;

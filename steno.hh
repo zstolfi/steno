@@ -17,33 +17,32 @@ namespace steno {
 
 /* ~~ API Flags ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-constexpr struct FromBits_Arg {} FromBits;
-constexpr struct FromBitsReversed_Arg {} FromBitsReversed;
+constexpr struct FromBits_Arg         {} FromBits         {};
+constexpr struct FromBitsReversed_Arg {} FromBitsReversed {};
 
 /* ~~ Key ID's ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 enum class Key : uint32_t {
-		// Number Bar
-		Num = 1u<<31,
-		// Initial Consonants
-		S_ = 1u<<30,
-		T_ = 1u<<29, K_ = 1u<<28,
-		P_ = 1u<<27, W_ = 1u<<26,
-		H_ = 1u<<25, R_ = 1u<<24,
-		// Vowels & Asterisk
-		A  = 1u<<23, O  = 1u<<22,
-		x  = 1u<<21,
-		E  = 1u<<20, U  = 1u<<19,
-		// Final Consonants
-		_F = 1u<<18, _R = 1u<<17,
-		_P = 1u<<16, _B = 1u<<15,
-		_L = 1u<<14, _G = 1u<<13,
-		_T = 1u<<12, _S = 1u<<11,
-		_D = 1u<<10, _Z = 1u<< 9,
-		// Flags
-//		Mark = 1<<8, OpenLeft = 1<<7, OpenRight = 1<<0,
+	// Number Bar
+	Num = 1u<<31,
+	// Initial Consonants
+	S_ = 1u<<30,
+	T_ = 1u<<29, K_ = 1u<<28,
+	P_ = 1u<<27, W_ = 1u<<26,
+	H_ = 1u<<25, R_ = 1u<<24,
+	// Vowels & Asterisk
+	A  = 1u<<23, O  = 1u<<22,
+	x  = 1u<<21,
+	E  = 1u<<20, U  = 1u<<19,
+	// Final Consonants
+	_F = 1u<<18, _R = 1u<<17,
+	_P = 1u<<16, _B = 1u<<15,
+	_L = 1u<<14, _G = 1u<<13,
+	_T = 1u<<12, _S = 1u<<11,
+	_D = 1u<<10, _Z = 1u<< 9,
+	// Flags
+//	Mark = 1<<8, OpenLeft = 1<<7, OpenRight = 1<<0,
 };
-
 
 /* ~~ Stroke Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -110,11 +109,13 @@ private:
 	void failConstruction(std::string_view = "");
 };
 
+// Key promotion
 Stroke operator~(Key);
 Stroke operator+(Key, Key);
 Stroke operator-(Key, Key);
 Stroke operator&(Key, Key);
 Stroke operator^(Key, Key);
+
 /* ~~ Phrase Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 class Phrase {
@@ -124,19 +125,16 @@ public:
 	// Default construction/assignment/movement
 	Phrase() = default;
 	Phrase(Phrase const&) = default;
-	Phrase(Phrase&&     ) = default;
 	Phrase& operator=(Phrase const&) = default;
-	Phrase& operator=(Phrase&&     ) = default;
 	// Class constructors
 	Phrase(std::string_view);
 	Phrase(Stroke);
-	Phrase(std::span<const Stroke>);
-	Phrase(std::initializer_list<Stroke>);
+	Phrase(std::span<Stroke const>);
 	// Fail-state query
 	bool failed() const;
 	operator bool() const;
 	// Getters and Setters
-	std::vector<Stroke>      & getStrokes();
+	std::vector<Stroke>&       getStrokes();
 	std::vector<Stroke> const& getStrokes() const;
 	Phrase& append (Phrase);
 	Phrase& prepend(Phrase);
@@ -144,7 +142,7 @@ public:
 	bool operator== (Phrase const&) const = default;
 	auto operator<=>(Phrase const&) const = default;
 	template <class T> friend struct std::hash;
-	// Phrase concatenation
+	// Concatenation
 	Phrase& operator|=(Phrase);
 
 public:
@@ -170,6 +168,7 @@ public:
 
 public:
 	// Sequence specific methods
+	Phrase(std::initializer_list<Stroke> il): strokes(il) {};
 	Phrase(std::size_t n, Stroke t): strokes(n, t) {}
 	template <std::input_iterator I>
 	Phrase(I first, I last): strokes(first, last) {}
@@ -202,9 +201,7 @@ public:
 	// Default construction/assignment/movement
 	Brief() = default;
 	Brief(Brief const&) = default;
-	Brief(Brief&&     ) = default;
 	Brief& operator=(Brief const&) = default;
-	Brief& operator=(Brief&&     ) = default;
 	// Class constructors
 	Brief(Phrase const&, std::string_view);
 	Brief(Brief const&, std::string_view);
@@ -212,9 +209,9 @@ public:
 	bool failed() const;
 	operator bool() const;
 	// Getters and Setters
-	Phrase& getStrokes();
+	Phrase&       getStrokes();
 	Phrase const& getStrokes() const;
-	std::string& getText();
+	std::string&       getText();
 	std::string const& getText() const;
 	Brief& setStrokes(Phrase const&);
 	Brief& setText(std::string_view);
@@ -223,6 +220,7 @@ public:
 	auto operator<=>(Brief const&) const = default;
 	// Concatenation
 	Brief& operator|=(Brief);
+	friend Phrase operator|(Phrase, Phrase const&);
 
 private:
 	void appendText(std::string_view);
@@ -287,18 +285,9 @@ constexpr Stroke::Stroke(std::string_view str) {
 //		Mk, /*!*/
 //		Ol, /*~*/
 		Nm, /*#*/
-		S_,
-		T_, K_,
-		P_, W_,
-		H_, R_,
-		A , O ,
-		x ,
-		E , U ,
-		_F, _R,
-		_P, _B,
-		_L, _G,
-		_T, _S,
-		_D, _Z,
+		S_, T_, K_, P_, W_, H_, R_,
+		A , O , x , E , U ,
+		_F, _R, _P, _B, _L, _G, _T, _S, _D, _Z,
 //		Or, /*~*/
 		Begin = Nm, End = _Z+1
 	};
@@ -342,7 +331,7 @@ constexpr Stroke::Stroke(std::string_view str) {
 	bool valid = false;
 	for (State state {Begin}; char c : str) if (!in(c, " \t")) {
 		valid = true;
-		auto require = [&] (bool condition) { return !(valid = condition); };
+		auto require = [&] (bool condition) { return !(valid &= condition); };
 		auto accept = [&] (State s, Key k, char cKey, char cNum = '\0') {
 			bool match = (c == cKey) || (c == cNum);
 			if (c == cKey) this->bits |= (uint32_t)k;
@@ -363,8 +352,8 @@ constexpr Stroke::Stroke(std::string_view str) {
 			case H_: if (accept(H_, Key::H_, 'H', '4')); else
 			case R_: if (accept(R_, Key::R_, 'R'     )); else
 			case A : if (accept(A , Key::A , 'A', '5')); else
-			/*    */ if (c == '-') state = _F;           else
-			/*    */ if (require(Numeric || in(c, "O*EU" "0"))); else
+			if (c == '-') state = _F;                    else
+			if (require(Numeric || in(c, "O*EU" "0")));  else
 			case O : if (accept(O , Key::O , 'O', '0')); else
 			case x : if (accept(x , Key::x , '*'     )); else
 			case E : if (accept(E , Key::E , 'E'     )); else
@@ -387,9 +376,9 @@ constexpr Stroke::Stroke(std::string_view str) {
 	if (!valid) failConstruction(str);
 }
 
-const auto NoStroke = Stroke {};
-const auto NoPhrase = Phrase {};
-const auto NoBrief = Brief {};
+Stroke const NoStroke {};
+Phrase const NoPhrase {};
+Brief  const NoBrief  {};
 
 } // namespace steno
 
