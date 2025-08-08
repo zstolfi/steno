@@ -265,6 +265,15 @@ TEST(StenoStroke, UseWithMaps) {
 /* ~~ Phrase Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 // Modeled after https://en.cppreference.com/w/cpp/named_req/SequenceContainer
 
+TEST(StenoPhrase, Concatenation) {
+	using S = steno::Stroke;
+	using P = steno::Phrase;
+	EXPECT_EQ(S("1") | S("2") | S("3"), P("1/2/3"));
+	EXPECT_EQ(P("1") | P("2") | P("3"), P("1/2/3"));
+	EXPECT_EQ(P("1   /    2") | S("3"), P("1/2/3"));
+	EXPECT_EQ(S("1") | P("2   /    3"), P("1/2/3"));
+}
+
 #include <map>
 #include <unordered_map>
 TEST(StenoPhrase, UseWithMaps) {

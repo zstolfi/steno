@@ -144,6 +144,7 @@ public:
 	template <class T> friend struct std::hash;
 	// Concatenation
 	Phrase& operator|=(Phrase);
+	friend Phrase operator|(Phrase, Phrase const&);
 
 public:
 	// Container specific types
@@ -191,6 +192,9 @@ public:
 	auto& at          (std::size_t n) const { return strokes.at(n);            }
 };
 
+// Stroke promotion
+Phrase operator|(Stroke, Stroke const&);
+
 /* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 class Brief {
@@ -225,10 +229,13 @@ public:
 	// Concatenation
 	Brief& operator|=(Brief);
 	friend Phrase operator|(Phrase, Phrase const&);
+	Brief& operator+=(std::string_view);
+	friend Brief operator+(Brief, std::string_view);
+	friend Brief operator+(std::string_view, Brief);
 
 private:
-	void appendText(std::string_view);
-	void normalize();
+	Brief& appendText(std::string_view);
+	Brief& normalize();
 	template <std::size_t I, class T> auto&& get_impl(T&& t) {
 		static_assert(I < 2);
 		if constexpr (I == 0) return std::forward<T>(t).getStrokes();
@@ -236,34 +243,15 @@ private:
 	}
 };
 
-/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+// Phrase promotion
+Brief operator+(Phrase, std::string_view);
+Brief operator+(std::string_view, Phrase);
+
+/* ~~ Dictionary Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 //using Dictionary = std::map<steno::Phrase, std::string>;
 
-/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
-// Multiple keys at the same time:
-//Phrase operator+(Phrase, Stroke);
-//Phrase operator+(Stroke, Phrase);
-//Brief  operator+(Brief , Brief );
-//Brief  operator+(Phrase, Brief );
-//Brief  operator+(Brief , Phrase);
-//Brief  operator+(std::string, Brief);
-//Brief  operator+(Brief, std::string);
-
-// Removing keys:
-//Phrase operator-(Phrase, Stroke);
-
-// Multiple strokes in order:
-Phrase operator|(Stroke, Stroke);
-Phrase operator|(Phrase, Stroke);
-Phrase operator|(Stroke, Phrase);
-Phrase operator|(Phrase, Phrase);
-//Brief  operator|(Brief , Brief );
-//Brief  operator|(Phrase, Brief );
-//Brief  operator|(Brief , Phrase);
-// Subset of keys:
-// Toggling keys:
+/* ~~ String Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 //std::string toString(Key);
 //std::string toString(Stroke);
@@ -271,7 +259,7 @@ Phrase operator|(Phrase, Phrase);
 //std::ostream& operator<<(std::ostream&, Stroke);
 //std::ostream& operator<<(std::ostream&, Phrase);
 
-/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ Constexpr Declarations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 constexpr Stroke::Stroke(Key k) {
 	this->bits = (uint32_t)k;
@@ -385,13 +373,13 @@ constexpr Stroke::Stroke(std::string_view str) {
 	if (!valid) failConstruction(str);
 }
 
-Stroke const NoStroke {};
-Phrase const NoPhrase {};
-Brief  const NoBrief  {};
+static constexpr auto NoStroke = Stroke {};
+static constexpr auto NoPhrase = Phrase {};
+static constexpr auto NoBrief  = Brief  {};
 
 } // namespace steno
 
-/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ Misc. STL Functionality ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 template <> struct std::hash<steno::Stroke>
 { std::size_t operator()(steno::Stroke const&) const; };

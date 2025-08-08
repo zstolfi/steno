@@ -220,6 +220,11 @@ Phrase operator|(Phrase lhs, Phrase const& rhs) {
 	lhs |= rhs; return lhs;
 }
 
+// Stroke promotion
+Phrase operator|(Stroke lhs, Stroke const& rhs) {
+	return Phrase {lhs, rhs};
+}
+
 /* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 // Class constructors
@@ -271,18 +276,31 @@ Brief& Brief::setText(std::string_view s) {
 // Concatenation
 Brief& Brief::operator|=(Brief other) {
 	strokes |= other.strokes;
-	appendText(other.text);
-	return *this;
+	return appendText(other.text);
 }
 
 Brief operator|(Brief lhs, Brief const& rhs) {
 	lhs |= rhs; return lhs;
 }
 
+Brief& Brief::operator+=(std::string_view str) {
+	return appendText(str);
+}
+
+Brief operator+(Brief b, std::string_view str) {
+	return b.appendText(str);
+}
+
+Brief operator+(std::string_view str, Brief b) {
+	Brief result {b.strokes, str};
+	return result.appendText(b.text);
+}
+
+
 // Internal
-void Brief::appendText(std::string_view str) {
-	if (text.empty()) { text = str; return; }
-	if (str.empty()) return;
+Brief& Brief::appendText(std::string_view str) {
+	if (text.empty()) { text = str; return *this; }
+	if (str.empty()) return *this;
 
 	bool endGlue = text.back() == '~';
 	bool startGlue = str.front() == '~';
@@ -292,9 +310,10 @@ void Brief::appendText(std::string_view str) {
 		if (endGlue) text.pop_back();
 		text.insert(text.size(), str, startGlue? 1: 0);
 	}
+	return *this;
 }
 
-void Brief::normalize() {
+Brief& Brief::normalize() {
 	// Remove empty strokes.
 	strokes.erase(
 		std::remove(strokes.begin(), strokes.end(), NoStroke),
@@ -305,6 +324,7 @@ void Brief::normalize() {
 	auto i = text.find_first_not_of(Whitespace);
 	auto j = text.find_last_not_of(Whitespace);
 	text = (i != text.npos)? text.substr(i, j-i + 1): "";
+	return *this;
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -325,10 +345,6 @@ void Brief::normalize() {
 
 //Phrase operator-(Phrase xx, Stroke  y) { return xx.getStrokes().back() -= y; }
 
-Phrase operator|(Stroke x , Stroke y ) { return Phrase {x, y}; }
-Phrase operator|(Phrase xx, Stroke y ) { return xx.append(y); }
-Phrase operator|(Stroke x , Phrase yy) { return yy.prepend(x); }
-Phrase operator|(Phrase xx, Phrase yy) { return xx.append(yy); }
 //Brief  operator|(Brief  a , Brief  b ) { return a |= b; }
 //Brief  operator|(Phrase xx, Brief  b ) { return Brief {"", xx} |= b; }
 //Brief  operator|(Brief  b , Phrase xx) { return b |= Brief {"", xx}; }
