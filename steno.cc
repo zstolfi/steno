@@ -11,16 +11,16 @@ namespace steno {
 
 // Fail-state query
 bool Stroke::failed() const {
-	return bits & FailBit;
+	return m_bits & FailBit;
 }
 
 Stroke::operator bool() const {
-	return bits && !failed();
+	return m_bits && !failed();
 }
 
 // Getters and Setters
-uint32_t Stroke::getBits() const {
-	return bits;
+uint32_t Stroke::bits() const {
+	return m_bits;
 }
 
 bool Stroke::get(Key k) const {
@@ -62,34 +62,34 @@ Stroke::Reference Stroke::operator[](Key k) {
 // Key manipulation
 Stroke Stroke::operator~() const {
 	Stroke result {};
-	result.bits = ~bits & ~FlagsMask;
+	result.m_bits = ~m_bits & ~FlagsMask;
 	return result;
 }
 
 Stroke& Stroke::operator+=(Stroke const& other) {
 	auto flags = getFlags();
-	bits |= other.bits;
+	m_bits |= other.m_bits;
 	setFlags(flags);
 	return *this;
 }
 
 Stroke& Stroke::operator-=(Stroke const& other) {
 	auto flags = getFlags();
-	bits &= ~other.bits;
+	m_bits &= ~other.m_bits;
 	setFlags(flags);
 	return *this;
 }
 
 Stroke& Stroke::operator&=(Stroke const& other) {
 	auto flags = getFlags();
-	bits &= other.bits;
+	m_bits &= other.m_bits;
 	setFlags(flags);
 	return *this;
 }
 
 Stroke& Stroke::operator^=(Stroke const& other) {
 	auto flags = getFlags();
-	bits ^= other.bits;
+	m_bits ^= other.m_bits;
 	setFlags(flags);
 	return *this;
 }
@@ -112,17 +112,17 @@ Stroke operator^(Stroke lhs, Stroke const& rhs) {
 
 // Internal
 uint32_t Stroke::getFlags() const {
-	return bits & FlagsMask;
+	return m_bits & FlagsMask;
 }
 
 void Stroke::setFlags(uint32_t flags) {
-	bits &= ~FlagsMask;
-	bits |= flags;
+	m_bits &= ~FlagsMask;
+	m_bits |= flags;
 }
 
 void Stroke::failConstruction(std::string_view str) {
 //	if (str != "") std::cout << str << "\n";
-	bits |= FailBit;
+	m_bits |= FailBit;
 }
 
 // Key promotion
@@ -152,8 +152,8 @@ Stroke operator^(Key lhs, Key rhs) {
 Phrase::Phrase(std::string_view str) {
 	auto push = [&](unsigned i, unsigned j) {
 		// if (i == j) return false;
-		strokes.emplace_back(str.substr(i, j-i));
-		if (strokes.back().failed()) return false;
+		m_strokes.emplace_back(str.substr(i, j-i));
+		if (m_strokes.back().failed()) return false;
 		return true;
 	};
 
@@ -166,47 +166,47 @@ Phrase::Phrase(std::string_view str) {
 }
 
 Phrase::Phrase(Stroke x) {
-	strokes = std::vector<Stroke> {x};
+	m_strokes = std::vector<Stroke> {x};
 }
 
 Phrase::Phrase(std::span<Stroke const> span) {
-	strokes = std::vector<Stroke> (span.begin(), span.end());
+	m_strokes = std::vector<Stroke> (span.begin(), span.end());
 }
 
 // Fail-state query
 bool Phrase::failed() const {
 	// TODO: Decide whether containing an empty stroke is an error.
 	return std::any_of(
-		strokes.begin(), strokes.end(),
+		m_strokes.begin(), m_strokes.end(),
 		[](auto x) { return x.failed(); }
 	);
 }
 
 Phrase::operator bool() const {
-	return !strokes.empty() && !failed();
+	return !m_strokes.empty() && !failed();
 }
 
 // Getters and Setters
-std::vector<Stroke>& Phrase::getStrokes() {
-	return strokes;
+std::vector<Stroke>& Phrase::strokes() {
+	return m_strokes;
 }
 
-std::vector<Stroke> const& Phrase::getStrokes() const {
-	return strokes;
+std::vector<Stroke> const& Phrase::strokes() const {
+	return m_strokes;
 }
 
 Phrase& Phrase::append(Phrase p) {
-	strokes.insert(
-		strokes.end(),
-		p.strokes.begin(), p.strokes.end()
+	m_strokes.insert(
+		m_strokes.end(),
+		p.m_strokes.begin(), p.m_strokes.end()
 	);
 	return *this;
 }
 
 Phrase& Phrase::prepend(Phrase p) {
-	strokes.insert(
-		strokes.begin(),
-		p.strokes.begin(), p.strokes.end()
+	m_strokes.insert(
+		m_strokes.begin(),
+		p.m_strokes.begin(), p.m_strokes.end()
 	);
 	return *this;
 }
@@ -229,54 +229,44 @@ Phrase operator|(Stroke lhs, Stroke const& rhs) {
 
 // Class constructors
 Brief::Brief(Phrase const& p, std::string_view s)
-: strokes{p}, text{s} { normalize(); }
+: m_phrase{p}, m_text{s} { normalize(); }
 
 Brief::Brief(Brief const& b, std::string_view s)
-: strokes{b.strokes}, text{s} { normalize(); }
+: m_phrase{b.m_phrase}, m_text{s} { normalize(); }
 
 // Fail-state query
 bool Brief::failed() const {
 	return std::any_of(
-		strokes.begin(), strokes.end(),
+		m_phrase.begin(), m_phrase.end(),
 		[](auto s) { return !s; }
 	);
 }
 
 Brief::operator bool() const {
-	return !strokes.empty() && !failed();
+	return !m_phrase.empty() && !failed();
 }
 
 // Getters and Setters
-Phrase& Brief::getPhrase() {
-	return strokes;
+Phrase& Brief::phrase() {
+	return m_phrase;
 }
 
-Phrase const& Brief::getPhrase() const {
-	return strokes;
+Phrase const& Brief::phrase() const {
+	return m_phrase;
 }
 
-std::string& Brief::getText() {
-	return text;
+std::string& Brief::text() {
+	return m_text;
 }
 
-std::string const& Brief::getText() const {
-	return text;
-}
-
-Brief& Brief::setStrokes(Phrase const& p) {
-	strokes = p;
-	return *this;
-}
-
-Brief& Brief::setText(std::string_view s) {
-	text = s;
-	return *this;
+std::string const& Brief::text() const {
+	return m_text;
 }
 
 // Concatenation
 Brief& Brief::operator|=(Brief other) {
-	strokes |= other.strokes;
-	return appendText(other.text);
+	m_phrase |= other.m_phrase;
+	return appendText(other.m_text);
 }
 
 Brief operator|(Brief lhs, Brief const& rhs) {
@@ -292,38 +282,38 @@ Brief operator+(Brief b, std::string_view str) {
 }
 
 Brief operator+(std::string_view str, Brief b) {
-	Brief result {b.strokes, str};
-	return result.appendText(b.text);
+	Brief result {b.m_phrase, str};
+	return result.appendText(b.m_text);
 }
 
 
 // Internal
 Brief& Brief::appendText(std::string_view str) {
-	if (text.empty()) { text = str; return *this; }
+	if (m_text.empty()) { m_text = str; return *this; }
 	if (str.empty()) return *this;
 
-	bool endGlue = text.back() == '~';
+	bool endGlue = m_text.back() == '~';
 	bool startGlue = str.front() == '~';
 
-	if (!startGlue && !endGlue) text += ' ', text += str;
+	if (!startGlue && !endGlue) m_text += ' ', m_text += str;
 	else {
-		if (endGlue) text.pop_back();
-		text.insert(text.size(), str, startGlue? 1: 0);
+		if (endGlue) m_text.pop_back();
+		m_text.insert(m_text.size(), str, startGlue? 1: 0);
 	}
 	return *this;
 }
 
 Brief& Brief::normalize() {
-	// Remove empty strokes.
-	strokes.erase(
-		std::remove(strokes.begin(), strokes.end(), NoStroke),
-		strokes.end()
+	// Remove empty m_phrase.
+	m_phrase.erase(
+		std::remove(m_phrase.begin(), m_phrase.end(), NoStroke),
+		m_phrase.end()
 	);
 	// Remove leading or trailing whitespace.
 	constexpr std::string_view Whitespace {" \t\n\r"};
-	auto i = text.find_first_not_of(Whitespace);
-	auto j = text.find_last_not_of(Whitespace);
-	text = (i != text.npos)? text.substr(i, j-i + 1): "";
+	auto i = m_text.find_first_not_of(Whitespace);
+	auto j = m_text.find_last_not_of(Whitespace);
+	m_text = (i != m_text.npos)? m_text.substr(i, j-i + 1): "";
 	return *this;
 }
 
@@ -420,14 +410,14 @@ Brief& Brief::normalize() {
 } // namespace steno
 
 std::size_t std::hash<steno::Stroke>::operator()(steno::Stroke const& x) const {
-	return std::hash<uint32_t> {} (x.bits);
+	return std::hash<uint32_t> {} (x.m_bits);
 }
 
 // https://stackoverflow.com/a/72073933
 std::size_t std::hash<steno::Phrase>::operator()(steno::Phrase const& x) const {
 	std::size_t seed = x.size();
 	for (auto stroke : x) {
-		uint32_t n = stroke.bits;
+		uint32_t n = stroke.m_bits;
 		n = ((n >> 16) ^ n) & 0x45D9F3B;
 		n = ((n >> 16) ^ n) & 0x45D9F3B;
 		n = (n >> 16) ^ n;

@@ -47,10 +47,12 @@ enum class Key : uint32_t {
 /* ~~ Stroke Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 class Stroke {
-	//                          keys        flags/resv'd  
-	//                ┌──────────┴──────────┐ ┌──┴───┐ ┌─ fail-bit
-	//                #STKPWHRAO*EUFRPBLGTSDZ !~~      X
-	uint32_t bits = 0b00000000000000000000000'00000000'0;
+	uint32_t m_bits
+	//  #STKPWHRAO*EUFRPBLGTSDZ !~~      X
+	= 0b00000000000000000000000'00000000'0;
+	//  └──────────┬──────────┘ └──┬───┘ └─ fail-bit
+	//            keys        flags/resv'd  
+
 	static constexpr unsigned KeyCount = 23;
 	static constexpr unsigned PadCount = 9;
 	static_assert(KeyCount + PadCount == 32);
@@ -69,7 +71,8 @@ public:
 	bool failed() const;
 	operator bool() const;
 	// Getters and Setters
-	uint32_t getBits() const;
+//	uint32_t& bits();
+	uint32_t bits() const;
 	bool get(Key) const;
 	Stroke& set(Key, bool = true);
 	Stroke& unset(Key);
@@ -119,7 +122,7 @@ Stroke operator^(Key, Key);
 /* ~~ Phrase Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 class Phrase {
-	std::vector<Stroke> strokes {};
+	std::vector<Stroke> m_strokes {};
 
 public:
 	// Default construction/assignment/movement
@@ -134,8 +137,8 @@ public:
 	bool failed() const;
 	operator bool() const;
 	// Getters and Setters
-	std::vector<Stroke>&       getStrokes();
-	std::vector<Stroke> const& getStrokes() const;
+	std::vector<Stroke>&       strokes();
+	std::vector<Stroke> const& strokes() const;
 	Phrase& append (Phrase);
 	Phrase& prepend(Phrase);
 	// Comparison
@@ -151,45 +154,45 @@ public:
 	using value_type = Stroke;
 	using reference = Stroke&;
 	using const_reference = Stroke const&;
-	using iterator = decltype(strokes)::iterator;
-	using const_iterator = decltype(strokes)::const_iterator;
+	using iterator = decltype(m_strokes)::iterator;
+	using const_iterator = decltype(m_strokes)::const_iterator;
 	using difference_type = std::ptrdiff_t;
 	using size_type = std::size_t;
 	// Container specific methods
-	auto begin ()       { return strokes.begin (); }
-	auto begin () const { return strokes.begin (); }
-	auto cbegin() const { return strokes.cbegin(); }
-	auto end   ()       { return strokes.end   (); }
-	auto end   () const { return strokes.end   (); }
-	auto cend  () const { return strokes.cend  (); }
+	auto begin ()       { return m_strokes.begin (); }
+	auto begin () const { return m_strokes.begin (); }
+	auto cbegin() const { return m_strokes.cbegin(); }
+	auto end   ()       { return m_strokes.end   (); }
+	auto end   () const { return m_strokes.end   (); }
+	auto cend  () const { return m_strokes.cend  (); }
 	void swap(Phrase& other) { std::swap(*this, other); };
-	std::size_t size    () const { return strokes.size    (); }
-	std::size_t max_size() const { return strokes.max_size(); }
-	bool        empty   () const { return strokes.empty   (); }
+	std::size_t size    () const { return m_strokes.size    (); }
+	std::size_t max_size() const { return m_strokes.max_size(); }
+	bool        empty   () const { return m_strokes.empty   (); }
 
 public:
 	// Sequence specific methods
-	Phrase(std::initializer_list<Stroke> il): strokes(il) {};
-	Phrase(std::size_t n, Stroke t): strokes(n, t) {}
+	Phrase(std::initializer_list<Stroke> il): m_strokes(il) {};
+	Phrase(std::size_t n, Stroke t): m_strokes(n, t) {}
 	template <std::input_iterator I>
-	Phrase(I first, I last): strokes(first, last) {}
-	auto emplace(auto&& ... args) { return strokes.emplace(args ... ); }
-	auto insert (auto&& ... args) { return strokes.insert (args ... ); }
-	auto erase  (auto&& ... args) { return strokes.erase  (args ... ); }
-	auto clear  (auto&& ... args) { return strokes.clear  (args ... ); }
-	auto assign (auto&& ... args) { return strokes.assign (args ... ); }
+	Phrase(I first, I last): m_strokes(first, last) {}
+	auto emplace(auto&& ... args) { return m_strokes.emplace(args ... ); }
+	auto insert (auto&& ... args) { return m_strokes.insert (args ... ); }
+	auto erase  (auto&& ... args) { return m_strokes.erase  (args ... ); }
+	auto clear  (auto&& ... args) { return m_strokes.clear  (args ... ); }
+	auto assign (auto&& ... args) { return m_strokes.assign (args ... ); }
 	// Vector specific methods
-	auto& front  ()       { return strokes.front(); }
-	auto& front  () const { return strokes.front(); }
-	auto& back   ()       { return strokes.back (); }
-	auto& back   () const { return strokes.back (); }
-	auto  emplace_back(auto&& ... args)     { strokes.emplace_back(args ... ); }
-	auto  push_back   (auto&& ... args)     { strokes.push_back   (args ... ); }
-	auto  pop_back    ()                    { strokes.pop_back    ();          }
-	auto& operator[]  (std::size_t n)       { return strokes[n];               }
-	auto& operator[]  (std::size_t n) const { return strokes[n];               }
-	auto& at          (std::size_t n)       { return strokes.at(n);            }
-	auto& at          (std::size_t n) const { return strokes.at(n);            }
+	auto& front  ()       { return m_strokes.front(); }
+	auto& front  () const { return m_strokes.front(); }
+	auto& back   ()       { return m_strokes.back (); }
+	auto& back   () const { return m_strokes.back (); }
+	auto  emplace_back(auto&& ... args)   { m_strokes.emplace_back(args ... ); }
+	auto  push_back   (auto&& ... args)   { m_strokes.push_back   (args ... ); }
+	auto  pop_back  ()                    { m_strokes.pop_back    ();          }
+	auto& operator[](std::size_t n)       { return m_strokes[n];               }
+	auto& operator[](std::size_t n) const { return m_strokes[n];               }
+	auto& at        (std::size_t n)       { return m_strokes.at(n);            }
+	auto& at        (std::size_t n) const { return m_strokes.at(n);            }
 };
 
 // Stroke promotion
@@ -198,8 +201,8 @@ Phrase operator|(Stroke, Stroke const&);
 /* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 class Brief {
-	Phrase strokes {};
-	std::string text {};
+	Phrase m_phrase {};
+	std::string m_text {};
 
 public:
 	// Default construction/assignment/movement
@@ -213,12 +216,10 @@ public:
 	bool failed() const;
 	operator bool() const;
 	// Getters and Setters
-	Phrase&       getPhrase();
-	Phrase const& getPhrase() const;
-	std::string&       getText();
-	std::string const& getText() const;
-	Brief& setStrokes(Phrase const&);
-	Brief& setText(std::string_view);
+	Phrase&       phrase();
+	Phrase const& phrase() const;
+	std::string&       text();
+	std::string const& text() const;
 	template <std::size_t I> auto&& get()      &  { return get_impl<I>(*this); }
 	template <std::size_t I> auto&& get() const&  { return get_impl<I>(*this); }
 	template <std::size_t I> auto&& get()      && { return get_impl<I>(*this); }
@@ -238,8 +239,8 @@ private:
 	Brief& normalize();
 	template <std::size_t I, class T> auto&& get_impl(T&& t) {
 		static_assert(I < 2);
-		if constexpr (I == 0) return std::forward<T>(t).strokes;
-		if constexpr (I == 1) return std::forward<T>(t).text;
+		if constexpr (I == 0) return std::forward<T>(t).m_phrase;
+		if constexpr (I == 1) return std::forward<T>(t).m_text;
 	}
 };
 
@@ -262,18 +263,18 @@ Brief operator+(std::string_view, Phrase);
 /* ~~ Constexpr Declarations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 constexpr Stroke::Stroke(Key k) {
-	this->bits = (uint32_t)k;
+	this->m_bits = (uint32_t)k;
 }
 
 constexpr Stroke::Stroke(FromBits_Arg, std::bitset<23> const b) {
 	for (unsigned i=0; i<b.size(); i++) if (b[i]) {
-		this->bits |= 1 << (i + Stroke::PadCount);
+		this->m_bits |= 1 << (i + Stroke::PadCount);
 	}
 }
 
 constexpr Stroke::Stroke(FromBitsReversed_Arg, std::bitset<23> const b) {
 	for (unsigned i=0; i<b.size(); i++) if (b[22-i]) {
-		this->bits |= 1 << (i + Stroke::PadCount);
+		this->m_bits |= 1 << (i + Stroke::PadCount);
 	}
 }
 
@@ -331,8 +332,8 @@ constexpr Stroke::Stroke(std::string_view str) {
 		auto require = [&] (bool condition) { return !(valid &= condition); };
 		auto accept = [&] (State s, Key k, char cKey, char cNum = '\0') {
 			bool match = (c == cKey) || (c == cNum);
-			if (c == cKey) this->bits |= (uint32_t)k;
-			if (c == cNum) this->bits |= (uint32_t)k | (uint32_t)Key::Num;
+			if (c == cKey) this->m_bits |= (uint32_t)k;
+			if (c == cNum) this->m_bits |= (uint32_t)k | (uint32_t)Key::Num;
 			if (match) state = next(s);
 			return match;
 		};

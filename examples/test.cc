@@ -84,6 +84,12 @@ TEST(StenoStroke, BadInputString) {
 	// TODO
 }
 
+TEST(StenoStroke, Getters) {
+	// TODO: Decide if this is worth allowing.
+	steno::Stroke stroke {"SPROUTS"};
+	EXPECT_EQ(stroke.bits(), 0b01001001010010000001100'000000000);
+}
+
 TEST(StenoStroke, KeyAccessGet) {
 	steno::Stroke stroke {"SPROUTS"};
 	using enum steno::Key;
@@ -167,8 +173,8 @@ TEST(StenoStroke, SubscriptModify) {
 
 TEST(StenoStroke, UnaryNegate) {
 	steno::Stroke leftHand {"STKPWHRAO"};
-	EXPECT_EQ(  leftHand .getBits(), 0b01111111110000000000000'000000000);
-	EXPECT_EQ((~leftHand).getBits(), 0b10000000001111111111111'000000000);
+	EXPECT_EQ(  leftHand .bits(), 0b01111111110000000000000'000000000);
+	EXPECT_EQ((~leftHand).bits(), 0b10000000001111111111111'000000000);
 }
 
 TEST(StenoStroke, Addition) {
@@ -264,6 +270,20 @@ TEST(StenoStroke, UseWithMaps) {
 
 /* ~~ Phrase Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 // Modeled after https://en.cppreference.com/w/cpp/named_req/SequenceContainer
+
+TEST(StenoPhrase, Getters) {
+	steno::Phrase p1 {"PHAOUT/ABL"};
+	EXPECT_EQ(p1.strokes()[0], steno::Stroke {"   P H AO  U      T   "});
+	EXPECT_EQ(p1.strokes()[1], steno::Stroke {"       A       BL     "});
+	
+	p1.strokes()[1] = {"AEUTD"};
+	EXPECT_EQ(p1.strokes()[0], steno::Stroke {"   P H AO  U      T   "});
+	EXPECT_EQ(p1.strokes()[1], steno::Stroke {"       A  EU      T D "});
+	
+	steno::Phrase const p2 {"KOPB/STAPBT"};
+	EXPECT_EQ(p2.strokes()[0], steno::Stroke {"  K     O     PB      "});
+	EXPECT_EQ(p2.strokes()[1], steno::Stroke {"ST     A      PB  T   "});
+}
 
 TEST(StenoPhrase, Concatenation) {
 	using S = steno::Stroke;
@@ -453,12 +473,33 @@ TEST(StenoPhrase, SequenceExpressions) {
 
 TEST(StenoBrief, Construction) {
 	steno::Brief apple1 {{"AP/EL"}, "apple"};
-	EXPECT_EQ(apple1.getPhrase(), steno::Phrase {"AP/EL"});
-	EXPECT_EQ(apple1.getText(), "apple");
+	EXPECT_EQ(apple1.phrase(), steno::Phrase {"AP/EL"});
+	EXPECT_EQ(apple1.text(), "apple");
 
 	steno::Brief apple2 {apple1, "Apple ]["};
-	EXPECT_EQ(apple2.getPhrase(), steno::Phrase {"AP/EL"});
-	EXPECT_EQ(apple2.getText(), "Apple ][");
+	EXPECT_EQ(apple2.phrase(), steno::Phrase {"AP/EL"});
+	EXPECT_EQ(apple2.text(), "Apple ][");
+}
+
+TEST(StenoBrief, Getters) {
+	steno::Brief brief {{"1/2"}, "one two"};
+	EXPECT_EQ(brief.phrase(), steno::Phrase {"1/2"});
+	EXPECT_EQ(brief.text(), "one two");
+
+	brief.phrase() |= steno::Stroke {"3"};
+	brief.text() += " three";
+	EXPECT_EQ(brief.phrase(), steno::Phrase {"1/2/3"});
+	EXPECT_EQ(brief.text(), "one two three");
+
+	brief |= steno::Brief {{"4"}, "four"};
+	EXPECT_EQ(brief.phrase(), steno::Phrase {"1/2/3/4"});
+	EXPECT_EQ(brief.text(), "one two three four");
+
+	using enum steno::Key;
+	steno::Brief const ab {{"A/-B"}, "\tayy bee\t"};
+	EXPECT_TRUE(ab.phrase()[0][A]);
+	EXPECT_TRUE(ab.phrase()[1][_B]);
+	EXPECT_EQ(ab.text(), "ayy bee");
 }
 
 TEST(StenoBrief, StructuredBinding) {
