@@ -247,11 +247,11 @@ Brief::operator bool() const {
 }
 
 // Getters and Setters
-Phrase& Brief::getStrokes() {
+Phrase& Brief::getPhrase() {
 	return strokes;
 }
 
-Phrase const& Brief::getStrokes() const {
+Phrase const& Brief::getPhrase() const {
 	return strokes;
 }
 

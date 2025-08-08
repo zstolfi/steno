@@ -453,11 +453,11 @@ TEST(StenoPhrase, SequenceExpressions) {
 
 TEST(StenoBrief, Construction) {
 	steno::Brief apple1 {{"AP/EL"}, "apple"};
-	EXPECT_EQ(apple1.getStrokes(), steno::Phrase {"AP/EL"});
+	EXPECT_EQ(apple1.getPhrase(), steno::Phrase {"AP/EL"});
 	EXPECT_EQ(apple1.getText(), "apple");
 
 	steno::Brief apple2 {apple1, "Apple ]["};
-	EXPECT_EQ(apple2.getStrokes(), steno::Phrase {"AP/EL"});
+	EXPECT_EQ(apple2.getPhrase(), steno::Phrase {"AP/EL"});
 	EXPECT_EQ(apple2.getText(), "Apple ][");
 }
 

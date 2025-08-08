@@ -213,8 +213,8 @@ public:
 	bool failed() const;
 	operator bool() const;
 	// Getters and Setters
-	Phrase&       getStrokes();
-	Phrase const& getStrokes() const;
+	Phrase&       getPhrase();
+	Phrase const& getPhrase() const;
 	std::string&       getText();
 	std::string const& getText() const;
 	Brief& setStrokes(Phrase const&);
@@ -238,8 +238,8 @@ private:
 	Brief& normalize();
 	template <std::size_t I, class T> auto&& get_impl(T&& t) {
 		static_assert(I < 2);
-		if constexpr (I == 0) return std::forward<T>(t).getStrokes();
-		if constexpr (I == 1) return std::forward<T>(t).getText();
+		if constexpr (I == 0) return std::forward<T>(t).strokes;
+		if constexpr (I == 1) return std::forward<T>(t).text;
 	}
 };
 
