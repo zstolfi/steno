@@ -13,6 +13,20 @@ TEST(StenoKey, Addition) {
 	EXPECT_EQ(S_ + P_ + R_ + O + U + _T + _S, steno::Stroke {"SPROUTS"});
 }
 
+TEST(StenoKey, ToString) {
+	EXPECT_EQ(steno::toString(steno::Key::Num), "#");
+	EXPECT_EQ(steno::toString(steno::Key::x  ), "*");
+
+	EXPECT_EQ(steno::toString(steno::Key::K_), "K");
+	EXPECT_EQ(steno::toString(steno::Key::A ), "A");
+	EXPECT_EQ(steno::toString(steno::Key::O ), "O");
+	EXPECT_EQ(steno::toString(steno::Key::E ), "E");
+	EXPECT_EQ(steno::toString(steno::Key::_Z), "Z");
+
+	EXPECT_EQ(steno::toString(steno::Key::S_), "S");
+	EXPECT_EQ(steno::toString(steno::Key::_S), "S");
+}
+
 /* ~~ Stroke Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 // Modeled after https://cppreference.com/w/cpp/utility/bitset
 
@@ -274,6 +288,23 @@ TEST(StenoStroke, UseWithMaps) {
 	EXPECT_EQ(seen[{"KR"}], false);
 }
 
+TEST(StenoStroke, ToString) {
+	steno::Stroke array[] = {
+		{"         *EU          "},
+		{"                8     "},
+		{"S          U  P L     "},
+		{"   P      EU          "},
+		{"S KP                  "},
+		{"S  P  R  O U      TS  "},
+	};
+	EXPECT_EQ(steno::toString(array[0]), "*EU");     // I
+	EXPECT_EQ(steno::toString(array[1]), "#-L");     // 8
+	EXPECT_EQ(steno::toString(array[2]), "SUPL");    // sum
+	EXPECT_EQ(steno::toString(array[3]), "PEU");     // pi
+	EXPECT_EQ(steno::toString(array[4]), "SKP-");    // and
+	EXPECT_EQ(steno::toString(array[5]), "SPROUTS"); // sprouts
+}
+
 /* ~~ Phrase Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 // Modeled after https://en.cppreference.com/w/cpp/named_req/SequenceContainer
 
@@ -316,6 +347,11 @@ TEST(StenoPhrase, UseWithMaps) {
 	EXPECT_EQ(seen[{"1"}], true);
 	EXPECT_EQ(seen[{"2"}], true);
 	EXPECT_EQ(seen[{"3"}], false);
+}
+
+TEST(StenoPhrase, ToString) {
+	steno::Phrase phrase {"0/1/2/3/4/5/6/7/8/9"};
+	EXPECT_EQ(steno::toString(phrase), "#O/#S-/#T-/#P-/#H-/#A/#-F/#-P/#-L/#-T");
 }
 
 // Double parentheses required so our '<' isn't parsed as a less-than.

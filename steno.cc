@@ -338,60 +338,51 @@ Brief& Brief::normalize() {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-//std::string toString(Key k) {
-//	switch (k) {
-//	case Key::Num: return "#";
-//	case Key::S_: return "S";
-//	case Key::T_: return "T"; case Key::K_: return "K";
-//	case Key::P_: return "P"; case Key::W_: return "W";
-//	case Key::H_: return "H"; case Key::R_: return "R";
-//	case Key::A : return "A"; case Key::O : return "O";
-//	case Key::x : return "*";
-//	case Key::E : return "E"; case Key::U : return "U";
-//	case Key::_F: return "F"; case Key::_R: return "R";
-//	case Key::_P: return "P"; case Key::_B: return "B";
-//	case Key::_L: return "L"; case Key::_G: return "G";
-//	case Key::_T: return "T"; case Key::_S: return "S";
-//	case Key::_D: return "D"; case Key::_Z: return "Z";
-//	default: return {};
-//	}
-//}
 
-//std::string toString(Stroke x) {
-//	if (x.get(Key::OpenLeft)) {
-//		x.unset(Key::OpenLeft);
-//		auto result = '~' + toString(x);
-//		auto i = result.find(' ');
-//		if (i != result.npos) result.erase(i, 1);
-//		return result;
-//	}
+char toChar(Key k) {
+	switch (k) {
+	case Key::Num: return '#';
+	case Key::S_: return 'S';
+	case Key::T_: return 'T'; case Key::K_: return 'K';
+	case Key::P_: return 'P'; case Key::W_: return 'W';
+	case Key::H_: return 'H'; case Key::R_: return 'R';
+	case Key::A : return 'A'; case Key::O : return 'O';
+	case Key::x : return '*';
+	case Key::E : return 'E'; case Key::U : return 'U';
+	case Key::_F: return 'F'; case Key::_R: return 'R';
+	case Key::_P: return 'P'; case Key::_B: return 'B';
+	case Key::_L: return 'L'; case Key::_G: return 'G';
+	case Key::_T: return 'T'; case Key::_S: return 'S';
+	case Key::_D: return 'D'; case Key::_Z: return 'Z';
+	default: return {};
+	}
+}
 
-//	if (x.get(Key::OpenRight)) {
-//		x.unset(Key::OpenRight);
-//		auto result = toString(x) + '~';
-//		auto i = result.rfind(' ');
-//		if (i != result.npos) result.erase(i, 1);
-//		return result;
-//	}
+std::string toString(Key k) {
+	return std::string(1, toChar(k));
+}
 
-//	std::string result = "#STKPWHRAO*EUFRPBLGTSDZ ";
-//	for (unsigned i=0; i<result.size(); i++) {
-//		if (x.get(Key(i)) == false) result[i] = ' ';
-//	}
-//	if (!(x & Stroke {"AO*EU"})) {
-//		result[10] = '-';
-//	}
-//	return result;
-//}
+std::string toString(Stroke s) {
+	Stroke const Left   = s & Stroke {"#STKPWHR  -            "};
+	Stroke const Middle = s & Stroke {"        AO*EU          "};
+	Stroke const Right  = s & Stroke {"          -  FRPBLGTSDZ"};
+	std::string result {};
+	for (Key k : Left  ) result += toChar(k);
+	if (Middle == NoStroke) result += '-';
+	for (Key k : Middle) result += toChar(k);
+	for (Key k : Right ) result += toChar(k);
+	return result;
+}
 
-//std::string toString(Phrase xx) {
-//	std::string result = "";
-//	for (int i=0; auto stroke : xx.getStrokes()) {
-//		if (i++) result += '/';
-//		result += toString(stroke);
-//	}
-//	return result;
-//}
+std::string toString(Phrase p) {
+	std::string result = "";
+	for (int i=0; auto stroke : p) {
+		if (i++) result += '/';
+		result += toString(stroke);
+	}
+	return result;
+}
+
 
 //std::ostream& operator<<(std::ostream& os, Stroke x) {
 //	return os << toString(x);

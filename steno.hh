@@ -274,9 +274,9 @@ Brief operator+(std::string_view, Phrase);
 
 /* ~~ String Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-//std::string toString(Key);
-//std::string toString(Stroke);
-//std::string toString(Phrase);
+std::string toString(Key);
+std::string toString(Stroke);
+std::string toString(Phrase);
 //std::ostream& operator<<(std::ostream&, Stroke);
 //std::ostream& operator<<(std::ostream&, Phrase);
 
