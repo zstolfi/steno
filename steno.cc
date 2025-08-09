@@ -19,7 +19,7 @@ Stroke::operator bool() const {
 }
 
 // Getters and Setters
-uint32_t Stroke::bits() const {
+uint32_t Stroke::raw() const {
 	return m_bits;
 }
 

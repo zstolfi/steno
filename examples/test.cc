@@ -87,7 +87,7 @@ TEST(StenoStroke, BadInputString) {
 TEST(StenoStroke, Getters) {
 	// TODO: Decide if this is worth allowing.
 	steno::Stroke stroke {"SPROUTS"};
-	EXPECT_EQ(stroke.bits(), 0b01001001010010000001100'000000000);
+	EXPECT_EQ(stroke.raw(), 0b01001001010010000001100'000000000);
 }
 
 TEST(StenoStroke, KeyAccessGet) {
@@ -173,8 +173,8 @@ TEST(StenoStroke, SubscriptModify) {
 
 TEST(StenoStroke, UnaryNegate) {
 	steno::Stroke leftHand {"STKPWHRAO"};
-	EXPECT_EQ(  leftHand .bits(), 0b01111111110000000000000'000000000);
-	EXPECT_EQ((~leftHand).bits(), 0b10000000001111111111111'000000000);
+	EXPECT_EQ(  leftHand .raw(), 0b01111111110000000000000'000000000);
+	EXPECT_EQ((~leftHand).raw(), 0b10000000001111111111111'000000000);
 }
 
 TEST(StenoStroke, Addition) {

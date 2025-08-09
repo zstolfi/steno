@@ -71,8 +71,7 @@ public:
 	bool failed() const;
 	operator bool() const;
 	// Getters and Setters
-//	uint32_t& bits();
-	uint32_t bits() const;
+	uint32_t raw() const;
 	bool get(Key) const;
 	Stroke& set(Key, bool = true);
 	Stroke& unset(Key);
