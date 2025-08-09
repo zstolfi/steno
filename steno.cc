@@ -36,27 +36,22 @@ Stroke& Stroke::unset(Key k) {
 	return *this -= Stroke {k};
 }
 
-// Key proxy class
-Stroke::Reference::operator bool() const {
-	return parent->get(key);
-}
-
-Stroke::Reference& Stroke::Reference::operator=(bool b) {
-	parent->set(key, b);
-	return *this;
-}
-
-Stroke::Reference& Stroke::Reference::operator=(Reference const& r) {
-	return *this = (bool)r;
-}
-
 // Subscript operator
+Stroke::Reference Stroke::operator[](Key k) {
+	return Stroke::Reference {this, k};
+}
+
 bool Stroke::operator[](Key k) const {
 	return get(k);
 }
 
-Stroke::Reference Stroke::operator[](Key k) {
-	return Stroke::Reference {this, k};
+// Range-for compatability
+Stroke::Iterator Stroke::begin() const {
+	return Iterator {*this};
+}
+
+Stroke::Iterator Stroke::end() const {
+	return Iterator {};
 }
 
 // Key manipulation
@@ -108,6 +103,41 @@ Stroke operator&(Stroke lhs, Stroke const& rhs) {
 
 Stroke operator^(Stroke lhs, Stroke const& rhs) {
 	lhs ^= rhs; return lhs;
+}
+
+// Key proxy classes
+Stroke::Reference::operator bool() const {
+	return parent->get(key);
+}	
+
+Stroke::Reference& Stroke::Reference::operator=(bool b) {
+	parent->set(key, b);
+	return *this;
+}
+
+Stroke::Reference& Stroke::Reference::operator=(Reference const& r) {
+	return *this = (bool)r;
+}
+
+bool Stroke::Iterator::operator==(Iterator const& other) const {
+	return std::bit_floor(this->m_bits)
+	==     std::bit_floor(other.m_bits);
+}
+
+Stroke::Iterator& Stroke::Iterator::operator++() {
+	m_bits &= ~std::bit_floor(m_bits); // Remove leading bit.
+	return *this;
+}
+
+Stroke::Iterator Stroke::Iterator::operator++(int) {
+	auto result = *this;
+	++(*this);
+	return result;
+}
+
+Key Stroke::Iterator::operator*() const {
+	// Invalid if bit == 0
+	return (Key)std::bit_floor(m_bits);
 }
 
 // Internal

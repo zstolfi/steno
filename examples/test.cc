@@ -85,9 +85,15 @@ TEST(StenoStroke, BadInputString) {
 }
 
 TEST(StenoStroke, Getters) {
-	// TODO: Decide if this is worth allowing.
 	steno::Stroke stroke {"SPROUTS"};
 	EXPECT_EQ(stroke.raw(), 0b01001001010010000001100'000000000);
+}
+
+TEST(StenoStroke, RangeFor) {
+	steno::Stroke stroke {"SPROUTS"};
+	steno::Stroke copy {};
+	for (steno::Key k : stroke) copy += k;
+	EXPECT_EQ(stroke, copy);
 }
 
 TEST(StenoStroke, KeyAccessGet) {

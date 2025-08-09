@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <string_view>
+#include <bit>
 #include <bitset>
 #include <vector>
 #include <map>
@@ -71,25 +72,18 @@ public:
 	bool failed() const;
 	operator bool() const;
 	// Getters and Setters
+	class Reference;
+	class Iterator;
 	uint32_t raw() const;
 	bool get(Key) const;
 	Stroke& set(Key, bool = true);
 	Stroke& unset(Key);
-	// Key proxy class
-	class Reference {
-		Stroke* parent;
-		Key key;
-
-	public:
-		Reference(Reference const&) = default;
-		Reference(Stroke* p, Key k): parent{p}, key{k} {}
-		operator bool() const;
-		Reference& operator=(bool);
-		Reference& operator=(Reference const&);
-	};
 	// Subscript operator
-	bool operator[](Key) const;
 	Reference operator[](Key);
+	bool operator[](Key) const;
+	// Range-for compatability
+	Iterator begin() const;
+	Iterator end() const;
 	// Comparison
 	bool operator==(Stroke const&) const = default;
 	auto operator<=>(Stroke const&) const = default;
@@ -104,6 +98,39 @@ public:
 	friend Stroke operator-(Stroke, Stroke const&);
 	friend Stroke operator&(Stroke, Stroke const&);
 	friend Stroke operator^(Stroke, Stroke const&);
+
+public:
+	// Key proxy classes
+	class Reference {
+		Stroke* parent;
+		Key key;
+
+	public:
+		Reference(Reference const&) = default;
+		Reference(Stroke* p, Key k): parent{p}, key{k} {}
+		operator bool() const;
+		Reference& operator=(bool);
+		Reference& operator=(Reference const&);
+	};
+
+	class Iterator {
+		// Matches the bits of a Stroke.
+		// The leading bit matches the Key the iterator "points" to.
+		uint32_t m_bits = 0;
+
+	public:
+		Iterator() = default;
+		Iterator(Stroke const& s): m_bits{s.m_bits} {}
+		bool operator==(Iterator const&) const;
+		Iterator& operator++();
+		Iterator operator++(int);
+		Key operator*() const;
+		using difference_type = int;
+		using value_type = Key;
+		using pointer = void;
+		using reference = void;
+		using iterator_category = std::forward_iterator_tag;
+	};
 
 private:
 	uint32_t getFlags() const;
