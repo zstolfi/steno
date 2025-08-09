@@ -36,6 +36,8 @@ TEST(StenoStroke, EmptyConstruction) {
 	EXPECT_EQ(steno::Stroke (), steno::NoStroke);
 	EXPECT_EQ(steno::Stroke {}, steno::NoStroke);
 	EXPECT_EQ(steno::Stroke {"-"}, steno::NoStroke);
+	EXPECT_TRUE(steno::Stroke {""}.failed());
+	EXPECT_TRUE(steno::Stroke {" "}.failed());
 }
 
 TEST(StenoStroke, GoodInputString) {
@@ -50,6 +52,7 @@ TEST(StenoStroke, GoodInputString) {
 	EXPECT_TRUE(steno::Stroke {" S        -            "}); // ┘
 	EXPECT_TRUE(steno::Stroke {"#                      "}); // ┬─ Num. bar only
 	EXPECT_TRUE(steno::Stroke {"#         -            "}); // ┘
+	EXPECT_TRUE(steno::Stroke {"          *            "}); // ── Asterisk only
 	EXPECT_TRUE(steno::Stroke {" S  P  R O  U      TS  "}); // "sprouts"
 	EXPECT_TRUE(steno::Stroke {"        A       B      "}); // A B
 	EXPECT_TRUE(steno::Stroke {"   K   R  -          D "}); // C D
@@ -82,19 +85,41 @@ TEST(StenoStroke, GoodInputString) {
 	EXPECT_TRUE(steno::Stroke {"-8"});
 	EXPECT_TRUE(steno::Stroke {"-9"});
 	EXPECT_TRUE(steno::Stroke {"1234-6789"});
+	// A hash is always allowed at the start of input
+	EXPECT_TRUE(steno::Stroke {"#1"});
+	EXPECT_TRUE(steno::Stroke {"#2"});
+	EXPECT_TRUE(steno::Stroke {"#3"});
+	EXPECT_TRUE(steno::Stroke {"#4"});
+	EXPECT_TRUE(steno::Stroke {"#5"});
+	EXPECT_TRUE(steno::Stroke {"#0"});
+	EXPECT_TRUE(steno::Stroke {"#6"});
+	EXPECT_TRUE(steno::Stroke {"#7"});
+	EXPECT_TRUE(steno::Stroke {"#8"});
+	EXPECT_TRUE(steno::Stroke {"#9"});
+	EXPECT_TRUE(steno::Stroke {"#1-"});
+	EXPECT_TRUE(steno::Stroke {"#2-"});
+	EXPECT_TRUE(steno::Stroke {"#3-"});
+	EXPECT_TRUE(steno::Stroke {"#4-"});
+	EXPECT_TRUE(steno::Stroke {"#-6"});
+	EXPECT_TRUE(steno::Stroke {"#-7"});
+	EXPECT_TRUE(steno::Stroke {"#-8"});
+	EXPECT_TRUE(steno::Stroke {"#-9"});
 	// Compound
 	EXPECT_TRUE(steno::Stroke {"12HOURS"});
+	EXPECT_TRUE(steno::Stroke {"#12HOURS"});
+	EXPECT_TRUE(steno::Stroke {"1-TSDZ"});
+	EXPECT_TRUE(steno::Stroke {"#1-TSDZ"});
 }
 
 TEST(StenoStroke, BadInputString) {
 	// Construction from an empty string is probably an error.
-	EXPECT_TRUE(steno::Stroke {""}.failed());
-	EXPECT_TRUE(steno::Stroke {" "}.failed());
-	EXPECT_TRUE(steno::Stroke {"--"}.failed());
-	EXPECT_TRUE(steno::Stroke {"##"}.failed());
-	EXPECT_TRUE(steno::Stroke {"SS"}.failed());
-	EXPECT_TRUE(steno::Stroke {"TT"}.failed());
-	EXPECT_TRUE(steno::Stroke {"RR"}.failed());
+	EXPECT_FALSE(steno::Stroke {"--"});
+	EXPECT_FALSE(steno::Stroke {"##"});
+	EXPECT_FALSE(steno::Stroke {"SS"});
+	EXPECT_FALSE(steno::Stroke {"TT"});
+	EXPECT_FALSE(steno::Stroke {"RR"});
+	EXPECT_FALSE(steno::Stroke {"1TSDZ"});
+	EXPECT_FALSE(steno::Stroke {"#1TSDZ"});
 	// TODO
 }
 

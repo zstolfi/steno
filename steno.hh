@@ -327,7 +327,7 @@ constexpr Stroke::Stroke(std::string_view str) {
 	auto in = [] (char c, std::string_view s) { return s.find(c) != s.npos; };
 	bool const Numeric = std::all_of(
 		str.begin(), str.end(),
-		[&] (char c) { return in(c, " \t" "0123456789"); }
+		[&] (char c) { return in(c, " \t" "#0123456789"); }
 	);
 
 	//   On the left is every state's possible next valid input. This creates
@@ -374,7 +374,7 @@ constexpr Stroke::Stroke(std::string_view str) {
 			using enum State;
 //			case Mk: if (accept(End,Key::Mark    ,'!')); else
 //			case Ol: if (accept(Ol, Key::OpenLeft,'~')); else
-			case Nm: if (accept(Nm, Key::Num,'#'     )); else
+			case Nm: if (accept(Nm, Key::Num,'#', '#')); else
 			case S_: if (accept(S_, Key::S_, 'S', '1')); else
 			case T_: if (accept(T_, Key::T_, 'T', '2')); else
 			case K_: if (accept(K_, Key::K_, 'K'     )); else
