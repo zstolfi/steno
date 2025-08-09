@@ -287,7 +287,7 @@ TEST(StenoStroke, BitXor) {
 	EXPECT_EQ(stroke2 ^ stroke2, steno::NoStroke);
 	EXPECT_EQ(stroke1 ^ steno::NoStroke, stroke1);
 	EXPECT_EQ(stroke1 ^ stroke2, stroke2 ^ stroke1);
-	
+
 	steno::Stroke const rat  {"RA  T"};
 	steno::Stroke const rate {"RAEUT"};
 	steno::Stroke stroke {rat};
@@ -337,11 +337,11 @@ TEST(StenoPhrase, StrokeModify) {
 	steno::Phrase p1 {"PHAOUT/ABL"};
 	EXPECT_EQ(p1[0], steno::Stroke {"   P H AO  U      T   "});
 	EXPECT_EQ(p1[1], steno::Stroke {"       A       BL     "});
-	
+
 	p1[1] = {"AEUTD"};
 	EXPECT_EQ(p1[0], steno::Stroke {"   P H AO  U      T   "});
 	EXPECT_EQ(p1[1], steno::Stroke {"       A  EU      T D "});
-	
+
 	steno::Phrase const p2 {"KOPB/STAPBT"};
 	EXPECT_EQ(p2[0], steno::Stroke {"  K     O     PB      "});
 	EXPECT_EQ(p2[1], steno::Stroke {"ST     A      PB  T   "});
