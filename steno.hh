@@ -20,6 +20,8 @@ namespace steno {
 
 constexpr struct FromBits_Arg         {} FromBits         {};
 constexpr struct FromBitsReversed_Arg {} FromBitsReversed {};
+constexpr struct Wide_Arg             {} Wide             {};
+constexpr struct Packed_Arg           {} Packed           {};
 
 /* ~~ Key ID's ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -52,7 +54,7 @@ class Stroke {
 	//  #STKPWHRAO*EUFRPBLGTSDZ !~~      X
 	= 0b00000000000000000000000'00000000'0;
 	//  └──────────┬──────────┘ └──┬───┘ └─ fail-bit
-	//            keys        flags/resv'd  
+	//            keys        flags/resv'd
 
 	static constexpr unsigned KeyCount = 23;
 	static constexpr unsigned PadCount = 9;
@@ -274,11 +276,22 @@ Brief operator+(std::string_view, Phrase);
 
 /* ~~ String Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+char        toChar  (Key);
 std::string toString(Key);
 std::string toString(Stroke);
 std::string toString(Phrase);
-//std::ostream& operator<<(std::ostream&, Stroke);
-//std::ostream& operator<<(std::ostream&, Phrase);
+// Compile-time formatting
+std::string toString(Wide_Arg, Stroke);
+std::string toString(Packed_Arg, Stroke);
+std::string toString(Wide_Arg, Phrase);
+std::string toString(Packed_Arg, Phrase);
+// Run-time formatting
+std::ostream& operator<<(std::ostream&, Key);
+std::ostream& operator<<(std::ostream&, Stroke);
+std::ostream& operator<<(std::ostream&, Phrase);
+// Manipulators
+std::ostream& operator<<(std::ostream&, Wide_Arg);
+std::ostream& operator<<(std::ostream&, Packed_Arg);
 
 /* ~~ Constexpr Declarations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
