@@ -20,8 +20,6 @@ namespace steno {
 
 constexpr struct FromBits_Arg         {} FromBits         {};
 constexpr struct FromBitsReversed_Arg {} FromBitsReversed {};
-constexpr struct Wide_Arg             {} Wide             {};
-constexpr struct Packed_Arg           {} Packed           {};
 
 /* ~~ Key ID's ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -56,11 +54,10 @@ class Stroke {
 	//  └──────────┬──────────┘ └──┬───┘ └─ fail-bit
 	//            keys        flags/resv'd
 
+public:
 	static constexpr unsigned KeyCount = 23;
 	static constexpr unsigned PadCount = 9;
 	static_assert(KeyCount + PadCount == 32);
-
-public:
 	// Default construction/assignment
 	Stroke() = default;
 	Stroke(Stroke const&) = default;
@@ -276,22 +273,30 @@ Brief operator+(std::string_view, Phrase);
 
 /* ~~ String Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+// We use 'long' for ios_base::iword compatability.
+enum Format : long {
+	// Width                XX
+	Packed        = 0b00'00'01,
+	Wide          = 0b00'00'10,
+	// Hypen             XX   
+	Hyphen        = 0b00'01'00,
+	NoHyphen      = 0b00'10'00,
+	// Digit          XX      
+	Numeric       = 0b01'00'00,
+	Alpha         = 0b10'00'00,
+	DefaultFormat = 0b01'01'01,
+};
+Format operator|(Format, Format);
+
 char        toChar  (Key);
 std::string toString(Key);
-std::string toString(Stroke);
-std::string toString(Phrase);
-// Compile-time formatting
-std::string toString(Wide_Arg, Stroke);
-std::string toString(Packed_Arg, Stroke);
-std::string toString(Wide_Arg, Phrase);
-std::string toString(Packed_Arg, Phrase);
-// Run-time formatting
+std::string toString(Stroke, Format = DefaultFormat);
+std::string toString(Phrase, Format = DefaultFormat);
 std::ostream& operator<<(std::ostream&, Key);
 std::ostream& operator<<(std::ostream&, Stroke);
 std::ostream& operator<<(std::ostream&, Phrase);
-// Manipulators
-std::ostream& operator<<(std::ostream&, Wide_Arg);
-std::ostream& operator<<(std::ostream&, Packed_Arg);
+// Format as manipulator
+std::ostream& operator<<(std::ostream&, Format);
 
 /* ~~ Constexpr Declarations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 

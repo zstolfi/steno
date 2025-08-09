@@ -313,6 +313,7 @@ TEST(StenoStroke, UseWithMaps) {
 	EXPECT_EQ(seen[{"KR"}], false);
 }
 
+#include <sstream>
 TEST(StenoStroke, ToString) {
 	steno::Stroke array[] = {
 		{"         *EU          "},
@@ -328,6 +329,19 @@ TEST(StenoStroke, ToString) {
 	EXPECT_EQ(steno::toString(array[3]), "PEU");     // pi
 	EXPECT_EQ(steno::toString(array[4]), "SKP-");    // and
 	EXPECT_EQ(steno::toString(array[5]), "SPROUTS"); // sprouts
+
+	steno::Stroke stroke {"12HOURS"};
+	using enum steno::Format;
+	EXPECT_EQ(steno::toString(stroke, Packed|Alpha), "#STHOURS");
+	EXPECT_EQ(steno::toString(stroke, Numeric|Wide), "12   4  0  U R     S  ");
+	
+	std::stringstream ss {};
+	ss << Alpha << Packed << stroke;
+	EXPECT_EQ(ss.str(), "#STHOURS");
+
+	ss = std::stringstream {};
+	ss << Wide << Numeric << stroke;
+	EXPECT_EQ(ss.str(), "12   4  0  U R     S  ");
 }
 
 /* ~~ Phrase Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */

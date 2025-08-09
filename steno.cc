@@ -326,28 +326,33 @@ Brief operator+(std::string_view str, Phrase p) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-//Phrase operator+(Phrase xx, Stroke y ) { return xx.getStrokes().back() += y; }
-//Phrase operator+(Stroke x , Phrase yy) { return yy.getStrokes().front() += x; }
-//Brief  operator+(Brief  a , Brief  b ) { return a += b; }
-//Brief  operator+(Phrase xx, Brief  b ) { return Brief {"", xx} += b; }
-//Brief  operator+(Brief  b , Phrase xx) { return b += Brief {"", xx}; }
-//Brief  operator+(std::string s, Brief b) {
-//	if (s=="~") { b.text = s + b.text; return b; }
-//	else return Brief {s, {"-"}} += b;
-//}
-//Brief   operator+(Brief b, std::string s) {
-//	if (s=="~") { b.text = b.text + s; return b; }
-//	else return b += Brief {s, {"-"}};
-//}
+/* ~~ String Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-//Phrase operator-(Phrase xx, Stroke  y) { return xx.getStrokes().back() -= y; }
+Format operator|(Format f, Format g) {
+	return Format(long(f) | long(g));
+}
 
-//Brief  operator|(Brief  a , Brief  b ) { return a |= b; }
-//Brief  operator|(Phrase xx, Brief  b ) { return Brief {"", xx} |= b; }
-//Brief  operator|(Brief  b , Phrase xx) { return b |= Brief {"", xx}; }
+namespace /*detail*/ {
+	int const Format_xalloc = std::ios_base::xalloc();
 
-/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+	long bits(Format f) {
+		return long(f);
+	}
 
+	long mask(Format f) {
+		if (f == Packed  ) return 0b00'00'11;
+		if (f == Wide    ) return 0b00'00'11;
+		if (f == Hyphen  ) return 0b00'11'00;
+		if (f == NoHyphen) return 0b00'11'00;
+		if (f == Numeric ) return 0b11'00'00;
+		if (f == Alpha   ) return 0b11'00'00;
+		return {};
+	}
+
+	bool has(Format f, Format stock) {
+		return (mask(stock) & bits(f)) == bits(stock);
+	} 
+}
 
 char toChar(Key k) {
 	switch (k) {
@@ -368,79 +373,59 @@ char toChar(Key k) {
 	}
 }
 
-std::string toString(Key k) { return std::string(1, toChar(k)); }
-std::string toString(Stroke s) { return toString(Packed, s); }
-std::string toString(Phrase p) { return toString(Packed, p); }
+std::string toString(Key k) {
+	return std::string(1, toChar(k));
+}
 
-// Compile-time formatting
-std::string toString(Packed_Arg, Stroke s) {
+std::string toString(Stroke s, Format format) {
 	Stroke const Left   = s & Stroke {"#STKPWHR  -            "};
 	Stroke const Middle = s & Stroke {"        AO*EU          "};
 	Stroke const Right  = s & Stroke {"          -  FRPBLGTSDZ"};
-	std::string result {};
-	for (Key key : Left  ) result += toChar(key);
-	if (!Middle) result += '-';
-	for (Key key : Middle) result += toChar(key);
-	for (Key key : Right ) result += toChar(key);
-	return result;
-}
-
-std::string toString(Wide_Arg, Stroke s) {
-	std::string result (keyID(Key::_Z) - keyID(Key::Num) + 1, ' ');
-	for (Key key : s) {
-		result[keyID(key)] = toChar(key);
+	if (has(format, Format::Packed)) {
+		std::string result {};
+		for (Key key : Left  ) result += toChar(key);
+		/* TODO */
+		if (!Middle) result += '-';
+		for (Key key : Middle) result += toChar(key);
+		for (Key key : Right ) result += toChar(key);
+		return result;
 	}
-	if (!(s & steno::Stroke {"AO*EU"})) result[keyID(Key::x)] = '-';
-	return result;
+	else if (has(format, Format::Wide)) {
+		std::string result (Stroke::KeyCount, ' ');
+		for (Key key : s) result[keyID(key)] = toChar(key);
+		if (!Middle) result[keyID(Key::x)] = '-';
+		return result;
+	}
+	else return {};
 }
 
-template <class Flag_Arg>
-std::string toString_impl(Phrase p) {
+std::string toString(Phrase p, Format format) {
 	std::string result = "";
 	for (int i=0; auto stroke : p) {
 		if (i++) result += '/';
-		result += toString(Flag_Arg {}, stroke);
+		result += toString(stroke, format);
 	}
 	return result;
 }
 
-std::string toString(Wide_Arg, Phrase p) {
-	return toString_impl<Wide_Arg>(p);
-}
-
-std::string toString(Packed_Arg, Phrase p) {
-	return toString_impl<Packed_Arg>(p);
-}
-
-// Run-time formatting
-std::ostream& operator<<(std::ostream& os, Key k) {
-	return os << toString(k);
-}
-
-int const stroke_xalloc = std::ios_base::xalloc();
 std::ostream& operator<<(std::ostream& os, Stroke s) {
-	auto const format = os.iword(stroke_xalloc);
-	if (format == 0) os << toString(Wide, s);
-	if (format == 1) os << toString(Packed, s);
-	return os;
+	auto format = Format(os.iword(Format_xalloc));
+	return os << toString(s, format);
 }
 
 std::ostream& operator<<(std::ostream& os, Phrase p) {
-	return os << toString(p);
+	auto format = Format(os.iword(Format_xalloc));
+	return os << toString(p, format);
 }
 
-// Manipulators
-std::ostream& operator<<(std::ostream& os, Wide_Arg) {
-	os.iword(stroke_xalloc) = 0;
+// Format as manipulator
+std::ostream& operator<<(std::ostream& os, Format f) {
+	os.iword(Format_xalloc) &= ~mask(f);
+	os.iword(Format_xalloc) |= bits(f);
 	return os;
 }
 
-std::ostream& operator<<(std::ostream& os, Packed_Arg) {
-	os.iword(stroke_xalloc) = 1;
-	return os;
-}
-
-/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ Misc. STL Functionality ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 } // namespace steno
 
