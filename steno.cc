@@ -307,11 +307,11 @@ Brief& Brief::normalize() {
 		std::remove(m_phrase.begin(), m_phrase.end(), NoStroke),
 		m_phrase.end()
 	);
-	// Remove leading or trailing whitespace.
-	constexpr std::string_view Whitespace {" \t\n\r"};
-	auto i = m_text.find_first_not_of(Whitespace);
-	auto j = m_text.find_last_not_of(Whitespace);
-	m_text = (i != m_text.npos)? m_text.substr(i, j-i + 1): "";
+//	// Remove leading or trailing whitespace.
+//	constexpr std::string_view Whitespace {" \t\n\r"};
+//	auto i = m_text.find_first_not_of(Whitespace);
+//	auto j = m_text.find_last_not_of(Whitespace);
+//	m_text = (i != m_text.npos)? m_text.substr(i, j-i + 1): "";
 	return *this;
 }
 
