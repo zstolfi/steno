@@ -58,18 +58,22 @@ public:
 	static constexpr unsigned KeyCount = 23;
 	static constexpr unsigned PadCount = 9;
 	static_assert(KeyCount + PadCount == 32);
+
 	// Default construction/assignment
 	Stroke() = default;
 	Stroke(Stroke const&) = default;
 	Stroke& operator=(Stroke const&) = default;
+
 	// Class constructors
 	constexpr Stroke(Key);
 	constexpr Stroke(std::string_view);
 	constexpr Stroke(FromBits_Arg, std::bitset<23> const);
 	constexpr Stroke(FromBitsReversed_Arg, std::bitset<23> const);
+
 	// Fail-state query
 	bool failed() const;
 	operator bool() const;
+
 	// Getters and Setters
 	class Reference;
 	class Iterator;
@@ -77,16 +81,18 @@ public:
 	bool get(Key) const;
 	Stroke& set(Key, bool = true);
 	Stroke& unset(Key);
-	// Subscript operator
 	Reference operator[](Key);
 	bool operator[](Key) const;
+
 	// Range-for compatability
 	Iterator begin() const;
 	Iterator end() const;
+
 	// Comparison
 	bool operator==(Stroke const&) const = default;
 	auto operator<=>(Stroke const&) const = default;
 	template <class T> friend struct std::hash;
+
 	// Key manipulation
 	Stroke operator~() const;
 	Stroke& operator+=(Stroke const&);
@@ -113,8 +119,8 @@ public:
 	};
 
 	class Iterator {
-		// Matches the bits of a Stroke.
-		// The leading bit matches the Key the iterator "points" to.
+		// Matches the bits of this Stroke.
+		// The leading bit => the Key the iterator "points" to.
 		uint32_t m_bits = 0;
 
 	public:
@@ -154,17 +160,21 @@ public:
 	Phrase() = default;
 	Phrase(Phrase const&) = default;
 	Phrase& operator=(Phrase const&) = default;
+
 	// Class constructors
 	Phrase(std::string_view);
 	Phrase(Stroke);
 	Phrase(std::span<Stroke const>);
+
 	// Fail-state query
 	bool failed() const;
 	operator bool() const;
+
 	// Comparison
 	bool operator== (Phrase const&) const = default;
 	auto operator<=>(Phrase const&) const = default;
 	template <class T> friend struct std::hash;
+
 	// Concatenation
 	Phrase& operator|=(Phrase);
 	friend Phrase operator|(Phrase, Phrase const&);
@@ -178,6 +188,7 @@ public:
 	using const_iterator = decltype(m_strokes)::const_iterator;
 	using difference_type = std::ptrdiff_t;
 	using size_type = std::size_t;
+
 	// Container specific methods
 	auto begin ()       { return m_strokes.begin (); }
 	auto begin () const { return m_strokes.begin (); }
@@ -201,6 +212,7 @@ public:
 	auto erase  (auto&& ... args) { return m_strokes.erase  (args ... ); }
 	auto clear  (auto&& ... args) { return m_strokes.clear  (args ... ); }
 	auto assign (auto&& ... args) { return m_strokes.assign (args ... ); }
+
 	// Vector specific methods
 	auto& front  ()       { return m_strokes.front(); }
 	auto& front  () const { return m_strokes.front(); }
@@ -229,12 +241,15 @@ public:
 	Brief() = default;
 	Brief(Brief const&) = default;
 	Brief& operator=(Brief const&) = default;
+
 	// Class constructors
 	Brief(Phrase const&, std::string_view);
 	Brief(Brief const&, std::string_view);
+
 	// Fail-state query
 	bool failed() const;
 	operator bool() const;
+
 	// Getters and Setters
 	Phrase&       phrase();
 	Phrase const& phrase() const;
@@ -243,9 +258,11 @@ public:
 	template <std::size_t I> friend auto&& get(Brief&);
 	template <std::size_t I> friend auto&& get(Brief const&);
 	template <std::size_t I> friend auto&& get(Brief&&);
+
 	// Comparison
 	bool operator== (Brief const&) const = default;
 	auto operator<=>(Brief const&) const = default;
+
 	// Concatenation
 	Brief& operator|=(Brief);
 	friend Phrase operator|(Phrase, Phrase const&);
@@ -295,6 +312,7 @@ std::string toString(Phrase, Format = DefaultFormat);
 std::ostream& operator<<(std::ostream&, Key);
 std::ostream& operator<<(std::ostream&, Stroke);
 std::ostream& operator<<(std::ostream&, Phrase);
+
 // Format as manipulator
 std::ostream& operator<<(std::ostream&, Format);
 
