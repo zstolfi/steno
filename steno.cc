@@ -332,14 +332,15 @@ Format operator|(Format f, Format g) {
 	return Format(long(f) | long(g));
 }
 
+Format operator|=(Format& lhs, Format rhs) {
+	return lhs = lhs | rhs;
+}
+
 namespace /*detail*/ {
 	int const Format_xalloc = std::ios_base::xalloc();
 
-	long bits(Format f) {
-		return long(f);
-	}
-
-	long mask(Format f) {
+	constexpr long bits(Format f) { return long(f); }
+	constexpr long mask(Format f) {
 		if (f == Packed  ) return 0b00'00'11;
 		if (f == Wide    ) return 0b00'00'11;
 		if (f == Hyphen  ) return 0b00'11'00;
@@ -349,28 +350,23 @@ namespace /*detail*/ {
 		return {};
 	}
 
-	bool has(Format f, Format stock) {
-		return (mask(stock) & bits(f)) == bits(stock);
-	} 
+	template <Format F>
+	bool check(Format x) { return (mask(F) & bits(x)) == bits(F); }
+	[[maybe_unused]] bool packed  (Format x) { return check<Packed  >(x); }
+	[[maybe_unused]] bool wide    (Format x) { return check<Wide    >(x); }
+	[[maybe_unused]] bool hyphen  (Format x) { return check<Hyphen  >(x); }
+	[[maybe_unused]] bool nohyphen(Format x) { return check<NoHyphen>(x); }
+	[[maybe_unused]] bool numeric (Format x) { return check<Numeric >(x); }
+	[[maybe_unused]] bool alpha   (Format x) { return check<Alpha   >(x); }
 }
 
 char toChar(Key k) {
-	switch (k) {
-	case Key::Num: return '#';
-	case Key::S_: return 'S';
-	case Key::T_: return 'T'; case Key::K_: return 'K';
-	case Key::P_: return 'P'; case Key::W_: return 'W';
-	case Key::H_: return 'H'; case Key::R_: return 'R';
-	case Key::A : return 'A'; case Key::O : return 'O';
-	case Key::x : return '*';
-	case Key::E : return 'E'; case Key::U : return 'U';
-	case Key::_F: return 'F'; case Key::_R: return 'R';
-	case Key::_P: return 'P'; case Key::_B: return 'B';
-	case Key::_L: return 'L'; case Key::_G: return 'G';
-	case Key::_T: return 'T'; case Key::_S: return 'S';
-	case Key::_D: return 'D'; case Key::_Z: return 'Z';
-	default: return {};
-	}
+	return "#STKPWHRAO*EUFRPBLGTSDZ" [keyID(k)];
+}
+
+char toCharShift(Key k) {
+	// The keyboard "shifted" via the number bar.
+	return "#12K3W4R50*EU6R7B8G9SDZ" [keyID(k)];
 }
 
 std::string toString(Key k) {
@@ -378,25 +374,24 @@ std::string toString(Key k) {
 }
 
 std::string toString(Stroke s, Format format) {
-	Stroke const Left   = s & Stroke {"#STKPWHR  -            "};
+	Stroke const NumBar = s & Stroke {"#         -            "};
+	Stroke const Left   = s & Stroke {" STKPWHR  -            "};
 	Stroke const Middle = s & Stroke {"        AO*EU          "};
 	Stroke const Right  = s & Stroke {"          -  FRPBLGTSDZ"};
-	if (has(format, Format::Packed)) {
-		std::string result {};
-		for (Key key : Left  ) result += toChar(key);
-		/* TODO */
-		if (!Middle) result += '-';
-		for (Key key : Middle) result += toChar(key);
-		for (Key key : Right ) result += toChar(key);
-		return result;
-	}
-	else if (has(format, Format::Wide)) {
-		std::string result (Stroke::KeyCount, ' ');
-		for (Key key : s) result[keyID(key)] = toChar(key);
-		if (!Middle) result[keyID(Key::x)] = '-';
-		return result;
-	}
-	else return {};
+	bool const AnyNumbers = NumBar && (s & steno::Stroke{" STPHAOFPLT"});
+	bool const AllNumbers = NumBar && (s & steno::Stroke{"#STPHAOFPLT"}) == s;
+	auto const toCh = NumBar && numeric(format)? toCharShift: toChar;
+
+	std::string result (Stroke::KeyCount, ' ');
+	auto put = [&] (Key k, char c = '\0') { result[keyID(k)] = c? c: toCh(k); };
+
+	if ( NumBar && !(numeric(format) || !AnyNumbers)) put(Key::Num);
+	if (!Middle && !(numeric(format) &&  AllNumbers)) put(Key::x, '-');
+	for (Key key : Left  ) put(key);
+	for (Key key : Middle) put(key);
+	for (Key key : Right ) put(key);
+	if (packed(format)) std::erase(result, ' ');
+	return result;
 }
 
 std::string toString(Phrase p, Format format) {

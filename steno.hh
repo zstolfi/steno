@@ -291,7 +291,7 @@ Brief operator+(std::string_view, Phrase);
 /* ~~ String Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 // We use 'long' for ios_base::iword compatability.
-enum Format : long {
+enum class Format : long {
 	// Width                XX
 	Packed        = 0b00'00'01,
 	Wide          = 0b00'00'10,
@@ -303,9 +303,12 @@ enum Format : long {
 	Alpha         = 0b10'00'00,
 	DefaultFormat = 0b01'01'01,
 };
+using enum Format;
 Format operator|(Format, Format);
+Format operator|=(Format&, Format);
 
-char        toChar  (Key);
+char toChar     (Key);
+char toCharShift(Key);
 std::string toString(Key);
 std::string toString(Stroke, Format = DefaultFormat);
 std::string toString(Phrase, Format = DefaultFormat);

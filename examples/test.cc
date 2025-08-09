@@ -324,7 +324,7 @@ TEST(StenoStroke, ToString) {
 		{"S  P  R  O U      TS  "},
 	};
 	EXPECT_EQ(steno::toString(array[0]), "*EU");     // I
-	EXPECT_EQ(steno::toString(array[1]), "#-L");     // 8
+	EXPECT_EQ(steno::toString(array[1]), "8");       // 8
 	EXPECT_EQ(steno::toString(array[2]), "SUPL");    // sum
 	EXPECT_EQ(steno::toString(array[3]), "PEU");     // pi
 	EXPECT_EQ(steno::toString(array[4]), "SKP-");    // and
@@ -333,15 +333,15 @@ TEST(StenoStroke, ToString) {
 	steno::Stroke stroke {"12HOURS"};
 	using enum steno::Format;
 	EXPECT_EQ(steno::toString(stroke, Packed|Alpha), "#STHOURS");
-	EXPECT_EQ(steno::toString(stroke, Numeric|Wide), "12   4  0  U R     S  ");
+	EXPECT_EQ(steno::toString(stroke, Numeric|Wide), " 12   4  0  U R     S  ");
 	
 	std::stringstream ss {};
-	ss << Alpha << Packed << stroke;
-	EXPECT_EQ(ss.str(), "#STHOURS");
+	ss << Alpha << Wide << stroke;
+	EXPECT_EQ(ss.str(), "#ST   H  O  U R     S  ");
 
 	ss = std::stringstream {};
-	ss << Wide << Numeric << stroke;
-	EXPECT_EQ(ss.str(), "12   4  0  U R     S  ");
+	ss << Packed << Numeric << stroke;
+	EXPECT_EQ(ss.str(), "1240URS");
 }
 
 /* ~~ Phrase Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -389,8 +389,8 @@ TEST(StenoPhrase, UseWithMaps) {
 }
 
 TEST(StenoPhrase, ToString) {
-	steno::Phrase phrase {"0/1/2/3/4/5/6/7/8/9"};
-	EXPECT_EQ(steno::toString(phrase), "#O/#S-/#T-/#P-/#H-/#A/#-F/#-P/#-L/#-T");
+	steno::Phrase phrase {"#O/#S-/#T-/#P-/#H-/#A/#-F/#-P/#-L/#-T"};
+	EXPECT_EQ(steno::toString(phrase), "0/1/2/3/4/5/6/7/8/9");
 }
 
 // Double parentheses required so our '<' isn't parsed as a less-than.
