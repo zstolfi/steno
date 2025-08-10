@@ -225,6 +225,8 @@ public:
 	auto& operator[](std::size_t n) const { return m_strokes[n];               }
 	auto& at        (std::size_t n)       { return m_strokes.at(n);            }
 	auto& at        (std::size_t n) const { return m_strokes.at(n);            }
+	friend auto erase   (Phrase& p, auto&&  v);
+	friend auto erase_if(Phrase& p, auto    c);
 };
 
 // Stroke promotion
@@ -455,7 +457,12 @@ template <std::size_t I> struct std::tuple_element<I, steno::Brief>
 { static_assert(I < 2); };
 
 namespace steno {
+auto erase (steno::Phrase& p, auto&& v){ return std::erase   (p.m_strokes, v); }
+auto erase_if(steno::Phrase& p, auto c){ return std::erase_if(p.m_strokes, c); }
 template <std::size_t I> auto&& get(Brief&       b) { return b.get_impl<I>(); }
 template <std::size_t I> auto&& get(Brief const& b) { return b.get_impl<I>(); }
 template <std::size_t I> auto&& get(Brief&&      b) { return b.get_impl<I>(); }
 }
+
+using steno::erase;
+using steno::erase_if;

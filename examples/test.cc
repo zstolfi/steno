@@ -483,6 +483,9 @@ TEST(StenoPhrase, ContainerExpressions) {
 		EXPECT_EXPRESSION(std::swap(lhs, rhs), void,
 			EXPECT_EQ(lhs, one); EXPECT_EQ(rhs, two)
 		);
+		// std::erase[_if] will not work, instead we provide global functions.
+		EXPECT_EXPRESSION(erase(v, steno::NoStroke), C::size_type);
+		EXPECT_EXPRESSION(erase_if(v, [] ( ... ) { return 1; }), C::size_type);
 	}
 	EXPECT_EXPRESSION(v.size()    , C::size_type);
 	EXPECT_EXPRESSION(v.max_size(), C::size_type);
