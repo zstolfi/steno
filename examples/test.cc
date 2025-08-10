@@ -598,7 +598,7 @@ TEST(StenoBrief, StructuredBinding) {
 
 TEST(StenoDictionary, ContainerTypes) {
 	using C  = steno::Dictionary;
-	using T  = std::map<steno::Phrase, std::string>::value_type; // !
+	using T  = steno::Brief;
 	using I  = C::iterator;
 	using IC = C::const_iterator;
 	using I_Traits  = std::iterator_traits<I>;
@@ -671,4 +671,55 @@ TEST(StenoDictionary, ContainerExpressions) {
 	EXPECT_EXPRESSION(v.size()    , C::size_type);
 	EXPECT_EXPRESSION(v.max_size(), C::size_type);
 	EXPECT_EXPRESSION(v.empty()   , bool        );
+}
+
+TEST (StenoDictionary, AssociativeTypes) {
+	using X = steno::Dictionary;
+	EXPECT_SAME_TYPE(X::key_type   , steno::Phrase);
+	EXPECT_SAME_TYPE(X::mapped_type, std::string);
+	EXPECT_SAME_TYPE(X::value_type , steno::Brief);
+}
+
+TEST(StenoDictionary, AssociativeExpressions) {
+	using X = steno::Dictionary;
+	auto a = X {/* ... */};
+	auto q = a.cbegin();
+	auto p = a.cend();
+	auto const b = X {/* ... */};
+	auto i = b.begin();
+	auto j = b.end();
+	auto il = std::initializer_list<X::value_type> {/* ... */};
+	auto t = X::value_type {{"PWRAOEF"}, "brief"};
+	auto k = X::key_type {"TPRAEUZ"};
+	EXPECT_EXPRESSION(X()    , X , EXPECT_TRUE(X().empty()));
+	EXPECT_EXPRESSION(X(a)   , X , EXPECT_EQ(X(a), a)      );
+	EXPECT_EXPRESSION(X(i, j), X , EXPECT_EQ(X(i, j), b)   );
+	EXPECT_EXPRESSION(X(il)  , X , EXPECT_EQ(X(i, j), b)   );
+	EXPECT_EXPRESSION(a = il , X&, EXPECT_EQ(a, X(il))     );
+	EXPECT_EXPRESSION(a.emplace(p, k, "")     , std::pair<X::iterator, bool>);
+	EXPECT_EXPRESSION(a.insert(t)             , std::pair<X::iterator, bool>);
+	EXPECT_EXPRESSION(a.emplace_hint(p, k, ""), X::iterator);
+	EXPECT_EXPRESSION(a.insert(p, t)          , X::iterator);
+	EXPECT_EXPRESSION(a.insert(i, j)          , void);
+	EXPECT_EXPRESSION(a.insert(il)            , void);
+	auto a2 = a;
+//	auto pq = [&] { q = v.begin(); p = v.end(); q1 = q; q2 = q+1; };
+	EXPECT_EXPRESSION(a.merge(a2)    , void);
+	EXPECT_EXPRESSION(a.erase(k)     , X::size_type);
+	EXPECT_EXPRESSION(a.erase(q)     , X::iterator);
+	EXPECT_EXPRESSION(a.erase(r)     , X::iterator);
+	EXPECT_EXPRESSION(a.erase(q1, q2), X::iterator);
+	EXPECT_EXPRESSION(a.clear()      , void, EXPECT_EQ(a.empty()));
+	EXPECT_EXPRESSION(a.find()       , X::iterator);
+	EXPECT_EXPRESSION(b.find()       , X::const_iterator);
+	EXPECT_EXPRESSION(b.count(k)     , X::size);
+	EXPECT_EXPRESSION(b.contains(k)  , bool);
+	EXPECT_EXPRESSION(a.lower_bound(k), X::iterator);
+	EXPECT_EXPRESSION(b.lower_bound(k), X::const_iterator);
+	EXPECT_EXPRESSION(a.upper_bound(k), X::iterator);
+	EXPECT_EXPRESSION(b.upper_bound(k), X::const_iterator);
+	template <class T> using Pair = std::pair<T, T>;
+	EXPECT_EXPRESSION(a.equal_range(k), Pair<X::iterator>);
+	EXPECT_EXPRESSION(b.equal_range(k), Pair<X::const_iterator>);
+	// TODO: swap, erase, erase_if
 }

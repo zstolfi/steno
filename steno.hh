@@ -6,6 +6,7 @@
 #include <bitset>
 #include <vector>
 #include <map>
+#include <list>
 #include <span>
 #include <initializer_list>
 #include <iterator>
@@ -288,12 +289,17 @@ Brief operator+(std::string_view, Phrase);
 
 /* ~~ Dictionary Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-struct Dictionary {
-	std::map<steno::Phrase, std::string> m_map;
+class Dictionary {
+	std::list<Brief> m_entries {};
+	std::map<Phrase const*, std::string*> m_map {};
+	
+public:
 	// Default construction/assignment/movement
 	Dictionary() = default;
 	Dictionary(Dictionary const&) = default;
+	Dictionary(Dictionary&&     ) = default;
 	Dictionary& operator=(Dictionary const&) = default;
+	Dictionary& operator=(Dictionary&&     ) = default;
 
 	// Class constructors
 	// see steno_parsers.hh
@@ -309,32 +315,36 @@ struct Dictionary {
 	template <class T> friend struct std::hash;
 
 public:
-	// Container specific types
-	using value_type = decltype(m_map)::value_type;
-	using reference = decltype(m_map)::value_type&;
-	using const_reference = decltype(m_map)::value_type const&;
-	using iterator = decltype(m_map)::iterator;
-	using const_iterator = decltype(m_map)::const_iterator;
+	// Container types
+	using value_type = Brief;
+	using reference = Brief&;
+	using const_reference = Brief const&;
+	using iterator = decltype(m_entries)::iterator;
+	using const_iterator = decltype(m_entries)::const_iterator;
 	using difference_type = std::ptrdiff_t;
 	using size_type = std::size_t;
 
-	// Container specific methods
-	auto begin ()       { return m_map.begin (); }
-	auto begin () const { return m_map.begin (); }
-	auto cbegin() const { return m_map.cbegin(); }
-	auto end   ()       { return m_map.end   (); }
-	auto end   () const { return m_map.end   (); }
-	auto cend  () const { return m_map.cend  (); }
+	// Container methods
+	auto begin ()       { return m_entries.begin (); }
+	auto begin () const { return m_entries.begin (); }
+	auto cbegin() const { return m_entries.cbegin(); }
+	auto end   ()       { return m_entries.end   (); }
+	auto end   () const { return m_entries.end   (); }
+	auto cend  () const { return m_entries.cend  (); }
 	void swap(Dictionary& other) { std::swap(*this, other); };
-	std::size_t size    () const { return m_map.size    (); }
-	std::size_t max_size() const { return m_map.max_size(); }
-	bool        empty   () const { return m_map.empty   (); }
+	std::size_t size    () const { return m_entries.size    (); }
+	std::size_t max_size() const { return m_entries.max_size(); }
+	bool        empty   () const { return m_entries.empty   (); }
 
 public:
-	// Associative specific methods
+	// Associative types
+	using key_type = Phrase;
+	using mapped_type = std::string;
+
+	// Associative methods
 	template <std::input_iterator I>
 	Dictionary(I first, I last)
-	{ for (I i=first; i!=last; ++i) m_map.emplace(i->phrase(), i->text()); }
+	{ for (I i=first; i!=last; ++i) m_entries.emplace_back(*i); }
 	Dictionary(std::initializer_list<Brief> il)
 	: Dictionary(il.begin(), il.end()) {};
 	/* ... */
