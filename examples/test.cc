@@ -1,5 +1,16 @@
 #include "steno.hh"
 #include <gtest/gtest.h>
+#include <iterator>
+#include <concepts>
+
+// Double parentheses required so our '<' isn't parsed as a less-than.
+#define EXPECT_SAME_TYPE(T, U) EXPECT_TRUE((std::same_as<T, U>))
+#define EXPECT_CONCEPT(C, ...) EXPECT_TRUE((C<__VA_ARGS__>))
+#define EXPECT_EXPRESSION(Expression, Type, ... ) {                            \
+	EXPECT_SAME_TYPE(Type, decltype(Expression));                              \
+	(void) (Expression);                                                       \
+	__VA_ARGS__; /*PostCondition*/                                             \
+}
 
 /* ~~ Key Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -393,17 +404,11 @@ TEST(StenoPhrase, ToString) {
 	EXPECT_EQ(steno::toString(phrase), "0/1/2/3/4/5/6/7/8/9");
 }
 
-// Double parentheses required so our '<' isn't parsed as a less-than.
-#define EXPECT_SAME_TYPE(T, U) EXPECT_TRUE((std::same_as<T, U>))
-#define EXPECT_CONCEPT(C, ...) EXPECT_TRUE((C<__VA_ARGS__>))
-
-#include <iterator>
-#include <concepts>
 TEST(StenoPhrase, ContainerTypes) {
 	using C  = steno::Phrase;
 	using T  = steno::Stroke;
-	using I  = steno::Phrase::iterator;
-	using IC = steno::Phrase::const_iterator;
+	using I  = C::iterator;
+	using IC = C::const_iterator;
 	using I_Traits  = std::iterator_traits<I>;
 	using IC_Traits = std::iterator_traits<IC>;
 	// Container
@@ -440,18 +445,10 @@ TEST(StenoPhrase, ContainerStatements) {
 	}
 }
 
-#define EXPECT_EXPRESSION(Expression, Type, ... ) {                            \
-	EXPECT_SAME_TYPE(Type, decltype(Expression));                              \
-	(void) (Expression);                                                       \
-	__VA_ARGS__; /*PostCondition*/                                             \
-}
-
-#pragma clang diagnostic push
 TEST(StenoPhrase, ContainerExpressions) {
 	using C = steno::Phrase;
 	auto v = C {"STEPB/OE"};
 	auto lhs = C {};
-#	pragma clang diagnostic ignored "-Wvexing-parse"
 	EXPECT_EXPRESSION(C()    , C , EXPECT_TRUE(C().empty()));
 	EXPECT_EXPRESSION(C(v)   , C , EXPECT_EQ(C(v), v)      );
 	EXPECT_EXPRESSION(lhs = v, C&, EXPECT_EQ(lhs, v)       );
@@ -467,9 +464,6 @@ TEST(StenoPhrase, ContainerExpressions) {
 	{
 		auto u = C {"U"};
 		auto v = C {"SR"};
-		auto i = v.begin();
-		auto j = v.end();
-		EXPECT_EXPRESSION(i <=> j, std::strong_ordering);
 		EXPECT_EXPRESSION(u == v, bool);
 		EXPECT_EXPRESSION(u != v, bool);
 
@@ -491,7 +485,6 @@ TEST(StenoPhrase, ContainerExpressions) {
 	EXPECT_EXPRESSION(v.max_size(), C::size_type);
 	EXPECT_EXPRESSION(v.empty()   , bool        );
 }
-#pragma clang diagnostic pop
 
 #include <list>
 TEST(StenoPhrase, SequenceStatements) {
@@ -533,6 +526,7 @@ TEST(StenoPhrase, SequenceExpressions) {
 	pq(); EXPECT_EXPRESSION(v.insert(p, il)    , C::iterator);
 	pq(); EXPECT_EXPRESSION(v.erase(q)         , C::iterator);
 	pq(); EXPECT_EXPRESSION(v.erase(q1, q2)    , C::iterator);
+	EXPECT_EXPRESSION(i <=> j, std::strong_ordering);
 	EXPECT_EXPRESSION(v.clear()     , void, EXPECT_TRUE(v.empty()   ));
 	EXPECT_EXPRESSION(v.assign(i, j), void, EXPECT_TRUE(v == C(i, j)));
 	EXPECT_EXPRESSION(v.assign(il)  , void, EXPECT_TRUE(v == C(il)  ));
@@ -597,4 +591,84 @@ TEST(StenoBrief, StructuredBinding) {
 	EXPECT_EQ(strokes[0], steno::Stroke {"AP"});
 	EXPECT_EQ(strokes[1], steno::Stroke {"EL"});
 	EXPECT_EQ(text, "apple");
+}
+
+/* ~~ Brief Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+// Modeled after https://en.cppreference.com/w/cpp/named_req/AssociativeContainer
+
+TEST(StenoDictionary, ContainerTypes) {
+	using C  = steno::Dictionary;
+	using T  = std::map<steno::Phrase, std::string>::value_type; // !
+	using I  = C::iterator;
+	using IC = C::const_iterator;
+	using I_Traits  = std::iterator_traits<I>;
+	using IC_Traits = std::iterator_traits<IC>;
+	// Container
+	EXPECT_SAME_TYPE(C::value_type     , T             );
+	EXPECT_SAME_TYPE(C::reference      , T&            );
+	EXPECT_SAME_TYPE(C::const_reference, T const&      );
+	EXPECT_SAME_TYPE(C::difference_type, std::ptrdiff_t);
+	EXPECT_SAME_TYPE(C::size_type      , std::size_t   );
+	// Iterator
+	EXPECT_CONCEPT(std::forward_iterator, I);
+	EXPECT_CONCEPT(std::forward_iterator, IC);
+	EXPECT_CONCEPT(std::convertible_to, I, IC);
+	EXPECT_SAME_TYPE(I_Traits::value_type, T);
+	EXPECT_SAME_TYPE(IC_Traits::value_type, T);
+	EXPECT_SAME_TYPE(I_Traits::difference_type, C::difference_type);
+	EXPECT_SAME_TYPE(IC_Traits::difference_type, C::difference_type);
+}
+
+TEST(StenoDictionary, ContainerStatements) {
+	using C = steno::Dictionary;
+	{
+		C a;
+		C b = C();
+		EXPECT_TRUE(a.empty());
+		EXPECT_TRUE(b.empty());
+	} {
+		auto v = C {{{"1"}, "one"}, {{"2"}, "two"}};
+		C a(v);
+		C b = C(v);
+		EXPECT_EQ(a, v);
+		EXPECT_EQ(b, v);
+	}
+}
+
+TEST(StenoDictionary, ContainerExpressions) {
+	using C = steno::Dictionary;
+	auto v = C {{{"1"}, "one"}, {{"2"}, "two"}};
+	auto lhs = C {};
+	EXPECT_EXPRESSION(C()    , C , EXPECT_TRUE(C().empty()));
+	EXPECT_EXPRESSION(C(v)   , C , EXPECT_EQ(C(v), v)      );
+	EXPECT_EXPRESSION(lhs = v, C&, EXPECT_EQ(lhs, v)       );
+
+	auto       mv = C {{{"PH"}, "M"}, {{"SR"}, "V"}};
+	auto const cv = C {{{"KR"}, "C"}, {{"SR"}, "V"}};
+	EXPECT_EXPRESSION(mv.begin(), C::iterator      );
+	EXPECT_EXPRESSION(cv.begin(), C::const_iterator);
+	EXPECT_EXPRESSION(mv.end()  , C::iterator      );
+	EXPECT_EXPRESSION(cv.end()  , C::const_iterator);
+	EXPECT_EXPRESSION(v.cbegin(), C::const_iterator);
+	EXPECT_EXPRESSION(v.cend()  , C::const_iterator);
+	{
+		auto u = C {{{"1*"}, "first"}};
+		auto v = C {{{"2*"}, "second"}};
+		EXPECT_EXPRESSION(u == v, bool);
+		EXPECT_EXPRESSION(u != v, bool);
+
+		auto const ayy = steno::Dictionary {{{" A "}, "a"}};
+		auto const bee = steno::Dictionary {{{"-B "}, "b"}};
+		auto lhs = ayy;
+		auto rhs = bee;
+		EXPECT_EXPRESSION(lhs.swap(rhs), void,
+			EXPECT_EQ(lhs, bee); EXPECT_EQ(rhs, ayy)
+		);
+		EXPECT_EXPRESSION(std::swap(lhs, rhs), void,
+			EXPECT_EQ(lhs, ayy); EXPECT_EQ(rhs, bee)
+		);
+	}
+	EXPECT_EXPRESSION(v.size()    , C::size_type);
+	EXPECT_EXPRESSION(v.max_size(), C::size_type);
+	EXPECT_EXPRESSION(v.empty()   , bool        );
 }

@@ -288,7 +288,57 @@ Brief operator+(std::string_view, Phrase);
 
 /* ~~ Dictionary Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-//using Dictionary = std::map<steno::Phrase, std::string>;
+struct Dictionary {
+	std::map<steno::Phrase, std::string> m_map;
+	// Default construction/assignment/movement
+	Dictionary() = default;
+	Dictionary(Dictionary const&) = default;
+	Dictionary& operator=(Dictionary const&) = default;
+
+	// Class constructors
+	// see steno_parsers.hh
+	Dictionary(std::span<Brief const>);
+
+	// Fail-state query
+	bool failed() const;
+	void eraseFailed();
+
+	// Comparison
+	bool operator== (Dictionary const&) const = default;
+	auto operator<=>(Dictionary const&) const = default;
+	template <class T> friend struct std::hash;
+
+public:
+	// Container specific types
+	using value_type = decltype(m_map)::value_type;
+	using reference = decltype(m_map)::value_type&;
+	using const_reference = decltype(m_map)::value_type const&;
+	using iterator = decltype(m_map)::iterator;
+	using const_iterator = decltype(m_map)::const_iterator;
+	using difference_type = std::ptrdiff_t;
+	using size_type = std::size_t;
+
+	// Container specific methods
+	auto begin ()       { return m_map.begin (); }
+	auto begin () const { return m_map.begin (); }
+	auto cbegin() const { return m_map.cbegin(); }
+	auto end   ()       { return m_map.end   (); }
+	auto end   () const { return m_map.end   (); }
+	auto cend  () const { return m_map.cend  (); }
+	void swap(Dictionary& other) { std::swap(*this, other); };
+	std::size_t size    () const { return m_map.size    (); }
+	std::size_t max_size() const { return m_map.max_size(); }
+	bool        empty   () const { return m_map.empty   (); }
+
+public:
+	// Associative specific methods
+	template <std::input_iterator I>
+	Dictionary(I first, I last)
+	{ for (I i=first; i!=last; ++i) m_map.emplace(i->phrase(), i->text()); }
+	Dictionary(std::initializer_list<Brief> il)
+	: Dictionary(il.begin(), il.end()) {};
+	/* ... */
+};
 
 /* ~~ String Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
