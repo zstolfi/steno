@@ -1,4 +1,4 @@
-#include "../steno.hh"
+#include "steno.hh"
 #include <iostream>
 
 int main() {
@@ -8,8 +8,8 @@ int main() {
 		if (stroke.failed()) std::cout << line << "\tREJECT!\n";
 		else {
 			std::cout << line << "\tACCEPT!\t";
-			std::cout << "|" << steno::toString(stroke) << "|\t";
-			std::cout << std::bitset<32>(stroke.getBits()) << "\n";
+			std::cout << "|" << steno::Wide << stroke << "|\t";
+			std::cout << std::bitset<32>(stroke.raw()) << "\n";
 		}
 	}
 	std::cout << "# ........ Program End ........ #\n";

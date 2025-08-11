@@ -1,4 +1,4 @@
-#include "../steno.hh"
+#include "steno.hh"
 #include <iostream>
 #include <cassert>
 
@@ -8,8 +8,8 @@ int main() {
 	std::cout << "# ''''''' Program Begin ''''''' #\n";
 	std::cout << "String constructors ... ";
 	assert(valid(steno::Stroke {"KPAFRPL"})); // The word "example"
-	assert(valid(steno::Strokes {"EBGS/APL/P-L"})); // "example" long-handed
-	assert(valid(steno::Brief {"stenography", {"STAOPB/TKPWRAEF"}}));
+	assert(valid(steno::Phrase {"EBGS/APL/P-L"})); // "example" long-handed
+	assert(valid(steno::Brief {{"STAOPB/TKPWRAEF"}, "stenography"}));
 	std::cout << "passed!\n";
 
 	std::cout << "Empty stroke constructors ... ";
@@ -27,7 +27,7 @@ int main() {
 
 	const steno::Stroke example {"KPAFRPL"};
 	const steno::Stroke AllKeys {steno::FromBits, 0xFFFFFFFF};
-	std::cout << "Steno order: |" << steno::toString(AllKeys) << "|\n";
-	std::cout << "'example':   |" << steno::toString(example) << "|\n";
+	std::cout << "Steno order: |" << steno::Wide << AllKeys << "|\n";
+	std::cout << "'example':   |" << steno::Wide << example << "|\n";
 	std::cout << "# ........ Program End ........ #\n";
 }

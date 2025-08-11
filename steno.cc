@@ -108,7 +108,7 @@ Stroke operator^(Stroke lhs, Stroke const& rhs) {
 	lhs ^= rhs; return lhs;
 }
 
-// Key proxy classes
+// Key proxy class
 Stroke::Reference::operator bool() const {
 	return parent->get(key);
 }
@@ -185,8 +185,8 @@ Stroke operator^(Key lhs, Key rhs) {
 Phrase::Phrase(std::string_view str) {
 	auto push = [&](unsigned i, unsigned j) {
 		// if (i == j) return false;
-		m_strokes.emplace_back(str.substr(i, j-i));
-		if (m_strokes.back().failed()) return false;
+		emplace_back(str.substr(i, j-i));
+		if (back().failed()) return false;
 		return true;
 	};
 
@@ -199,32 +199,29 @@ Phrase::Phrase(std::string_view str) {
 }
 
 Phrase::Phrase(Stroke x) {
-	m_strokes = std::vector<Stroke> {x};
+	insert(x);
 }
 
 Phrase::Phrase(std::span<Stroke const> span) {
-	m_strokes = std::vector<Stroke> (span.begin(), span.end());
+	insert(span.begin(), span.end());
 }
 
 // Fail-state query
 bool Phrase::failed() const {
 	// TODO: Decide whether containing an empty stroke is an error.
 	return std::any_of(
-		m_strokes.begin(), m_strokes.end(),
+		begin(), end(),
 		[](auto x) { return x.failed(); }
 	);
 }
 
 Phrase::operator bool() const {
-	return !m_strokes.empty() && !failed();
+	return !empty() && !failed();
 }
 
 // Concatenation
 Phrase& Phrase::operator|=(Phrase p) {
-	m_strokes.insert(
-		m_strokes.end(),
-		p.m_strokes.begin(), p.m_strokes.end()
-	);
+	insert(end(), p.begin(), p.end());
 	return *this;
 }
 
@@ -325,6 +322,37 @@ Brief operator+(std::string_view str, Phrase p) {
 }
 
 /* ~~ Dictionary Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+Dictionary::Dictionary(std::span<Stroke const> span) {
+	insert(span.begin(), span.end());
+}
+
+// TODO
+bool failed() const;
+void eraseFailed();
+
+// TODO: Optional argument for how to handle insertion
+Dictionary::iterator Dictionary::insert(Brief b) {
+	// Append to our linked list
+	auto it = m_list.insert(m_list.end(), b);
+	// Efficiently find our sorted position
+	auto next = m_set.upper_bound(it);
+	// Insert into our set
+	m_set.insert(next, it);
+	// Move our linked-list element to its rightful place
+	if (next != m_set.end()) {
+		m_list.splice(*next, m_list, it);
+	}
+	return it;
+}
+
+std::size_t erase(Phrase p) {
+	auto it2 = m_set.find(p);
+	if (it2 == m_set.end()) return 0;
+	m_set.erase(it2);
+	m_list.erase(*it2);
+	return 1;
+}
 
 /* ~~ String Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 

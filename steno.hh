@@ -5,7 +5,7 @@
 #include <bit>
 #include <bitset>
 #include <vector>
-#include <map>
+#include <set>
 #include <list>
 #include <span>
 #include <initializer_list>
@@ -106,7 +106,7 @@ public:
 	friend Stroke operator^(Stroke, Stroke const&);
 
 public:
-	// Key proxy classes
+	// Key proxy class
 	class Reference {
 		Stroke* parent;
 		Key key;
@@ -157,7 +157,7 @@ class Phrase {
 	std::vector<Stroke> m_strokes {};
 
 public:
-	// Default construction/assignment/movement
+	// Default construction/assignment
 	Phrase() = default;
 	Phrase(Phrase const&) = default;
 	Phrase& operator=(Phrase const&) = default;
@@ -181,7 +181,7 @@ public:
 	friend Phrase operator|(Phrase, Phrase const&);
 
 public:
-	// Container specific types
+	// Container types
 	using value_type = Stroke;
 	using reference = Stroke&;
 	using const_reference = Stroke const&;
@@ -190,7 +190,7 @@ public:
 	using difference_type = std::ptrdiff_t;
 	using size_type = std::size_t;
 
-	// Container specific methods
+	// Container methods
 	auto begin ()       { return m_strokes.begin (); }
 	auto begin () const { return m_strokes.begin (); }
 	auto cbegin() const { return m_strokes.cbegin(); }
@@ -203,18 +203,18 @@ public:
 	bool        empty   () const { return m_strokes.empty   (); }
 
 public:
-	// Sequence specific methods
-	Phrase(std::initializer_list<Stroke> il): m_strokes(il) {};
-	Phrase(std::size_t n, Stroke t): m_strokes(n, t) {}
+	// Sequence methods
 	template <std::input_iterator I>
 	Phrase(I first, I last): m_strokes(first, last) {}
+	Phrase(std::initializer_list<Stroke> il): m_strokes(il) {};
+	Phrase(std::size_t n, Stroke t): m_strokes(n, t) {}
 	auto emplace(auto&& ... args) { return m_strokes.emplace(args ... ); }
 	auto insert (auto&& ... args) { return m_strokes.insert (args ... ); }
 	auto erase  (auto&& ... args) { return m_strokes.erase  (args ... ); }
 	auto clear  (auto&& ... args) { return m_strokes.clear  (args ... ); }
 	auto assign (auto&& ... args) { return m_strokes.assign (args ... ); }
 
-	// Vector specific methods
+	// Vector methods
 	auto& front  ()       { return m_strokes.front(); }
 	auto& front  () const { return m_strokes.front(); }
 	auto& back   ()       { return m_strokes.back (); }
@@ -240,7 +240,7 @@ class Brief {
 	std::string m_text {};
 
 public:
-	// Default construction/assignment/movement
+	// Default construction/assignment
 	Brief() = default;
 	Brief(Brief const&) = default;
 	Brief& operator=(Brief const&) = default;
@@ -290,9 +290,14 @@ Brief operator+(std::string_view, Phrase);
 /* ~~ Dictionary Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 class Dictionary {
-	std::list<Brief> m_entries {};
-	std::map<Phrase const*, std::string*> m_map {};
-	
+	static constexpr struct Compare {
+		template <class It>
+		bool operator()(It a, It b) const { return a->phrase() < b->phrase(); }
+	} compare {};
+
+	std::list<Brief> m_list {};
+	std::set<decltype(m_list)::const_iterator, Compare> m_set {};
+
 public:
 	// Default construction/assignment/movement
 	Dictionary() = default;
@@ -311,30 +316,28 @@ public:
 
 	// Comparison
 	bool operator== (Dictionary const&) const = default;
-	auto operator<=>(Dictionary const&) const = default;
-	template <class T> friend struct std::hash;
 
 public:
 	// Container types
 	using value_type = Brief;
 	using reference = Brief&;
 	using const_reference = Brief const&;
-	using iterator = decltype(m_entries)::iterator;
-	using const_iterator = decltype(m_entries)::const_iterator;
+	using iterator = decltype(m_list)::iterator;
+	using const_iterator = decltype(m_list)::const_iterator;
 	using difference_type = std::ptrdiff_t;
 	using size_type = std::size_t;
 
 	// Container methods
-	auto begin ()       { return m_entries.begin (); }
-	auto begin () const { return m_entries.begin (); }
-	auto cbegin() const { return m_entries.cbegin(); }
-	auto end   ()       { return m_entries.end   (); }
-	auto end   () const { return m_entries.end   (); }
-	auto cend  () const { return m_entries.cend  (); }
+	auto begin ()       { return m_list.begin (); }
+	auto begin () const { return m_list.begin (); }
+	auto cbegin() const { return m_list.cbegin(); }
+	auto end   ()       { return m_list.end   (); }
+	auto end   () const { return m_list.end   (); }
+	auto cend  () const { return m_list.cend  (); }
 	void swap(Dictionary& other) { std::swap(*this, other); };
-	std::size_t size    () const { return m_entries.size    (); }
-	std::size_t max_size() const { return m_entries.max_size(); }
-	bool        empty   () const { return m_entries.empty   (); }
+	std::size_t size    () const { return m_list.size    (); }
+	std::size_t max_size() const { return m_list.max_size(); }
+	bool        empty   () const { return m_list.empty   (); }
 
 public:
 	// Associative types
@@ -342,12 +345,40 @@ public:
 	using mapped_type = std::string;
 
 	// Associative methods
+	iterator insert(Brief);
+	
 	template <std::input_iterator I>
-	Dictionary(I first, I last)
-	{ for (I i=first; i!=last; ++i) m_entries.emplace_back(*i); }
-	Dictionary(std::initializer_list<Brief> il)
-	: Dictionary(il.begin(), il.end()) {};
-	/* ... */
+	Dictionary(I i, I j) { insert(i, j); }
+	Dictionary(std::initializer_list<Brief> il) { insert(il); };
+	template <std::input_iterator I>
+	iterator insert(I i, I j) { for (I i=first; i!=last; ++i) insert(*i); }
+	std::size_t erase(Phrase);
+
+//	// Sequence methods (For Reference :D :D :D)
+//	Phrase(std::initializer_list<Stroke> il): m_strokes(il) {};
+//	Phrase(std::size_t n, Stroke t): m_strokes(n, t) {}
+//	template <std::input_iterator I>
+//	Phrase(I first, I last): m_strokes(first, last) {}
+//	auto emplace(auto&& ... args) { return m_strokes.emplace(args ... ); }
+//	auto insert (auto&& ... args) { return m_strokes.insert (args ... ); }
+//	auto erase  (auto&& ... args) { return m_strokes.erase  (args ... ); }
+//	auto clear  (auto&& ... args) { return m_strokes.clear  (args ... ); }
+//	auto assign (auto&& ... args) { return m_strokes.assign (args ... ); }
+
+//	// Vector methods
+//	auto& front  ()       { return m_strokes.front(); }
+//	auto& front  () const { return m_strokes.front(); }
+//	auto& back   ()       { return m_strokes.back (); }
+//	auto& back   () const { return m_strokes.back (); }
+//	auto  emplace_back(auto&& ... args)   { m_strokes.emplace_back(args ... ); }
+//	auto  push_back   (auto&& ... args)   { m_strokes.push_back   (args ... ); }
+//	auto  pop_back  ()                    { m_strokes.pop_back    ();          }
+//	auto& operator[](std::size_t n)       { return m_strokes[n];               }
+//	auto& operator[](std::size_t n) const { return m_strokes[n];               }
+//	auto& at        (std::size_t n)       { return m_strokes.at(n);            }
+//	auto& at        (std::size_t n) const { return m_strokes.at(n);            }
+//	friend auto erase   (Phrase& p, auto&&  v);
+//	friend auto erase_if(Phrase& p, auto    c);
 };
 
 /* ~~ String Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
