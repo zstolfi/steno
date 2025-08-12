@@ -183,16 +183,15 @@ Stroke operator^(Key lhs, Key rhs) {
 
 // Class constructors
 Phrase::Phrase(std::string_view str) {
-	auto push = [&](unsigned i, unsigned j) {
-		// if (i == j) return false;
-		emplace_back(str.substr(i, j-i));
-		if (back().failed()) return false;
-		return true;
-	};
-
-	signed i=0, j=0;
+	// How to spell the empty phrase (\s*-\s*)
+	if (auto i = str.find_first_not_of(" \t"); i != str.npos)
+	if (auto j = str.find_last_not_of(" \t"); j != str.npos)
+	if (i == j && str.find('-') != str.npos) return;
+	// Split up strokes by "/" otherwise
+	auto push = [&](auto i, auto j) { emplace_back(str.substr(i, j-i)); };
+	int i=0, j=0;
 	while (j=str.find('/', i), j!=str.npos) {
-		if (push(i, j) == false) return;
+		push(i, j);
 		i = j+1;
 	}
 	push(i, str.size());
@@ -208,11 +207,10 @@ Phrase::Phrase(std::span<Stroke const> span) {
 
 // Fail-state query
 bool Phrase::failed() const {
-	// TODO: Decide whether containing an empty stroke is an error.
-	return std::any_of(
-		begin(), end(),
-		[](auto x) { return x.failed(); }
-	);
+	auto hasFailed = [](Stroke s) { return s.failed(); };
+	auto isEmpty = [](Stroke s) { return s == NoStroke; };
+	return ( std::any_of(begin(), end(), hasFailed)           )
+	||     ( !empty() && std::all_of(begin(), end(), isEmpty) );
 }
 
 Phrase::operator bool() const {
@@ -330,6 +328,10 @@ Brief operator+(std::string_view str, Phrase p) {
 // TODO
 //bool Dictionary::failed() const;
 //void Dictionary::eraseFailed();
+
+bool Dictionary::operator==(Dictionary const& other) const {
+	return m_list == other.m_list;
+}
 
 // TODO: Optional argument for how to handle insertion,
 //       or maybe have the comparator decide what to do.

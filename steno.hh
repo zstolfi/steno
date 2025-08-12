@@ -319,7 +319,7 @@ public:
 	void eraseFailed();
 
 	// Comparison
-	bool operator== (Dictionary const&) const = default;
+	bool operator==(Dictionary const&) const;
 
 public:
 	// Container types

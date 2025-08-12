@@ -364,6 +364,8 @@ TEST(StenoPhrase, EmptyConstruction) {
 	EXPECT_EQ(steno::Phrase (), steno::NoPhrase);
 	EXPECT_EQ(steno::Phrase {}, steno::NoPhrase);
 	EXPECT_EQ(steno::Phrase {"-"}, steno::NoPhrase);
+	EXPECT_TRUE(steno::Phrase {""}.failed());
+	EXPECT_TRUE(steno::Phrase {" "}.failed());
 }
 
 TEST(StenoPhrase, GoodInputString) {
@@ -375,20 +377,19 @@ TEST(StenoPhrase, GoodInputString) {
 
 TEST(StenoPhrase, BadInputString) {
 	// Construction from an empty string is probably an error.
-	EXPECT_TRUE(steno::Stroke {""}.failed());
-	EXPECT_TRUE(steno::Stroke {" "}.failed());
-	EXPECT_TRUE(steno::Stroke {"/"}.failed());
-	EXPECT_TRUE(steno::Stroke {"//"}.failed());
-	EXPECT_TRUE(steno::Stroke {"1/"}.failed());
-	EXPECT_TRUE(steno::Stroke {"/2"}.failed());
-	EXPECT_TRUE(steno::Stroke {"/3/"}.failed());
-	EXPECT_TRUE(steno::Stroke {"4//5"}.failed());
+	EXPECT_FALSE(steno::Phrase {"/"});
+	EXPECT_FALSE(steno::Phrase {"//"});
+	EXPECT_FALSE(steno::Phrase {"1/"});
+	EXPECT_FALSE(steno::Phrase {"/2"});
+	EXPECT_FALSE(steno::Phrase {"/3/"});
+	EXPECT_FALSE(steno::Phrase {"4//5"});
 	// Any phrase made up of only empty strokes is invalid. This is because only
 	// one phrase is allowd to act like 0, the one with a size of 0. Any other
 	// "zero-like" phrase would imply 0 | 0 != 0, where | is concatenation.
 	// Construction via "-" is allowed and not "", for the same reason zero is
 	// written "0" and not "".
-	// TODO
+	EXPECT_FALSE(steno::Phrase {"-/-"});
+	EXPECT_FALSE(steno::Phrase {"-/-/-"});
 }
 
 TEST(StenoPhrase, StrokeModify) {
@@ -720,14 +721,14 @@ TEST(StenoDictionary, AssociativeExpressions) {
 	auto const b = X {{{"A"}, "a"}, {{"O"}, "o"}, {{"E"}, "e"}, {{"U"}, "u"}};
 	auto i = b.begin();
 	auto j = b.end();
-	auto il = std::initializer_list<X::value_type> {/* ... */};
+	auto il = std::initializer_list<X::value_type> {{{"0"}, "o"}, {{"O"}, "o"}};
 	auto t = X::value_type {{"PWRAOEF"}, "brief"};
 	auto k = X::key_type {"TPRAEUZ"};
-	EXPECT_EXPRESSION(X()    , X , EXPECT_TRUE(X().empty()));
-	EXPECT_EXPRESSION(X(a)   , X , EXPECT_EQ(X(a), a)      );
-	EXPECT_EXPRESSION(X(i, j), X , EXPECT_EQ(X(i, j), b)   );
-	EXPECT_EXPRESSION(X(il)  , X , EXPECT_EQ(X(il), b)     );
-	EXPECT_EXPRESSION(a = il , X&, EXPECT_EQ(a, X(il))     );
+	EXPECT_EXPRESSION(X()    , X , EXPECT_TRUE(X().empty())                 );
+	EXPECT_EXPRESSION(X(a)   , X , EXPECT_EQ(X(a), a)                       );
+	EXPECT_EXPRESSION(X(i, j), X , EXPECT_EQ(X(i, j), b)                    );
+	EXPECT_EXPRESSION(X(il)  , X , EXPECT_EQ(X(il), X(il.begin(), il.end())));
+	EXPECT_EXPRESSION(a = il , X&, EXPECT_EQ(a, X(il))                      );
 	// Not exact to the spec
 	EXPECT_EXPRESSION(a.insert(t)             , X::iterator);
 	EXPECT_EXPRESSION(a.insert(i, j)          , void);
