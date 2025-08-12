@@ -199,11 +199,11 @@ Phrase::Phrase(std::string_view str) {
 }
 
 Phrase::Phrase(Stroke x) {
-	insert(x);
+	insert(end(), x);
 }
 
 Phrase::Phrase(std::span<Stroke const> span) {
-	insert(span.begin(), span.end());
+	insert(end(), span.begin(), span.end());
 }
 
 // Fail-state query
@@ -323,35 +323,127 @@ Brief operator+(std::string_view str, Phrase p) {
 
 /* ~~ Dictionary Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-Dictionary::Dictionary(std::span<Stroke const> span) {
-	insert(span.begin(), span.end());
-}
+//Dictionary::Dictionary(std::span<Brief const> span) {
+//	insert(span.begin(), span.end());
+//}
 
 // TODO
-bool failed() const;
-void eraseFailed();
+//bool Dictionary::failed() const;
+//void Dictionary::eraseFailed();
 
-// TODO: Optional argument for how to handle insertion
+// TODO: Optional argument for how to handle insertion,
+//       or maybe have the comparator decide what to do.
 Dictionary::iterator Dictionary::insert(Brief b) {
 	// Append to our linked list
 	auto it = m_list.insert(m_list.end(), b);
 	// Efficiently find our sorted position
-	auto next = m_set.upper_bound(it);
+	auto next = m_map.upper_bound(&*it);
 	// Insert into our set
-	m_set.insert(next, it);
+	m_map.insert(next, {&*it, it});
 	// Move our linked-list element to its rightful place
-	if (next != m_set.end()) {
-		m_list.splice(*next, m_list, it);
+	if (next != m_map.end()) {
+		m_list.splice(next->second, m_list, it);
 	}
 	return it;
 }
 
-std::size_t erase(Phrase p) {
-	auto it2 = m_set.find(p);
-	if (it2 == m_set.end()) return 0;
-	m_set.erase(it2);
-	m_list.erase(*it2);
+Dictionary::Dictionary(std::initializer_list<Brief> il) {
+	insert(il.begin(), il.end());
+}
+
+void Dictionary::insert(std::initializer_list<Brief> il) {
+	insert(il.begin(), il.end());
+}
+
+std::size_t Dictionary::erase(Phrase p) {
+	Brief temp {p, ""};
+	auto it2 = m_map.find(&temp);
+	if (it2 == m_map.end()) return 0;
+	m_map.erase(it2);
+	m_list.erase(it2->second);
 	return 1;
+}
+
+Dictionary::iterator Dictionary::erase(const_iterator it) {
+	// Note: If I use shared_ptr<Brief> or a data structure with pointers back
+	//        to the map, I can remove the map lookup per erease.
+	m_map.erase(m_map.find(&*it));
+	return m_list.erase(it);
+}
+
+Dictionary::iterator Dictionary::erase(const_iterator i, const_iterator j) {
+	auto i2 = m_map.find(&*i);
+	auto j2 = m_map.find(&*j);
+	m_map.erase(i2, j2);
+	return m_list.erase(i, j);
+}
+
+void Dictionary::merge(Dictionary& other) {
+	if (this->size() < 16 || this->size() > 2*other.size()) {
+		m_map.merge(other.m_map);
+		m_list.merge(other.m_list);
+	}
+	else for(Brief b : other) insert(b);
+}
+
+void Dictionary::merge(Dictionary&& other) {
+	m_map.merge(std::move(other.m_map));
+	m_list.merge(std::move(other.m_list));
+}
+
+void Dictionary::clear() {
+	m_map.clear();
+	m_list.clear();
+}
+
+bool Dictionary::contains(Phrase const& p) const {
+	return find(p) != end();
+}
+
+Dictionary::iterator Dictionary::find(Phrase const& p) {
+	Brief temp {p, ""};
+	auto it2 = m_map.find(&temp);
+	return (it2 != m_map.end())? it2->second: m_list.end();
+}
+
+Dictionary::const_iterator Dictionary::find(Phrase const& p) const {
+	Brief temp {p, ""};
+	auto it2 = m_map.find(&temp);
+	return (it2 != m_map.end())? it2->second: m_list.end();
+}
+
+Dictionary::iterator Dictionary::lower_bound(Phrase const& p) {
+	Brief temp {p, ""};
+	auto it2 = m_map.lower_bound(&temp);
+	return (it2 != m_map.end())? it2->second: m_list.end();
+}
+
+Dictionary::const_iterator Dictionary::lower_bound(Phrase const& p) const {
+	Brief temp {p, ""};
+	auto it2 = m_map.lower_bound(&temp);
+	return (it2 != m_map.end())? it2->second: m_list.end();
+}
+
+Dictionary::iterator Dictionary::upper_bound(Phrase const& p) {
+	Brief temp {p, ""};
+	auto it2 = m_map.upper_bound(&temp);
+	return (it2 != m_map.end())? it2->second: m_list.end();
+}
+
+Dictionary::const_iterator Dictionary::upper_bound(Phrase const& p) const {
+	Brief temp {p, ""};
+	auto it2 = m_map.upper_bound(&temp);
+	return (it2 != m_map.end())? it2->second: m_list.end();
+}
+
+std::pair<Dictionary::iterator, Dictionary::iterator>
+Dictionary::equal_range(Phrase const& p) {
+	return std::pair {lower_bound(p), upper_bound(p)};
+}
+
+std::pair<Dictionary::const_iterator, Dictionary::const_iterator>
+Dictionary::equal_range(Phrase const& p) const {
+	return std::pair {lower_bound(p), upper_bound(p)};
 }
 
 /* ~~ String Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */

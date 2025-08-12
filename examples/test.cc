@@ -345,7 +345,7 @@ TEST(StenoStroke, ToString) {
 	using enum steno::Format;
 	EXPECT_EQ(steno::toString(stroke, Packed|Alpha), "#STHOURS");
 	EXPECT_EQ(steno::toString(stroke, Numeric|Wide), " 12   4  0  U R     S  ");
-	
+
 	std::stringstream ss {};
 	ss << Alpha << Wide << stroke;
 	EXPECT_EQ(ss.str(), "#ST   H  O  U R     S  ");
@@ -357,6 +357,39 @@ TEST(StenoStroke, ToString) {
 
 /* ~~ Phrase Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 // Modeled after https://en.cppreference.com/w/cpp/named_req/SequenceContainer
+
+TEST(StenoPhrase, EmptyConstruction) {
+	steno::Phrase phrase;
+	EXPECT_EQ(phrase, steno::NoPhrase);
+	EXPECT_EQ(steno::Phrase (), steno::NoPhrase);
+	EXPECT_EQ(steno::Phrase {}, steno::NoPhrase);
+	EXPECT_EQ(steno::Phrase {"-"}, steno::NoPhrase);
+}
+
+TEST(StenoPhrase, GoodInputString) {
+	// We can't EXPECT_TRUE for the empty phrase, it's treated like 0.
+	EXPECT_FALSE(steno::Phrase {"-"});
+	EXPECT_FALSE(steno::Phrase {"-"}.failed());
+	// TODO
+}
+
+TEST(StenoPhrase, BadInputString) {
+	// Construction from an empty string is probably an error.
+	EXPECT_TRUE(steno::Stroke {""}.failed());
+	EXPECT_TRUE(steno::Stroke {" "}.failed());
+	EXPECT_TRUE(steno::Stroke {"/"}.failed());
+	EXPECT_TRUE(steno::Stroke {"//"}.failed());
+	EXPECT_TRUE(steno::Stroke {"1/"}.failed());
+	EXPECT_TRUE(steno::Stroke {"/2"}.failed());
+	EXPECT_TRUE(steno::Stroke {"/3/"}.failed());
+	EXPECT_TRUE(steno::Stroke {"4//5"}.failed());
+	// Any phrase made up of only empty strokes is invalid. This is because only
+	// one phrase is allowd to act like 0, the one with a size of 0. Any other
+	// "zero-like" phrase would imply 0 | 0 != 0, where | is concatenation.
+	// Construction via "-" is allowed and not "", for the same reason zero is
+	// written "0" and not "".
+	// TODO
+}
 
 TEST(StenoPhrase, StrokeModify) {
 	steno::Phrase p1 {"PHAOUT/ABL"};
@@ -680,12 +713,11 @@ TEST (StenoDictionary, AssociativeTypes) {
 	EXPECT_SAME_TYPE(X::value_type , steno::Brief);
 }
 
+template <class T> using PairOf = std::pair<T, T>;
 TEST(StenoDictionary, AssociativeExpressions) {
 	using X = steno::Dictionary;
-	auto a = X {/* ... */};
-	auto q = a.cbegin();
-	auto p = a.cend();
-	auto const b = X {/* ... */};
+	auto a = X {{{"1"}, "one"}, {{"2"}, "two"}, {{"3"}, "three"}};
+	auto const b = X {{{"A"}, "a"}, {{"O"}, "o"}, {{"E"}, "e"}, {{"U"}, "u"}};
 	auto i = b.begin();
 	auto j = b.end();
 	auto il = std::initializer_list<X::value_type> {/* ... */};
@@ -694,31 +726,29 @@ TEST(StenoDictionary, AssociativeExpressions) {
 	EXPECT_EXPRESSION(X()    , X , EXPECT_TRUE(X().empty()));
 	EXPECT_EXPRESSION(X(a)   , X , EXPECT_EQ(X(a), a)      );
 	EXPECT_EXPRESSION(X(i, j), X , EXPECT_EQ(X(i, j), b)   );
-	EXPECT_EXPRESSION(X(il)  , X , EXPECT_EQ(X(i, j), b)   );
+	EXPECT_EXPRESSION(X(il)  , X , EXPECT_EQ(X(il), b)     );
 	EXPECT_EXPRESSION(a = il , X&, EXPECT_EQ(a, X(il))     );
 	// Not exact to the spec
 	EXPECT_EXPRESSION(a.insert(t)             , X::iterator);
 	EXPECT_EXPRESSION(a.insert(i, j)          , void);
 	EXPECT_EXPRESSION(a.insert(il)            , void);
 	EXPECT_EXPRESSION(a.erase(k)              , X::size_type);
-	auto a2 = a;
-	EXPECT_EXPRESSION(a.merge(a2)             , void);
+	X::const_iterator p, q, q1, q2; X::iterator r;
+	auto pq = [&] { a={b}; q=r=a.begin(); p=a.end(); q1=q2=q; ++q2; };
 	pq(); EXPECT_EXPRESSION(a.erase(q)        , X::iterator);
-	X::iterator r = a.begin();
 	pq(); EXPECT_EXPRESSION(a.erase(r)        , X::iterator);
-	X::const_iterator q1 {q}, q2 {q+1};
 	pq(); EXPECT_EXPRESSION(a.erase(q1, q2)   , X::iterator);
-	EXPECT_EXPRESSION(a.clear()               , void, EXPECT_EQ(a.empty()));
-	EXPECT_EXPRESSION(a.find()                , X::iterator);
-	EXPECT_EXPRESSION(b.find()                , X::const_iterator);
-	EXPECT_EXPRESSION(b.count(k)              , X::size);
+	auto a2 = X {b};
+	EXPECT_EXPRESSION(a.merge(a2)             , void);
+	EXPECT_EXPRESSION(a.clear()               , void, EXPECT_TRUE(a.empty()));
+	EXPECT_EXPRESSION(a.find(k)               , X::iterator);
+	EXPECT_EXPRESSION(b.find(k)               , X::const_iterator);
 	EXPECT_EXPRESSION(b.contains(k)           , bool);
 	EXPECT_EXPRESSION(a.lower_bound(k)        , X::iterator);
 	EXPECT_EXPRESSION(b.lower_bound(k)        , X::const_iterator);
 	EXPECT_EXPRESSION(a.upper_bound(k)        , X::iterator);
 	EXPECT_EXPRESSION(b.upper_bound(k)        , X::const_iterator);
-	template <class T> using Pair = std::pair<T, T>;
-	EXPECT_EXPRESSION(a.equal_range(k)        , Pair<X::iterator>);
-	EXPECT_EXPRESSION(b.equal_range(k)        , Pair<X::const_iterator>);
+	EXPECT_EXPRESSION(a.equal_range(k)        , PairOf<X::iterator>);
+	EXPECT_EXPRESSION(b.equal_range(k)        , PairOf<X::const_iterator>);
 	// TODO: swap, erase, erase_if
 }

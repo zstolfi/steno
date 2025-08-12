@@ -5,7 +5,7 @@
 #include <bit>
 #include <bitset>
 #include <vector>
-#include <set>
+#include <map>
 #include <list>
 #include <span>
 #include <initializer_list>
@@ -13,6 +13,7 @@
 #include <utility>
 #include <type_traits>
 #include <algorithm>
+#include <functional>
 #include <cstdint>
 
 namespace steno {
@@ -290,13 +291,16 @@ Brief operator+(std::string_view, Phrase);
 /* ~~ Dictionary Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 class Dictionary {
-	static constexpr struct Compare {
-		template <class It>
-		bool operator()(It a, It b) const { return a->phrase() < b->phrase(); }
-	} compare {};
-
 	std::list<Brief> m_list {};
-	std::set<decltype(m_list)::const_iterator, Compare> m_set {};
+
+	std::map<
+		// Non-owning lookup (would be a std::reference_wrapper in C++26)
+		Brief const*,
+		// Store an iterator for interacting with m_list
+		decltype(m_list)::iterator,
+		// Custom comparison
+		decltype([] (auto a, auto b) { return a->phrase() < b->phrase(); })
+	> m_map {};
 
 public:
 	// Default construction/assignment/movement
@@ -349,36 +353,28 @@ public:
 	
 	template <std::input_iterator I>
 	Dictionary(I i, I j) { insert(i, j); }
-	Dictionary(std::initializer_list<Brief> il) { insert(il); };
+	Dictionary(std::initializer_list<Brief>);
 	template <std::input_iterator I>
-	iterator insert(I i, I j) { for (I i=first; i!=last; ++i) insert(*i); }
+	void insert(I i, I j) { for (I it=i; it!=j; ++it) insert(*it); }
+	void insert(std::initializer_list<Brief>);
 	std::size_t erase(Phrase);
+	iterator erase(const_iterator);
+	iterator erase(const_iterator, const_iterator);
+	void merge(Dictionary&);
+	void merge(Dictionary&&);
+	void clear();
+	bool contains(Phrase const&) const;
+	/*  */iterator find(Phrase const&);
+	const_iterator find(Phrase const&) const;
+	/*  */iterator lower_bound(Phrase const&);
+	const_iterator lower_bound(Phrase const&) const;
+	/*  */iterator upper_bound(Phrase const&);
+	const_iterator upper_bound(Phrase const&) const;
+	std::pair</*  */iterator, /*  */iterator> equal_range(Phrase const&);
+	std::pair<const_iterator, const_iterator> equal_range(Phrase const&) const;
 
-//	// Sequence methods (For Reference :D :D :D)
-//	Phrase(std::initializer_list<Stroke> il): m_strokes(il) {};
-//	Phrase(std::size_t n, Stroke t): m_strokes(n, t) {}
-//	template <std::input_iterator I>
-//	Phrase(I first, I last): m_strokes(first, last) {}
-//	auto emplace(auto&& ... args) { return m_strokes.emplace(args ... ); }
-//	auto insert (auto&& ... args) { return m_strokes.insert (args ... ); }
-//	auto erase  (auto&& ... args) { return m_strokes.erase  (args ... ); }
-//	auto clear  (auto&& ... args) { return m_strokes.clear  (args ... ); }
-//	auto assign (auto&& ... args) { return m_strokes.assign (args ... ); }
-
-//	// Vector methods
-//	auto& front  ()       { return m_strokes.front(); }
-//	auto& front  () const { return m_strokes.front(); }
-//	auto& back   ()       { return m_strokes.back (); }
-//	auto& back   () const { return m_strokes.back (); }
-//	auto  emplace_back(auto&& ... args)   { m_strokes.emplace_back(args ... ); }
-//	auto  push_back   (auto&& ... args)   { m_strokes.push_back   (args ... ); }
-//	auto  pop_back  ()                    { m_strokes.pop_back    ();          }
-//	auto& operator[](std::size_t n)       { return m_strokes[n];               }
-//	auto& operator[](std::size_t n) const { return m_strokes[n];               }
-//	auto& at        (std::size_t n)       { return m_strokes.at(n);            }
-//	auto& at        (std::size_t n) const { return m_strokes.at(n);            }
-//	friend auto erase   (Phrase& p, auto&&  v);
-//	friend auto erase_if(Phrase& p, auto    c);
+	// Map methods
+	/* ... */
 };
 
 /* ~~ String Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -527,8 +523,8 @@ constexpr Stroke::Stroke(std::string_view str) {
 }
 
 static constexpr auto NoStroke = Stroke {};
-static constexpr auto NoPhrase = Phrase {};
-static constexpr auto NoBrief  = Brief  {};
+static const/**/ auto NoPhrase = Phrase {};
+static const/**/ auto NoBrief  = Brief  {};
 
 } // namespace steno
 
