@@ -292,15 +292,7 @@ Brief operator+(std::string_view, Phrase);
 
 class Dictionary {
 	std::list<Brief> m_list {};
-
-	std::map<
-		// Non-owning lookup (would be a std::reference_wrapper in C++26)
-		Brief const*,
-		// Store an iterator for interacting with m_list
-		decltype(m_list)::iterator,
-		// Custom comparison
-		decltype([] (auto a, auto b) { return a->phrase() < b->phrase(); })
-	> m_map {};
+	std::map<Phrase, decltype(m_list)::iterator> m_map {};
 
 public:
 	// Default construction/assignment/movement
@@ -326,6 +318,8 @@ public:
 	using value_type = Brief;
 	using reference = Brief&;
 	using const_reference = Brief const&;
+	using pointer = Brief*;
+	using const_pointer = Brief const*;
 	using iterator = decltype(m_list)::iterator;
 	using const_iterator = decltype(m_list)::const_iterator;
 	using difference_type = std::ptrdiff_t;
@@ -350,7 +344,7 @@ public:
 
 	// Associative methods
 	iterator insert(Brief);
-	
+
 	template <std::input_iterator I>
 	Dictionary(I i, I j) { insert(i, j); }
 	Dictionary(std::initializer_list<Brief>);

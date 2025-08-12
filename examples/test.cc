@@ -643,6 +643,9 @@ TEST(StenoDictionary, ContainerTypes) {
 	EXPECT_SAME_TYPE(C::const_reference, T const&      );
 	EXPECT_SAME_TYPE(C::difference_type, std::ptrdiff_t);
 	EXPECT_SAME_TYPE(C::size_type      , std::size_t   );
+	// Map specific
+	EXPECT_SAME_TYPE(C::pointer        , T*            );
+	EXPECT_SAME_TYPE(C::const_pointer  , T const*      );
 	// Iterator
 	EXPECT_CONCEPT(std::forward_iterator, I);
 	EXPECT_CONCEPT(std::forward_iterator, IC);

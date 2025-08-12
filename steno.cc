@@ -339,9 +339,9 @@ Dictionary::iterator Dictionary::insert(Brief b) {
 	// Append to our linked list
 	auto it = m_list.insert(m_list.end(), b);
 	// Efficiently find our sorted position
-	auto next = m_map.upper_bound(&*it);
+	auto next = m_map.upper_bound(it->phrase());
 	// Insert into our set
-	m_map.insert(next, {&*it, it});
+	m_map.insert(next, {it->phrase(), it});
 	// Move our linked-list element to its rightful place
 	if (next != m_map.end()) {
 		m_list.splice(next->second, m_list, it);
@@ -358,8 +358,7 @@ void Dictionary::insert(std::initializer_list<Brief> il) {
 }
 
 std::size_t Dictionary::erase(Phrase p) {
-	Brief temp {p, ""};
-	auto it2 = m_map.find(&temp);
+	auto it2 = m_map.find(p);
 	if (it2 == m_map.end()) return 0;
 	m_map.erase(it2);
 	m_list.erase(it2->second);
@@ -369,14 +368,15 @@ std::size_t Dictionary::erase(Phrase p) {
 Dictionary::iterator Dictionary::erase(const_iterator it) {
 	// Note: If I use shared_ptr<Brief> or a data structure with pointers back
 	//        to the map, I can remove the map lookup per erease.
-	m_map.erase(m_map.find(&*it));
+	m_map.erase(m_map.find(it->phrase()));
 	return m_list.erase(it);
 }
 
 Dictionary::iterator Dictionary::erase(const_iterator i, const_iterator j) {
-	auto i2 = m_map.find(&*i);
-	auto j2 = m_map.find(&*j);
-	m_map.erase(i2, j2);
+	m_map.erase(
+		m_map.find(i->phrase()),
+		m_map.find(j->phrase())
+	);
 	return m_list.erase(i, j);
 }
 
@@ -403,38 +403,32 @@ bool Dictionary::contains(Phrase const& p) const {
 }
 
 Dictionary::iterator Dictionary::find(Phrase const& p) {
-	Brief temp {p, ""};
-	auto it2 = m_map.find(&temp);
+	auto it2 = m_map.find(p);
 	return (it2 != m_map.end())? it2->second: m_list.end();
 }
 
 Dictionary::const_iterator Dictionary::find(Phrase const& p) const {
-	Brief temp {p, ""};
-	auto it2 = m_map.find(&temp);
+	auto it2 = m_map.find(p);
 	return (it2 != m_map.end())? it2->second: m_list.end();
 }
 
 Dictionary::iterator Dictionary::lower_bound(Phrase const& p) {
-	Brief temp {p, ""};
-	auto it2 = m_map.lower_bound(&temp);
+	auto it2 = m_map.lower_bound(p);
 	return (it2 != m_map.end())? it2->second: m_list.end();
 }
 
 Dictionary::const_iterator Dictionary::lower_bound(Phrase const& p) const {
-	Brief temp {p, ""};
-	auto it2 = m_map.lower_bound(&temp);
+	auto it2 = m_map.lower_bound(p);
 	return (it2 != m_map.end())? it2->second: m_list.end();
 }
 
 Dictionary::iterator Dictionary::upper_bound(Phrase const& p) {
-	Brief temp {p, ""};
-	auto it2 = m_map.upper_bound(&temp);
+	auto it2 = m_map.upper_bound(p);
 	return (it2 != m_map.end())? it2->second: m_list.end();
 }
 
 Dictionary::const_iterator Dictionary::upper_bound(Phrase const& p) const {
-	Brief temp {p, ""};
-	auto it2 = m_map.upper_bound(&temp);
+	auto it2 = m_map.upper_bound(p);
 	return (it2 != m_map.end())? it2->second: m_list.end();
 }
 
