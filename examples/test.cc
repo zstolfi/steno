@@ -630,6 +630,27 @@ TEST(StenoBrief, StructuredBinding) {
 /* ~~ Brief Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 // Modeled after https://en.cppreference.com/w/cpp/named_req/AssociativeContainer
 
+TEST(StenoDictionary, PhraseAccess) {
+	steno::Dictionary dict {{{"KAOE"}, "value"}};
+	steno::Phrase const key {"KAOE"};
+	steno::Phrase const newKey {"TPHAOU/KAOE"};
+	EXPECT_CONCEPT(std::convertible_to, decltype(dict[key]), steno::Text&);
+
+	EXPECT_TRUE(dict.contains(key));
+	EXPECT_EQ(dict[key], "value");
+	EXPECT_TRUE(dict.contains(key));
+
+	EXPECT_FALSE(dict.contains(newKey));
+	EXPECT_EQ(dict[newKey], steno::NoText);
+	EXPECT_FALSE(dict.contains(newKey));
+	for (steno::Brief b : dict) EXPECT_NE(b.phrase(), newKey);
+
+	dict[newKey] = "new value";
+	EXPECT_TRUE(dict.contains(newKey));
+	EXPECT_EQ(dict[newKey], "new value");
+	EXPECT_TRUE(dict.contains(newKey));
+}
+
 TEST(StenoDictionary, ContainerTypes) {
 	using C  = steno::Dictionary;
 	using T  = steno::Brief;
@@ -755,4 +776,10 @@ TEST(StenoDictionary, AssociativeExpressions) {
 	EXPECT_EXPRESSION(a.equal_range(k)        , PairOf<X::iterator>);
 	EXPECT_EXPRESSION(b.equal_range(k)        , PairOf<X::const_iterator>);
 	// TODO: swap, erase, erase_if
+	// Map specific
+	a = b;
+	EXPECT_EXPRESSION(a.at(a.begin()->phrase()), X::mapped_type&);
+	EXPECT_EXPRESSION(b.at(b.begin()->phrase()), X::mapped_type const&);
+	EXPECT_THROW(std::ignore = a.at(steno::NoStroke), std::out_of_range);
+	EXPECT_THROW(std::ignore = b.at(steno::NoStroke), std::out_of_range);
 }

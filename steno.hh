@@ -290,6 +290,8 @@ Brief operator+(std::string_view, Phrase);
 
 /* ~~ Dictionary Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+using Text = std::string;
+
 class Dictionary {
 	std::list<Brief> m_list {};
 	std::map<Phrase, decltype(m_list)::iterator> m_map {};
@@ -344,19 +346,20 @@ public:
 
 	// Associative methods
 	iterator insert(Brief);
-
 	template <std::input_iterator I>
 	Dictionary(I i, I j) { insert(i, j); }
 	Dictionary(std::initializer_list<Brief>);
 	template <std::input_iterator I>
 	void insert(I i, I j) { for (I it=i; it!=j; ++it) insert(*it); }
 	void insert(std::initializer_list<Brief>);
+	iterator emplace(auto&& ... args) { return insert(Brief {args ... }); }
 	std::size_t erase(Phrase);
 	iterator erase(const_iterator);
 	iterator erase(const_iterator, const_iterator);
 	void merge(Dictionary&);
 	void merge(Dictionary&&);
 	void clear();
+	bool contains(Phrase const&);
 	bool contains(Phrase const&) const;
 	/*  */iterator find(Phrase const&);
 	const_iterator find(Phrase const&) const;
@@ -368,7 +371,14 @@ public:
 	std::pair<const_iterator, const_iterator> equal_range(Phrase const&) const;
 
 	// Map methods
-	/* ... */
+	[[nodiscard]] Text& operator[](Phrase const&);
+	[[nodiscard]] Text const& operator[](Phrase const&) const;
+	[[nodiscard]] Text& at(Phrase const&);
+	[[nodiscard]] Text const& at(Phrase const&) const;
+
+private:
+	void normalize();
+	std::vector<decltype(m_list)::iterator> newEntries {};
 };
 
 /* ~~ String Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -519,6 +529,7 @@ constexpr Stroke::Stroke(std::string_view str) {
 static constexpr auto NoStroke = Stroke {};
 static const/**/ auto NoPhrase = Phrase {};
 static const/**/ auto NoBrief  = Brief  {};
+static const/**/ auto NoText   = Text   {};
 
 } // namespace steno
 
