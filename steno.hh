@@ -223,12 +223,18 @@ public:
 	auto  emplace_back(auto&& ... args)   { m_strokes.emplace_back(args ... ); }
 	auto  push_back   (auto&& ... args)   { m_strokes.push_back   (args ... ); }
 	auto  pop_back  ()                    { m_strokes.pop_back    ();          }
-	auto& operator[](std::size_t n)       { return m_strokes[n];               }
-	auto& operator[](std::size_t n) const { return m_strokes[n];               }
-	auto& at        (std::size_t n)       { return m_strokes.at(n);            }
-	auto& at        (std::size_t n) const { return m_strokes.at(n);            }
-	friend auto erase   (Phrase& p, auto&&  v);
-	friend auto erase_if(Phrase& p, auto    c);
+	[[nodiscard]] auto& operator[](auto n)       { return m_strokes[n];    }
+	[[nodiscard]] auto& operator[](auto n) const { return m_strokes[n];    }
+	[[nodiscard]] auto& at        (auto n)       { return m_strokes.at(n); }
+	[[nodiscard]] auto& at        (auto n) const { return m_strokes.at(n); }
+	friend void erase   (Phrase& p, auto&& value);
+	friend void erase_if(Phrase& p, auto&& pred);
+
+private:
+	void erase_impl(auto&& value)
+	{ erase(std::remove(begin(), end(), value), end()); }
+	void erase_if_impl(auto&& pred)
+	{ erase(std::remove_if(begin(), end(), pred), end()); }
 };
 
 // Stroke promotion
@@ -324,16 +330,17 @@ public:
 	using const_pointer = Brief const*;
 	using iterator = decltype(m_list)::iterator;
 	using const_iterator = decltype(m_list)::const_iterator;
+	using reverse_iterator = std::reverse_iterator<iterator>;
+	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 	using difference_type = std::ptrdiff_t;
 	using size_type = std::size_t;
 
 	// Container methods
-	auto begin ()       { return m_list.begin (); }
-	auto begin () const { return m_list.begin (); }
-	auto cbegin() const { return m_list.cbegin(); }
-	auto end   ()       { return m_list.end   (); }
-	auto end   () const { return m_list.end   (); }
-	auto cend  () const { return m_list.cend  (); }
+#	define USE(Name) auto    Name()       { return m_list.   Name(); } \
+ 	/*            */ auto    Name() const { return m_list.   Name(); } \
+ 	/*            */ auto c##Name() const { return m_list.c##Name(); }
+	USE(begin) USE(end) USE(rbegin) USE(rend)
+#	undef USE
 	void swap(Dictionary& other) { std::swap(*this, other); };
 	std::size_t size    () const { return m_list.size    (); }
 	std::size_t max_size() const { return m_list.max_size(); }
@@ -375,10 +382,16 @@ public:
 	[[nodiscard]] Text const& operator[](Phrase const&) const;
 	[[nodiscard]] Text& at(Phrase const&);
 	[[nodiscard]] Text const& at(Phrase const&) const;
+	friend void erase   (Dictionary& p, auto&& value);
+	friend void erase_if(Dictionary& p, auto&& pred);
 
 private:
 	void normalize();
 	std::vector<decltype(m_list)::iterator> newEntries {};
+	void erase_if_impl(auto&& pred)
+	{ for (auto it=begin(); it!=end(); ++it) if (pred(*it)) erase(it); }
+	void erase_impl(auto&& value)
+	{ erase_if_impl([&] (auto y) { return value == y; }); }
 };
 
 /* ~~ String Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -549,8 +562,10 @@ template <std::size_t I> struct std::tuple_element<I, steno::Brief>
 { static_assert(I < 2); };
 
 namespace steno {
-auto erase (steno::Phrase& p, auto&& v){ return std::erase   (p.m_strokes, v); }
-auto erase_if(steno::Phrase& p, auto c){ return std::erase_if(p.m_strokes, c); }
+void erase   (Phrase&     t, auto&& x) { t.erase_impl(x);    }
+void erase_if(Phrase&     t, auto&& f) { t.erase_if_impl(f); }
+void erase   (Dictionary& t, auto&& x) { t.erase_impl(x);    }
+void erase_if(Dictionary& t, auto&& f) { t.erase_if_impl(f); }
 template <std::size_t I> auto&& get(Brief&       b) { return b.get_impl<I>(); }
 template <std::size_t I> auto&& get(Brief const& b) { return b.get_impl<I>(); }
 template <std::size_t I> auto&& get(Brief&&      b) { return b.get_impl<I>(); }

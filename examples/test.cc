@@ -512,8 +512,8 @@ TEST(StenoPhrase, ContainerExpressions) {
 			EXPECT_EQ(lhs, one); EXPECT_EQ(rhs, two)
 		);
 		// std::erase[_if] will not work, instead we provide global functions.
-		EXPECT_EXPRESSION(erase(v, steno::NoStroke), C::size_type);
-		EXPECT_EXPRESSION(erase_if(v, [] ( ... ) { return 1; }), C::size_type);
+		EXPECT_EXPRESSION(erase(v, steno::NoStroke)           , void);
+		EXPECT_EXPRESSION(erase_if(v, [] (auto) { return 1; }), void);
 	}
 	EXPECT_EXPRESSION(v.size()    , C::size_type);
 	EXPECT_EXPRESSION(v.max_size(), C::size_type);
@@ -738,6 +738,26 @@ TEST (StenoDictionary, AssociativeTypes) {
 	EXPECT_SAME_TYPE(X::value_type , steno::Brief);
 }
 
+TEST(StenoDictionary, ReversibleTypes) {
+	using X = steno::Dictionary;
+	X a {};
+	X const b {};
+	using RI = X::reverse_iterator;
+	using CRI = X::const_reverse_iterator;
+	EXPECT_SAME_TYPE(RI , std::reverse_iterator<X::iterator>);
+	EXPECT_SAME_TYPE(CRI, std::reverse_iterator<X::const_iterator>);
+	EXPECT_SAME_TYPE(RI::value_type, X::value_type);
+	EXPECT_SAME_TYPE(CRI::value_type, X::value_type);
+	EXPECT_CONCEPT(std::forward_iterator, RI);
+	EXPECT_CONCEPT(std::forward_iterator, CRI);
+	EXPECT_EXPRESSION(a.rbegin() , RI );
+	EXPECT_EXPRESSION(b.rbegin() , CRI);
+	EXPECT_EXPRESSION(a.rend()   , RI );
+	EXPECT_EXPRESSION(b.rend()   , CRI);
+	EXPECT_EXPRESSION(a.crbegin(), CRI);
+	EXPECT_EXPRESSION(a.crend()  , CRI);
+}
+
 template <class T> using PairOf = std::pair<T, T>;
 TEST(StenoDictionary, AssociativeExpressions) {
 	using X = steno::Dictionary;
@@ -775,7 +795,20 @@ TEST(StenoDictionary, AssociativeExpressions) {
 	EXPECT_EXPRESSION(b.upper_bound(k)        , X::const_iterator);
 	EXPECT_EXPRESSION(a.equal_range(k)        , PairOf<X::iterator>);
 	EXPECT_EXPRESSION(b.equal_range(k)        , PairOf<X::const_iterator>);
-	// TODO: swap, erase, erase_if
+	{
+		X const Value1 {b};
+		X const Value2 {il};
+		auto lhs = Value1;
+		auto rhs = Value2;
+		EXPECT_EXPRESSION(lhs.swap(rhs), void,
+			EXPECT_EQ(lhs, Value2); EXPECT_EQ(rhs, Value1)
+		);
+		EXPECT_EXPRESSION(std::swap(lhs, rhs), void,
+			EXPECT_EQ(lhs, Value1); EXPECT_EQ(rhs, Value2)
+		);
+		EXPECT_EXPRESSION(erase(a, steno::NoBrief)            , void);
+		EXPECT_EXPRESSION(erase_if(a, [] (auto) { return 1; }), void);
+	}
 	// Map specific
 	a = b;
 	EXPECT_EXPRESSION(a.at(a.begin()->phrase()), X::mapped_type&);
