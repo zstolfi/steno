@@ -556,7 +556,7 @@ std::string toString(Stroke s, Format format) {
 	std::string result (Stroke::KeyCount, ' ');
 	auto put = [&] (Key k, char c = '\0') { result[keyID(k)] = c? c: toCh(k); };
 
-	if ( NumBar && !(numeric(format) || !AnyNumbers)) put(Key::Num);
+	if ( NumBar &&  (alpha  (format) || !AnyNumbers)) put(Key::Num);
 	if (!Middle && !(numeric(format) &&  AllNumbers)) put(Key::x, '-');
 	for (Key key : Left  ) put(key);
 	for (Key key : Middle) put(key);

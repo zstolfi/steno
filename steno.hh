@@ -188,16 +188,18 @@ public:
 	using const_reference = Stroke const&;
 	using iterator = decltype(m_strokes)::iterator;
 	using const_iterator = decltype(m_strokes)::const_iterator;
+	using reverse_iterator = std::reverse_iterator<iterator>;
+	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 	using difference_type = std::ptrdiff_t;
 	using size_type = std::size_t;
 
 	// Container methods
-	auto begin ()       { return m_strokes.begin (); }
-	auto begin () const { return m_strokes.begin (); }
-	auto cbegin() const { return m_strokes.cbegin(); }
-	auto end   ()       { return m_strokes.end   (); }
-	auto end   () const { return m_strokes.end   (); }
-	auto cend  () const { return m_strokes.cend  (); }
+#	define USE(Name) \
+	auto    Name()       { return m_strokes.   Name(); } \
+	auto    Name() const { return m_strokes.   Name(); } \
+	auto c##Name() const { return m_strokes.c##Name(); }
+	USE(begin) USE(end) USE(rbegin) USE(rend)
+#	undef USE
 	void swap(Phrase& other) { std::swap(*this, other); };
 	std::size_t size    () const { return m_strokes.size    (); }
 	std::size_t max_size() const { return m_strokes.max_size(); }

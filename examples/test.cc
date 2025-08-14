@@ -341,6 +341,10 @@ TEST(StenoStroke, ToString) {
 	EXPECT_EQ(steno::toString(array[4]), "SKP-");    // and
 	EXPECT_EQ(steno::toString(array[5]), "SPROUTS"); // sprouts
 
+	EXPECT_EQ(steno::toString(steno::Stroke {"#"}), "#");
+	EXPECT_EQ(steno::toString(steno::Stroke {"#R-"}), "#R-");
+	EXPECT_EQ(steno::toString(steno::Stroke {"#-R"}), "#-R");
+
 	steno::Stroke stroke {"12HOURS"};
 	using enum steno::Format;
 	EXPECT_EQ(steno::toString(stroke, Packed|Alpha), "#STHOURS");
@@ -520,6 +524,26 @@ TEST(StenoPhrase, ContainerExpressions) {
 	EXPECT_EXPRESSION(v.empty()   , bool        );
 }
 
+TEST(StenoPhrase, ReversibleTypes) {
+	using X = steno::Phrase;
+	X a {};
+	X const b {};
+	using RI = X::reverse_iterator;
+	using CRI = X::const_reverse_iterator;
+	EXPECT_SAME_TYPE(RI , std::reverse_iterator<X::iterator>);
+	EXPECT_SAME_TYPE(CRI, std::reverse_iterator<X::const_iterator>);
+	EXPECT_SAME_TYPE(RI::value_type, X::value_type);
+	EXPECT_SAME_TYPE(CRI::value_type, X::value_type);
+	EXPECT_CONCEPT(std::forward_iterator, RI);
+	EXPECT_CONCEPT(std::forward_iterator, CRI);
+	EXPECT_EXPRESSION(a.rbegin() , RI);
+	EXPECT_EXPRESSION(b.rbegin() , CRI);
+	EXPECT_EXPRESSION(a.rend()   , RI);
+	EXPECT_EXPRESSION(b.rend()   , CRI);
+	EXPECT_EXPRESSION(a.crbegin(), CRI);
+	EXPECT_EXPRESSION(a.crend()  , CRI);
+}
+
 #include <list>
 TEST(StenoPhrase, SequenceStatements) {
 	using C = steno::Phrase;
@@ -625,6 +649,11 @@ TEST(StenoBrief, StructuredBinding) {
 	EXPECT_EQ(strokes[0], steno::Stroke {"AP"});
 	EXPECT_EQ(strokes[1], steno::Stroke {"EL"});
 	EXPECT_EQ(text, "apple");
+}
+
+TEST(StenoBrief, ToString) {
+	steno::Brief brief {{"3/#/14/15"}, "3.1415"};
+	EXPECT_EQ(steno::toString(brief), "3/#/14/15, 3.1415");
 }
 
 /* ~~ Brief Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
