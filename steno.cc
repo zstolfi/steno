@@ -4,9 +4,6 @@
 namespace /*detail*/ {
 	constexpr auto FailBit   = 0b00000000000000000000000'000000001;
 	constexpr auto FlagsMask = 0b00000000000000000000000'111111111;
-	constexpr int keyID(steno::Key k) {
-		return 31 - std::countr_zero((uint32_t)k);
-	}
 }
 
 namespace steno {
@@ -120,7 +117,7 @@ Stroke::Reference& Stroke::Reference::operator=(bool b) {
 }
 
 Stroke::Reference& Stroke::Reference::operator=(Reference const& r) {
-	return *this = (bool)r;
+	return *this = bool(r);
 }
 
 bool Stroke::Iterator::operator==(Iterator const& other) const {
@@ -141,7 +138,7 @@ Stroke::Iterator Stroke::Iterator::operator++(int) {
 
 Key Stroke::Iterator::operator*() const {
 	// Invalid if bit == 0
-	return (Key)std::bit_floor(m_bits);
+	return Key(std::bit_floor(m_bits));
 }
 
 // Internal
@@ -508,6 +505,10 @@ Format operator|=(Format& lhs, Format rhs) {
 }
 
 namespace /*detail*/ {
+	constexpr int keyID(steno::Key k) {
+		return 31 - std::countr_zero(uint32_t(k));
+	}
+
 	int const Format_xalloc = std::ios_base::xalloc();
 
 	constexpr long bits(Format f) { return long(f); }
@@ -540,8 +541,13 @@ char toCharShift(Key k) {
 	return "#12K3W4R50*EU6R7B8G9SDZ" [keyID(k)];
 }
 
-std::string toString(Key k) {
-	return std::string(1, toChar(k));
+std::string toString(Key k, Format format) {
+	auto result = std::string(1, toChar(k));
+	if (hyphen(format)) {
+		if (k & Stroke {"STKPWHR-          "}) result = result + '-';
+		if (k & Stroke {"       -FRPBLGTSDZ"}) result = '-' + result;
+	}
+	return result;
 }
 
 std::string toString(Stroke s, Format format) {
@@ -565,7 +571,7 @@ std::string toString(Stroke s, Format format) {
 	return result;
 }
 
-std::string toString(Phrase p, Format format) {
+std::string toString(Phrase const& p, Format format) {
 	std::string result = "";
 	for (int i=0; auto stroke : p) {
 		if (i++) result += '/';
@@ -574,14 +580,23 @@ std::string toString(Phrase p, Format format) {
 	return result;
 }
 
+std::string toString(Brief const& b, Format format) {
+	return toString(b.phrase(), format) + ", " + b.text();
+}
+
 std::ostream& operator<<(std::ostream& os, Stroke s) {
 	auto format = Format(os.iword(Format_xalloc));
 	return os << toString(s, format);
 }
 
-std::ostream& operator<<(std::ostream& os, Phrase p) {
+std::ostream& operator<<(std::ostream& os, Phrase const& p) {
 	auto format = Format(os.iword(Format_xalloc));
 	return os << toString(p, format);
+}
+
+std::ostream& operator<<(std::ostream& os, Brief const& b) {
+	auto format = Format(os.iword(Format_xalloc));
+	return os << toString(b, format);
 }
 
 // Format as manipulator

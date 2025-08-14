@@ -338,9 +338,10 @@ public:
 	using size_type = std::size_t;
 
 	// Container methods
-#	define USE(Name) auto    Name()       { return m_list.   Name(); } \
- 	/*            */ auto    Name() const { return m_list.   Name(); } \
- 	/*            */ auto c##Name() const { return m_list.c##Name(); }
+#	define USE(Name) \
+	auto    Name()       { return m_list.   Name(); } \
+	auto    Name() const { return m_list.   Name(); } \
+	auto c##Name() const { return m_list.c##Name(); }
 	USE(begin) USE(end) USE(rbegin) USE(rend)
 #	undef USE
 	void swap(Dictionary& other) { std::swap(*this, other); };
@@ -409,7 +410,10 @@ enum class Format : long {
 	// Digit          XX      
 	Numeric       = 0b01'00'00,
 	Alpha         = 0b10'00'00,
-	DefaultFormat = 0b01'01'01,
+
+	StrokeDefault = 0b01'01'01,
+	KeyDefault    = 0b00'10'00,
+	// TODO: More formatting options for Phrases and upward
 };
 using enum Format;
 Format operator|(Format, Format);
@@ -417,12 +421,14 @@ Format operator|=(Format&, Format);
 
 char toChar     (Key);
 char toCharShift(Key);
-std::string toString(Key);
-std::string toString(Stroke, Format = DefaultFormat);
-std::string toString(Phrase, Format = DefaultFormat);
-std::ostream& operator<<(std::ostream&, Key);
-std::ostream& operator<<(std::ostream&, Stroke);
-std::ostream& operator<<(std::ostream&, Phrase);
+std::string toString(Key          , Format = KeyDefault);
+std::string toString(Stroke       , Format = StrokeDefault);
+std::string toString(Phrase const&, Format = StrokeDefault);
+std::string toString(Brief  const&, Format = StrokeDefault);
+std::ostream& operator<<(std::ostream&, Key          );
+std::ostream& operator<<(std::ostream&, Stroke       );
+std::ostream& operator<<(std::ostream&, Phrase const&);
+std::ostream& operator<<(std::ostream&, Brief  const&);
 
 // Format as manipulator
 std::ostream& operator<<(std::ostream&, Format);

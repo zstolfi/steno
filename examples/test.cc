@@ -7,9 +7,9 @@
 #define EXPECT_SAME_TYPE(T, U) EXPECT_TRUE((std::same_as<T, U>))
 #define EXPECT_CONCEPT(C, ...) EXPECT_TRUE((C<__VA_ARGS__>))
 #define EXPECT_EXPRESSION(Expression, Type, ... ) {                            \
-	EXPECT_SAME_TYPE(Type, decltype(Expression));                              \
-	(void) (Expression);                                                       \
-	__VA_ARGS__; /*PostCondition*/                                             \
+    EXPECT_SAME_TYPE(Type, decltype(Expression));                              \
+    (void) (Expression);                                                       \
+    __VA_ARGS__; /*PostCondition*/                                             \
 }
 
 /* ~~ Key Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -450,11 +450,11 @@ TEST(StenoPhrase, ContainerTypes) {
 	using I_Traits  = std::iterator_traits<I>;
 	using IC_Traits = std::iterator_traits<IC>;
 	// Container
-	EXPECT_SAME_TYPE(C::value_type     , T             );
-	EXPECT_SAME_TYPE(C::reference      , T&            );
-	EXPECT_SAME_TYPE(C::const_reference, T const&      );
+	EXPECT_SAME_TYPE(C::value_type     , T);
+	EXPECT_SAME_TYPE(C::reference      , T&);
+	EXPECT_SAME_TYPE(C::const_reference, T const&);
 	EXPECT_SAME_TYPE(C::difference_type, std::ptrdiff_t);
-	EXPECT_SAME_TYPE(C::size_type      , std::size_t   );
+	EXPECT_SAME_TYPE(C::size_type      , std::size_t);
 	// Iterator
 	EXPECT_CONCEPT(std::contiguous_iterator, I);
 	EXPECT_CONCEPT(std::contiguous_iterator, IC);
@@ -488,14 +488,14 @@ TEST(StenoPhrase, ContainerExpressions) {
 	auto v = C {"STEPB/OE"};
 	auto lhs = C {};
 	EXPECT_EXPRESSION(C()    , C , EXPECT_TRUE(C().empty()));
-	EXPECT_EXPRESSION(C(v)   , C , EXPECT_EQ(C(v), v)      );
-	EXPECT_EXPRESSION(lhs = v, C&, EXPECT_EQ(lhs, v)       );
+	EXPECT_EXPRESSION(C(v)   , C , EXPECT_EQ(C(v), v));
+	EXPECT_EXPRESSION(lhs = v, C&, EXPECT_EQ(lhs, v));
 
 	auto       mv = C {"PHAOUT/ABL"};
 	auto const cv = C {"KOPB/STAPBT"};
-	EXPECT_EXPRESSION(mv.begin(), C::iterator      );
+	EXPECT_EXPRESSION(mv.begin(), C::iterator);
 	EXPECT_EXPRESSION(cv.begin(), C::const_iterator);
-	EXPECT_EXPRESSION(mv.end()  , C::iterator      );
+	EXPECT_EXPRESSION(mv.end()  , C::iterator);
 	EXPECT_EXPRESSION(cv.end()  , C::const_iterator);
 	EXPECT_EXPRESSION(v.cbegin(), C::const_iterator);
 	EXPECT_EXPRESSION(v.cend()  , C::const_iterator);
@@ -505,15 +505,15 @@ TEST(StenoPhrase, ContainerExpressions) {
 		EXPECT_EXPRESSION(u == v, bool);
 		EXPECT_EXPRESSION(u != v, bool);
 
-		auto const one = steno::Phrase {"WUPB"};
-		auto const two = steno::Phrase {"TWO"};
-		auto lhs = one;
-		auto rhs = two;
+		auto const One = steno::Phrase {"WUPB"};
+		auto const Two = steno::Phrase {"TWO"};
+		auto lhs = One;
+		auto rhs = Two;
 		EXPECT_EXPRESSION(lhs.swap(rhs), void,
-			EXPECT_EQ(lhs, two); EXPECT_EQ(rhs, one)
+			EXPECT_EQ(lhs, Two); EXPECT_EQ(rhs, One)
 		);
 		EXPECT_EXPRESSION(std::swap(lhs, rhs), void,
-			EXPECT_EQ(lhs, one); EXPECT_EQ(rhs, two)
+			EXPECT_EQ(lhs, One); EXPECT_EQ(rhs, Two)
 		);
 		// std::erase[_if] will not work, instead we provide global functions.
 		EXPECT_EXPRESSION(erase(v, steno::NoStroke)           , void);
@@ -521,7 +521,7 @@ TEST(StenoPhrase, ContainerExpressions) {
 	}
 	EXPECT_EXPRESSION(v.size()    , C::size_type);
 	EXPECT_EXPRESSION(v.max_size(), C::size_type);
-	EXPECT_EXPRESSION(v.empty()   , bool        );
+	EXPECT_EXPRESSION(v.empty()   , bool);
 }
 
 TEST(StenoPhrase, ReversibleTypes) {
@@ -590,19 +590,19 @@ TEST(StenoPhrase, SequenceExpressions) {
 	EXPECT_EXPRESSION(v.assign(il)  , void, EXPECT_TRUE(v == C(il)  ));
 	EXPECT_EXPRESSION(v.assign(n, t), void, EXPECT_TRUE(v == C(n, t)));
 	// Vector specific
-	EXPECT_EXPRESSION(v .front(), C::reference);
-	EXPECT_EXPRESSION(cv.front(), C::const_reference);
-	EXPECT_EXPRESSION(v .back() , C::reference);
-	EXPECT_EXPRESSION(cv.back() , C::const_reference);
-	EXPECT_EXPRESSION(v.emplace_back("123"), void);
-	EXPECT_EXPRESSION(v.push_back(t)       , void);
-	EXPECT_EXPRESSION(v.pop_back()         , void);
-	EXPECT_EXPRESSION(v [n], C::reference);
-	EXPECT_EXPRESSION(cv[n], C::const_reference);
-	EXPECT_EXPRESSION(v .at(C::size_type {0}), C::reference);
-	EXPECT_EXPRESSION(cv.at(C::size_type {0}), C::const_reference);
-	EXPECT_THROW(v .at(v .size()), std::out_of_range);
-	EXPECT_THROW(cv.at(cv.size()), std::out_of_range);
+	EXPECT_EXPRESSION(v .front()               , C::reference);
+	EXPECT_EXPRESSION(cv.front()               , C::const_reference);
+	EXPECT_EXPRESSION(v .back()                , C::reference);
+	EXPECT_EXPRESSION(cv.back()                , C::const_reference);
+	EXPECT_EXPRESSION(v.emplace_back("123")    , void);
+	EXPECT_EXPRESSION(v.push_back(t)           , void);
+	EXPECT_EXPRESSION(v.pop_back()             , void);
+	EXPECT_EXPRESSION(v [n]                    , C::reference);
+	EXPECT_EXPRESSION(cv[n]                    , C::const_reference);
+	EXPECT_EXPRESSION(v .at(C::size_type {0})  , C::reference);
+	EXPECT_EXPRESSION(cv.at(C::size_type {0})  , C::const_reference);
+	EXPECT_THROW(std::ignore = v .at(v .size()), std::out_of_range);
+	EXPECT_THROW(std::ignore = cv.at(cv.size()), std::out_of_range);
 }
 
 /* ~~ Brief Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -688,14 +688,14 @@ TEST(StenoDictionary, ContainerTypes) {
 	using I_Traits  = std::iterator_traits<I>;
 	using IC_Traits = std::iterator_traits<IC>;
 	// Container
-	EXPECT_SAME_TYPE(C::value_type     , T             );
-	EXPECT_SAME_TYPE(C::reference      , T&            );
-	EXPECT_SAME_TYPE(C::const_reference, T const&      );
+	EXPECT_SAME_TYPE(C::value_type     , T);
+	EXPECT_SAME_TYPE(C::reference      , T&);
+	EXPECT_SAME_TYPE(C::const_reference, T const&);
 	EXPECT_SAME_TYPE(C::difference_type, std::ptrdiff_t);
-	EXPECT_SAME_TYPE(C::size_type      , std::size_t   );
+	EXPECT_SAME_TYPE(C::size_type      , std::size_t);
 	// Map specific
-	EXPECT_SAME_TYPE(C::pointer        , T*            );
-	EXPECT_SAME_TYPE(C::const_pointer  , T const*      );
+	EXPECT_SAME_TYPE(C::pointer        , T*);
+	EXPECT_SAME_TYPE(C::const_pointer  , T const*);
 	// Iterator
 	EXPECT_CONCEPT(std::forward_iterator, I);
 	EXPECT_CONCEPT(std::forward_iterator, IC);
@@ -727,14 +727,14 @@ TEST(StenoDictionary, ContainerExpressions) {
 	auto v = C {{{"1"}, "one"}, {{"2"}, "two"}};
 	auto lhs = C {};
 	EXPECT_EXPRESSION(C()    , C , EXPECT_TRUE(C().empty()));
-	EXPECT_EXPRESSION(C(v)   , C , EXPECT_EQ(C(v), v)      );
-	EXPECT_EXPRESSION(lhs = v, C&, EXPECT_EQ(lhs, v)       );
+	EXPECT_EXPRESSION(C(v)   , C , EXPECT_EQ(C(v), v));
+	EXPECT_EXPRESSION(lhs = v, C&, EXPECT_EQ(lhs, v));
 
 	auto       mv = C {{{"PH"}, "M"}, {{"SR"}, "V"}};
 	auto const cv = C {{{"KR"}, "C"}, {{"SR"}, "V"}};
-	EXPECT_EXPRESSION(mv.begin(), C::iterator      );
+	EXPECT_EXPRESSION(mv.begin(), C::iterator);
 	EXPECT_EXPRESSION(cv.begin(), C::const_iterator);
-	EXPECT_EXPRESSION(mv.end()  , C::iterator      );
+	EXPECT_EXPRESSION(mv.end()  , C::iterator);
 	EXPECT_EXPRESSION(cv.end()  , C::const_iterator);
 	EXPECT_EXPRESSION(v.cbegin(), C::const_iterator);
 	EXPECT_EXPRESSION(v.cend()  , C::const_iterator);
@@ -744,23 +744,23 @@ TEST(StenoDictionary, ContainerExpressions) {
 		EXPECT_EXPRESSION(u == v, bool);
 		EXPECT_EXPRESSION(u != v, bool);
 
-		auto const ayy = steno::Dictionary {{{" A "}, "a"}};
-		auto const bee = steno::Dictionary {{{"-B "}, "b"}};
-		auto lhs = ayy;
-		auto rhs = bee;
+		auto const Ayy = steno::Dictionary {{{" A "}, "a"}};
+		auto const Bee = steno::Dictionary {{{"-B "}, "b"}};
+		auto lhs = Ayy;
+		auto rhs = Bee;
 		EXPECT_EXPRESSION(lhs.swap(rhs), void,
-			EXPECT_EQ(lhs, bee); EXPECT_EQ(rhs, ayy)
+			EXPECT_EQ(lhs, Bee); EXPECT_EQ(rhs, Ayy)
 		);
 		EXPECT_EXPRESSION(std::swap(lhs, rhs), void,
-			EXPECT_EQ(lhs, ayy); EXPECT_EQ(rhs, bee)
+			EXPECT_EQ(lhs, Ayy); EXPECT_EQ(rhs, Bee)
 		);
 	}
 	EXPECT_EXPRESSION(v.size()    , C::size_type);
 	EXPECT_EXPRESSION(v.max_size(), C::size_type);
-	EXPECT_EXPRESSION(v.empty()   , bool        );
+	EXPECT_EXPRESSION(v.empty()   , bool);
 }
 
-TEST (StenoDictionary, AssociativeTypes) {
+TEST(StenoDictionary, AssociativeTypes) {
 	using X = steno::Dictionary;
 	EXPECT_SAME_TYPE(X::key_type   , steno::Phrase);
 	EXPECT_SAME_TYPE(X::mapped_type, std::string);
@@ -779,9 +779,9 @@ TEST(StenoDictionary, ReversibleTypes) {
 	EXPECT_SAME_TYPE(CRI::value_type, X::value_type);
 	EXPECT_CONCEPT(std::forward_iterator, RI);
 	EXPECT_CONCEPT(std::forward_iterator, CRI);
-	EXPECT_EXPRESSION(a.rbegin() , RI );
+	EXPECT_EXPRESSION(a.rbegin() , RI);
 	EXPECT_EXPRESSION(b.rbegin() , CRI);
-	EXPECT_EXPRESSION(a.rend()   , RI );
+	EXPECT_EXPRESSION(a.rend()   , RI);
 	EXPECT_EXPRESSION(b.rend()   , CRI);
 	EXPECT_EXPRESSION(a.crbegin(), CRI);
 	EXPECT_EXPRESSION(a.crend()  , CRI);
@@ -797,11 +797,11 @@ TEST(StenoDictionary, AssociativeExpressions) {
 	auto il = std::initializer_list<X::value_type> {{{"0"}, "o"}, {{"O"}, "o"}};
 	auto t = X::value_type {{"PWRAOEF"}, "brief"};
 	auto k = X::key_type {"TPRAEUZ"};
-	EXPECT_EXPRESSION(X()    , X , EXPECT_TRUE(X().empty())                 );
-	EXPECT_EXPRESSION(X(a)   , X , EXPECT_EQ(X(a), a)                       );
-	EXPECT_EXPRESSION(X(i, j), X , EXPECT_EQ(X(i, j), b)                    );
+	EXPECT_EXPRESSION(X()    , X , EXPECT_TRUE(X().empty()));
+	EXPECT_EXPRESSION(X(a)   , X , EXPECT_EQ(X(a), a));
+	EXPECT_EXPRESSION(X(i, j), X , EXPECT_EQ(X(i, j), b));
 	EXPECT_EXPRESSION(X(il)  , X , EXPECT_EQ(X(il), X(il.begin(), il.end())));
-	EXPECT_EXPRESSION(a = il , X&, EXPECT_EQ(a, X(il))                      );
+	EXPECT_EXPRESSION(a = il , X&, EXPECT_EQ(a, X(il)));
 	// Not exact to the spec
 	EXPECT_EXPRESSION(a.insert(t)             , X::iterator);
 	EXPECT_EXPRESSION(a.insert(i, j)          , void);
