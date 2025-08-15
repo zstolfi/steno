@@ -13,7 +13,7 @@ CXXFLAGS   += -I$(STENO) -I$(BOOST)/parser/include
 CXXFLAGS   += -isystem $(GTEST)/include
 
 # ~~~~ Rules ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-all : test example validate #number_builder
+all : test example validate number_builder
 
 example : example.o steno.o
 	$(CXX) $(LDFLAGS) $^ -o $@
@@ -59,4 +59,4 @@ test.o : test.cc $(STENO)/steno.cc $(STENO)/steno.hh $(GTEST_INC)
 
 # ~~~~ Commands ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 clean :
-	rm -f *.o *.a test example validate #number_builder
+	rm -f *.o *.a test example validate number_builder
