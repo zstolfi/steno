@@ -277,7 +277,7 @@ public:
 
 	// Concatenation
 	Brief& operator|=(Brief);
-	friend Phrase operator|(Phrase, Phrase const&);
+	friend Brief operator|(Brief, Brief const&);
 	Brief& operator+=(std::string_view);
 	friend Brief operator+(Brief, std::string_view);
 	friend Brief operator+(std::string_view, Brief);
