@@ -586,23 +586,28 @@ std::string toString(Brief const& b, Format format) {
 
 std::ostream& operator<<(std::ostream& os, Stroke s) {
 	auto format = Format(os.iword(Format_xalloc));
+	if (!bits(format)) format = StrokeDefault;
 	return os << toString(s, format);
 }
 
 std::ostream& operator<<(std::ostream& os, Phrase const& p) {
 	auto format = Format(os.iword(Format_xalloc));
+	if (!bits(format)) format = StrokeDefault;
 	return os << toString(p, format);
 }
 
 std::ostream& operator<<(std::ostream& os, Brief const& b) {
 	auto format = Format(os.iword(Format_xalloc));
+	if (!bits(format)) format = StrokeDefault;
 	return os << toString(b, format);
 }
 
 // Format as manipulator
 std::ostream& operator<<(std::ostream& os, Format f) {
-	os.iword(Format_xalloc) &= ~mask(f);
-	os.iword(Format_xalloc) |= bits(f);
+	long& iword = os.iword(Format_xalloc);
+	if (!iword) iword = bits(StrokeDefault);
+	iword &= ~mask(f);
+	iword |= bits(f);
 	return os;
 }
 

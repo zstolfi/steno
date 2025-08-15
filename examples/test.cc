@@ -350,13 +350,27 @@ TEST(StenoStroke, ToString) {
 	EXPECT_EQ(steno::toString(stroke, Packed|Alpha), "#STHOURS");
 	EXPECT_EQ(steno::toString(stroke, Numeric|Wide), " 12   4  0  U R     S  ");
 
-	std::stringstream ss {};
-	ss << Alpha << Wide << stroke;
-	EXPECT_EQ(ss.str(), "#ST   H  O  U R     S  ");
-
-	ss = std::stringstream {};
-	ss << Packed << Numeric << stroke;
-	EXPECT_EQ(ss.str(), "1240URS");
+	{
+		std::stringstream ss {};
+		ss << Alpha << Wide << stroke;
+		EXPECT_EQ(ss.str(), "#ST   H  O  U R     S  ");
+	} {
+		std::stringstream ss {};
+		ss << Packed << Numeric << stroke;
+		EXPECT_EQ(ss.str(), "1240URS");
+	} {
+		std::stringstream ss {};
+		ss << ~steno::NoStroke; // Numeric by default
+		EXPECT_EQ(ss.str(), "12K3W4R50*EU6R7B8G9SDZ");
+	} {
+		std::stringstream ss {};
+		ss << Numeric << ~steno::NoStroke;
+		EXPECT_EQ(ss.str(), "12K3W4R50*EU6R7B8G9SDZ");
+	} {
+		std::stringstream ss {};
+		ss << Alpha << ~steno::NoStroke;
+		EXPECT_EQ(ss.str(), "#STKPWHRAO*EUFRPBLGTSDZ");
+	}
 }
 
 /* ~~ Phrase Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
