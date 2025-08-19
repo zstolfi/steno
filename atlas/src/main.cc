@@ -51,7 +51,7 @@ struct Dictionary {
 	void save() const {
 		std::filesystem::path imgPath {name};
 		imgPath.replace_extension("");
-		imgPath += " atlas by" + atlas.getMapping()->name() + ".png";
+		imgPath += " atlas by " + atlas.getMapping()->name() + ".png";
 		stbi_write_png(
 			imgPath.c_str(), Atlas::N, Atlas::N,
 			4, atlas.getImage().data(), 4*Atlas::N

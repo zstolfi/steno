@@ -26,7 +26,8 @@ int main() {
 	std::cout << "passed!\n";
 
 	const steno::Stroke example {"KPAFRPL"};
-	const steno::Stroke AllKeys {steno::FromBits, 0xFFFFFFFF};
+	const steno::Stroke AllKeys {~steno::NoStroke};
+	std::cout << steno::Wide << steno::Alpha;
 	std::cout << "Steno order: |" << steno::Wide << AllKeys << "|\n";
 	std::cout << "'example':   |" << steno::Wide << example << "|\n";
 	std::cout << "# ........ Program End ........ #\n";

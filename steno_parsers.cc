@@ -13,13 +13,11 @@
 namespace /*anonymous*/ {
 
 namespace bp = boost::parser;
-// "using Entry = steno::Dictionary::value_type" would not work in our parsers,
-// because steno::Strokes is not allowed to be const as we parse it.
 using Dictionary = steno::Dictionary;
-using Entry = std::pair<steno::Strokes, std::string>;
+using Entry = steno::Brief;
 
 bp::rule<struct stroke , steno::Stroke > stroke   = "steno stroke";
-bp::rule<struct strokes, steno::Strokes> strokes  = "steno strokes";
+bp::rule<struct strokes, steno::Phrase> strokes  = "steno strokes";
 // STKPWHR AO*EU FRPBLGTSDZ  or  12K3W4R 50*EU 6R7B8G9SDZ
 bp::rule<struct left     , std::string> left      = "left-hand consonants";
 bp::rule<struct middle   , std::string> middle    = "vowel or asterisk";

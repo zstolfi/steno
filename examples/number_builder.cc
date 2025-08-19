@@ -82,11 +82,14 @@ int main() {
 	constexpr int Fib[]
 	=	{ 0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987 };
 
-	Dictionary numbers {};
-	for (int x : Fib) numbers.insert(Num(x));
-
-	for (Brief const& entry : numbers) {
-		std::cout << Wide;
-		std::cout << "|" << entry.phrase() << "| == " << entry.text() << "\n";
+	for (int x : Fib) {
+		std::cout << steno::Wide;
+		std::cout << "|" << Num(x).phrase() << "| == " << Num(x).text() << "\n";
 	}
+
+	Dictionary numbers {};
+	for (int x=0; x<=999; x++) numbers.insert(Num(x));
+//	for (auto const& entry : numbers) {
+//		std::cout << entry.phrase() << "  =  " << entry.text() << "\n";
+//	}
 }

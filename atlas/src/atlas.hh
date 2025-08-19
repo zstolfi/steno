@@ -64,10 +64,10 @@ auto hilbert_inv(std::array<unsigned, 2> pos) -> unsigned {
 struct Mapping {
 	virtual std::string name() const = 0;
 	virtual std::array<unsigned, 2> size() const = 0;
-	virtual bool displayable(steno::Strokes) const = 0;
+	virtual bool displayable(steno::Phrase) const = 0;
 	virtual char summary(std::string) const = 0;
-	virtual std::array<unsigned, 2> toPosition(steno::Strokes) const = 0;
-	virtual steno::Strokes toStrokes(std::array<unsigned, 2>) const = 0;
+	virtual std::array<unsigned, 2> toPosition(steno::Phrase) const = 0;
+	virtual steno::Phrase toPhrase(std::array<unsigned, 2>) const = 0;
 };
 
 template <bool BitOrder>
@@ -80,11 +80,11 @@ struct HilbertMap final : Mapping {
 		return {2048, 2048};
 	}
 
-	bool displayable(steno::Strokes strokes) const {
-		if (strokes.list.size() != 1) return false;
-		// Ignore number bar strokes ... for now.
+	bool displayable(steno::Phrase phrase) const {
+		if (phrase.size() != 1) return false;
+		// Ignore number bar phrase ... for now.
 		steno::Stroke const Allowed {"STKPWHRAO*EUFRPBLGTSDZ"};
-		steno::Stroke const first {strokes.list[0]};
+		steno::Stroke const first {phrase[0]};
 		return (first & Allowed) == first;
 	}
 
@@ -93,12 +93,12 @@ struct HilbertMap final : Mapping {
 		return BitOrder? text.front(): text.back();
 	}
 
-	std::array<unsigned, 2> toPosition(steno::Strokes strokes) const {
-		auto bitValue = customBitOrdering(strokes.list[0]);
+	std::array<unsigned, 2> toPosition(steno::Phrase phrase) const {
+		auto bitValue = customBitOrdering(phrase[0]);
 		return math::hilbert(bitValue);
 	}
 
-	steno::Strokes toStrokes(std::array<unsigned, 2> position) const {
+	steno::Phrase toPhrase(std::array<unsigned, 2> position) const {
 		return customBitOrdering_inv(math::hilbert_inv(position));
 	}
 
@@ -123,9 +123,9 @@ class Atlas {
 		View() = default;
 		View(steno::Dictionary dict, Mapping* m): mapping{m}, image{EmptyImage()} {
 			std::for_each(dict.begin(), dict.end(), [this] (auto entry) {
-				auto const& [strokes, text] = entry;
-				if (!mapping->displayable(strokes)) return;
-				auto [posX, posY] = mapping->toPosition(strokes);
+				auto const& [phrase, text] = entry;
+				if (!mapping->displayable(phrase)) return;
+				auto [posX, posY] = mapping->toPosition(phrase);
 
 				std::array<uint8_t, 3> rgb {255, 255, 255};
 				if (char const c = mapping->summary(text)) {
@@ -238,109 +238,113 @@ private:
 // TODO: BitOrdering class to simplify this data.
 
 template <>
-uint32_t HilbertMap<true>::customBitOrdering(steno::Stroke x) const {
-	return x.keys.S_ << 21
-	|      x.keys.T_ << 20
-	|      x.keys.K_ << 19
-	|      x.keys.P_ << 18
-	|      x.keys.W_ << 17
-	|      x.keys.H_ << 16
-	|      x.keys.R_ << 15
-	|      x.keys.A  << 14
-	|      x.keys.O  << 13
-	|      x.keys.E  << 12
-	|      x.keys.U  << 11
-	|      x.keys.x  << 10
-	|      x.keys._F <<  9
-	|      x.keys._R <<  8
-	|      x.keys._P <<  7
-	|      x.keys._B <<  6
-	|      x.keys._L <<  5
-	|      x.keys._G <<  4
-	|      x.keys._T <<  3
-	|      x.keys._S <<  2
-	|      x.keys._D <<  1
-	|      x.keys._Z <<  0;
+uint32_t HilbertMap<true>::customBitOrdering(steno::Stroke stroke) const {
+	using enum steno::Key;
+	return stroke[S_] << 21
+	|      stroke[T_] << 20
+	|      stroke[K_] << 19
+	|      stroke[P_] << 18
+	|      stroke[W_] << 17
+	|      stroke[H_] << 16
+	|      stroke[R_] << 15
+	|      stroke[A ] << 14
+	|      stroke[O ] << 13
+	|      stroke[E ] << 12
+	|      stroke[U ] << 11
+	|      stroke[x ] << 10
+	|      stroke[_F] <<  9
+	|      stroke[_R] <<  8
+	|      stroke[_P] <<  7
+	|      stroke[_B] <<  6
+	|      stroke[_L] <<  5
+	|      stroke[_G] <<  4
+	|      stroke[_T] <<  3
+	|      stroke[_S] <<  2
+	|      stroke[_D] <<  1
+	|      stroke[_Z] <<  0;
 }
 
 template <>
-steno::Stroke HilbertMap<true>::customBitOrdering_inv(uint32_t x) const {
+steno::Stroke HilbertMap<true>::customBitOrdering_inv(uint32_t n) const {
 	steno::Stroke result {};
-	if (x>>21 & 1) result.set(steno::Key::S_);
-	if (x>>20 & 1) result.set(steno::Key::T_);
-	if (x>>19 & 1) result.set(steno::Key::K_);
-	if (x>>18 & 1) result.set(steno::Key::P_);
-	if (x>>17 & 1) result.set(steno::Key::W_);
-	if (x>>16 & 1) result.set(steno::Key::H_);
-	if (x>>15 & 1) result.set(steno::Key::R_);
-	if (x>>14 & 1) result.set(steno::Key::A );
-	if (x>>13 & 1) result.set(steno::Key::O );
-	if (x>>12 & 1) result.set(steno::Key::E );
-	if (x>>11 & 1) result.set(steno::Key::U );
-	if (x>>10 & 1) result.set(steno::Key::x );
-	if (x>> 9 & 1) result.set(steno::Key::_F);
-	if (x>> 8 & 1) result.set(steno::Key::_R);
-	if (x>> 7 & 1) result.set(steno::Key::_P);
-	if (x>> 6 & 1) result.set(steno::Key::_B);
-	if (x>> 5 & 1) result.set(steno::Key::_L);
-	if (x>> 4 & 1) result.set(steno::Key::_G);
-	if (x>> 3 & 1) result.set(steno::Key::_T);
-	if (x>> 2 & 1) result.set(steno::Key::_S);
-	if (x>> 1 & 1) result.set(steno::Key::_D);
-	if (x>> 0 & 1) result.set(steno::Key::_Z);
+	using enum steno::Key;
+	result[S_] = (n>>21) & 1;
+	result[T_] = (n>>20) & 1;
+	result[K_] = (n>>19) & 1;
+	result[P_] = (n>>18) & 1;
+	result[W_] = (n>>17) & 1;
+	result[H_] = (n>>16) & 1;
+	result[R_] = (n>>15) & 1;
+	result[A ] = (n>>14) & 1;
+	result[O ] = (n>>13) & 1;
+	result[E ] = (n>>12) & 1;
+	result[U ] = (n>>11) & 1;
+	result[x ] = (n>>10) & 1;
+	result[_F] = (n>> 9) & 1;
+	result[_R] = (n>> 8) & 1;
+	result[_P] = (n>> 7) & 1;
+	result[_B] = (n>> 6) & 1;
+	result[_L] = (n>> 5) & 1;
+	result[_G] = (n>> 4) & 1;
+	result[_T] = (n>> 3) & 1;
+	result[_S] = (n>> 2) & 1;
+	result[_D] = (n>> 1) & 1;
+	result[_Z] = (n>> 0) & 1;
 	return result;
 }
 
 template <>
-uint32_t HilbertMap<false>::customBitOrdering(steno::Stroke x) const {
-	return x.keys.S_ <<  0
-	|      x.keys.T_ <<  1
-	|      x.keys.K_ <<  2
-	|      x.keys.P_ <<  3
-	|      x.keys.W_ <<  4
-	|      x.keys.H_ <<  5
-	|      x.keys.R_ <<  6
-	|      x.keys.A  <<  7
-	|      x.keys.O  <<  8
-	|      x.keys.E  <<  9
-	|      x.keys.U  << 10
-	|      x.keys.x  << 11
-	|      x.keys._F << 12
-	|      x.keys._R << 13
-	|      x.keys._P << 14
-	|      x.keys._B << 15
-	|      x.keys._L << 16
-	|      x.keys._G << 17
-	|      x.keys._T << 18
-	|      x.keys._S << 19
-	|      x.keys._D << 20
-	|      x.keys._Z << 21;
+uint32_t HilbertMap<false>::customBitOrdering(steno::Stroke stroke) const {
+	using enum steno::Key;
+	return stroke[S_] <<  0
+	|      stroke[T_] <<  1
+	|      stroke[K_] <<  2
+	|      stroke[P_] <<  3
+	|      stroke[W_] <<  4
+	|      stroke[H_] <<  5
+	|      stroke[R_] <<  6
+	|      stroke[A ] <<  7
+	|      stroke[O ] <<  8
+	|      stroke[E ] <<  9
+	|      stroke[U ] << 10
+	|      stroke[x ] << 11
+	|      stroke[_F] << 12
+	|      stroke[_R] << 13
+	|      stroke[_P] << 14
+	|      stroke[_B] << 15
+	|      stroke[_L] << 16
+	|      stroke[_G] << 17
+	|      stroke[_T] << 18
+	|      stroke[_S] << 19
+	|      stroke[_D] << 20
+	|      stroke[_Z] << 21;
 }
 
 template <>
-steno::Stroke HilbertMap<false>::customBitOrdering_inv(uint32_t x) const {
+steno::Stroke HilbertMap<false>::customBitOrdering_inv(uint32_t n) const {
 	steno::Stroke result {};
-	if (x>> 0 & 1) result.set(steno::Key::S_);
-	if (x>> 1 & 1) result.set(steno::Key::T_);
-	if (x>> 2 & 1) result.set(steno::Key::K_);
-	if (x>> 3 & 1) result.set(steno::Key::P_);
-	if (x>> 4 & 1) result.set(steno::Key::W_);
-	if (x>> 5 & 1) result.set(steno::Key::H_);
-	if (x>> 6 & 1) result.set(steno::Key::R_);
-	if (x>> 7 & 1) result.set(steno::Key::A );
-	if (x>> 8 & 1) result.set(steno::Key::O );
-	if (x>> 9 & 1) result.set(steno::Key::E );
-	if (x>>10 & 1) result.set(steno::Key::U );
-	if (x>>11 & 1) result.set(steno::Key::x );
-	if (x>>12 & 1) result.set(steno::Key::_F);
-	if (x>>13 & 1) result.set(steno::Key::_R);
-	if (x>>14 & 1) result.set(steno::Key::_P);
-	if (x>>15 & 1) result.set(steno::Key::_B);
-	if (x>>16 & 1) result.set(steno::Key::_L);
-	if (x>>17 & 1) result.set(steno::Key::_G);
-	if (x>>18 & 1) result.set(steno::Key::_T);
-	if (x>>19 & 1) result.set(steno::Key::_S);
-	if (x>>20 & 1) result.set(steno::Key::_D);
-	if (x>>21 & 1) result.set(steno::Key::_Z);
+	using enum steno::Key;
+	result[S_] = (n>> 0) & 1;
+	result[T_] = (n>> 1) & 1;
+	result[K_] = (n>> 2) & 1;
+	result[P_] = (n>> 3) & 1;
+	result[W_] = (n>> 4) & 1;
+	result[H_] = (n>> 5) & 1;
+	result[R_] = (n>> 6) & 1;
+	result[A ] = (n>> 7) & 1;
+	result[O ] = (n>> 8) & 1;
+	result[E ] = (n>> 9) & 1;
+	result[U ] = (n>>10) & 1;
+	result[x ] = (n>>11) & 1;
+	result[_F] = (n>>12) & 1;
+	result[_R] = (n>>13) & 1;
+	result[_P] = (n>>14) & 1;
+	result[_B] = (n>>15) & 1;
+	result[_L] = (n>>16) & 1;
+	result[_G] = (n>>17) & 1;
+	result[_T] = (n>>18) & 1;
+	result[_S] = (n>>19) & 1;
+	result[_D] = (n>>20) & 1;
+	result[_Z] = (n>>21) & 1;
 	return result;
 }
