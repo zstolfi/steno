@@ -673,6 +673,31 @@ TEST(StenoBrief, ToString) {
 /* ~~ Brief Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 // Modeled after https://en.cppreference.com/w/cpp/named_req/AssociativeContainer
 
+TEST(StenoDictionary, Insertion) {
+	steno::Brief const Entries[] = {
+		{{"EPB/TREU/WUPB"}, "entry 1"},
+		{{"EPB/TREU/TWO"} , "entry 2"},
+	}; 
+	steno::Dictionary dict {};
+	EXPECT_EQ(dict.begin(), dict.end());
+
+	dict.insert(Entries[0]);
+	{
+		auto it = dict.begin();
+		EXPECT_EQ(*it++, Entries[0]);
+		EXPECT_EQ(it, dict.end());
+	}
+
+	dict.insert(Entries[1]);
+	EXPECT_EQ(std::next(dict.begin(), 2), dict.end());
+	{
+		auto it = dict.begin();
+		EXPECT_EQ(*it++, Entries[0]);
+		EXPECT_EQ(*it++, Entries[1]);
+		EXPECT_EQ(it, dict.end());
+	}
+}
+
 TEST(StenoDictionary, PhraseAccess) {
 	steno::Dictionary dict {{{"KAOE"}, "value"}};
 	steno::Phrase const key {"KAOE"};
@@ -685,6 +710,7 @@ TEST(StenoDictionary, PhraseAccess) {
 
 	EXPECT_FALSE(dict.contains(newKey));
 	EXPECT_EQ(dict[newKey], steno::NoText);
+	dict.clean();
 	EXPECT_FALSE(dict.contains(newKey));
 	for (steno::Brief b : dict) EXPECT_NE(b.phrase(), newKey);
 

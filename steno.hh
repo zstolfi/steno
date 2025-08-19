@@ -5,7 +5,7 @@
 #include <bit>
 #include <bitset>
 #include <vector>
-#include <map>
+#include <deque>
 #include <list>
 #include <span>
 #include <initializer_list>
@@ -301,8 +301,7 @@ Brief operator+(std::string_view, Phrase);
 using Text = std::string;
 
 class Dictionary {
-	std::list<Brief> m_list {};
-	std::map<Phrase, decltype(m_list)::iterator> m_map {};
+	std::deque<Brief> m_entries {};
 
 public:
 	// Default construction/assignment/movement
@@ -319,9 +318,11 @@ public:
 	// Fail-state query
 	bool failed() const;
 	void eraseFailed();
+	void clean();
 
 	// Comparison
-	bool operator==(Dictionary const&) const;
+	bool operator== (Dictionary const&) const = default;
+	auto operator<=>(Dictionary const&) const = default;
 
 public:
 	// Container types
@@ -330,8 +331,8 @@ public:
 	using const_reference = Brief const&;
 	using pointer = Brief*;
 	using const_pointer = Brief const*;
-	using iterator = decltype(m_list)::iterator;
-	using const_iterator = decltype(m_list)::const_iterator;
+	using iterator = decltype(m_entries)::iterator;
+	using const_iterator = decltype(m_entries)::const_iterator;
 	using reverse_iterator = std::reverse_iterator<iterator>;
 	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 	using difference_type = std::ptrdiff_t;
@@ -339,26 +340,26 @@ public:
 
 	// Container methods
 #	define USE(Name) \
-	auto    Name()       { return m_list.   Name(); } \
-	auto    Name() const { return m_list.   Name(); } \
-	auto c##Name() const { return m_list.c##Name(); }
+	auto    Name()       { return m_entries.   Name(); } \
+	auto    Name() const { return m_entries.   Name(); } \
+	auto c##Name() const { return m_entries.c##Name(); }
 	USE(begin) USE(end) USE(rbegin) USE(rend)
 #	undef USE
 	void swap(Dictionary& other) { std::swap(*this, other); };
-	std::size_t size    () const { return m_list.size    (); }
-	std::size_t max_size() const { return m_list.max_size(); }
-	bool        empty   () const { return m_list.empty   (); }
+	std::size_t size    () const { return m_entries.size    (); }
+	std::size_t max_size() const { return m_entries.max_size(); }
+	bool        empty   () const { return m_entries.empty   (); }
 
 public:
 	// Associative types
 	using key_type = Phrase;
-	using mapped_type = std::string;
+	using mapped_type = Text;
 
 	// Associative methods
-	iterator insert(Brief);
+	iterator insert(Brief const&);
 	template <std::input_iterator I>
-	Dictionary(I i, I j) { insert(i, j); }
-	Dictionary(std::initializer_list<Brief>);
+	Dictionary(I first, I last): m_entries(first, last) { sort(); }
+	Dictionary(std::initializer_list<Brief> il): m_entries(il) { sort(); };
 	template <std::input_iterator I>
 	void insert(I i, I j) { for (I it=i; it!=j; ++it) insert(*it); }
 	void insert(std::initializer_list<Brief>);
@@ -369,7 +370,6 @@ public:
 	void merge(Dictionary&);
 	void merge(Dictionary&&);
 	void clear();
-	bool contains(Phrase const&);
 	bool contains(Phrase const&) const;
 	/*  */iterator find(Phrase const&);
 	const_iterator find(Phrase const&) const;
@@ -381,16 +381,15 @@ public:
 	std::pair<const_iterator, const_iterator> equal_range(Phrase const&) const;
 
 	// Map methods
-	[[nodiscard]] Text& operator[](Phrase const&);
-	[[nodiscard]] Text const& operator[](Phrase const&) const;
-	[[nodiscard]] Text& at(Phrase const&);
-	[[nodiscard]] Text const& at(Phrase const&) const;
+	Text& operator[](Phrase const&);
+	Text const& operator[](Phrase const&) const;
+	Text& at(Phrase const&);
+	Text const& at(Phrase const&) const;
 	friend void erase   (Dictionary& p, auto&& value);
 	friend void erase_if(Dictionary& p, auto&& pred);
 
 private:
-	void normalize();
-	std::vector<decltype(m_list)::iterator> newEntries {};
+	void sort();
 	void erase_if_impl(auto&& pred)
 	{ for (auto it=begin(); it!=end(); ++it) if (pred(*it)) erase(it); }
 	void erase_impl(auto&& value)
