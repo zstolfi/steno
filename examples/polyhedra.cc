@@ -3,12 +3,14 @@
 int main() {
 	auto dict = steno::Dictionary {};
 
+	auto poly_ = steno::Stroke {"POEUL"};
 	auto _hedron = steno::Stroke {"HAOED"};
 	auto _hedra = steno::Stroke {"HAOERD"};
 	auto _hedral = steno::Stroke {"HAOERLD"};
 
 	// https://www.youtube.com/watch?v=5xD7ndQPcg4
 	dict[steno::Stroke {"PHRO*PBG"}] = "Platonic";
+	dict[poly_ | _hedron] = "polyhedron";
 	dict[steno::Stroke {"TET"} | _hedron] = "tetrahedron";
 	dict[steno::Stroke {"OBGT"} | _hedron] = "octahedron";
 	dict[steno::Stroke {"K*UB"}] = "cube";
