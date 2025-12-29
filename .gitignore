@@ -8,8 +8,9 @@
 examples/test
 examples/example
 examples/validate
-examples/polyhedra
 examples/number_builder
+examples/polyhedra
+examples/numbers/numbers_advanced
 IO/JSON_import
 atlas/src/desktop/atlas
 

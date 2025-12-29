@@ -13,7 +13,8 @@ CXXFLAGS   += -I$(STENO) -I$(BOOST)/parser/include
 CXXFLAGS   += -isystem $(GTEST)/include
 
 # ~~~~ Rules ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-all : test example validate number_builder polyhedra
+all : test example validate number_builder polyhedra \
+numbers/numbers_advanced
 
 example : example.o steno.o
 	$(CXX) $(LDFLAGS) $^ -o $@
@@ -36,6 +37,12 @@ steno.o : $(STENO)/steno.cc $(STENO)/steno.hh Makefile
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 %.o : %.cc $(wildcard *.hh) Makefile
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+numbers/numbers_advanced : numbers/numbers_advanced.o steno.o
+	$(CXX) $(LDFLAGS) $^ -o $@
+
+numbers/%.o : numbers/%.cc
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # ~~~~ Google Test Specific ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
