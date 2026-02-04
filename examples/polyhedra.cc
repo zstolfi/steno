@@ -8,6 +8,7 @@ int main() {
 	auto _hedra = steno::Stroke {"HAOERD"};
 	auto _hedral = steno::Stroke {"HAOERLD"};
 
+	/* ~~ The Platonic Solids ~~ */
 	// https://www.youtube.com/watch?v=5xD7ndQPcg4
 	dict[steno::Phrase {"PHRO*PBG"}] = "Platonic";
 	dict[steno::Phrase {"POEUL"} | _hedron] = "polyhedron";
@@ -17,6 +18,7 @@ int main() {
 	dict[steno::Phrase {"AOEUBGS"} | _hedron] = "icosahedron";
 	dict[steno::Phrase {"TKOEBGD"} | _hedron] = "dodecahedron";
 
+	/* ~~ The Archimedean Solids ~~ */
 	// https://www.youtube.com/watch?v=_It-7VJH6n4
 	dict[steno::Phrase {"ARBG/PHAOED"}] = "Archimedean";
 	dict[steno::Phrase {"TRUPBT"}] = "truncate"; // verb
@@ -27,6 +29,14 @@ int main() {
 	dict[steno::Phrase {"RAUPL"}] = "rhombi";
 	dict[steno::Phrase {"RAUPL/K*UB/OBGT"} | _hedron] = "rhombicuboctahedron";
 	dict[steno::Phrase {"AOEUBGS/TKOEBGD"} | _hedron] = "icosidodecahedron";
+
+	/* ~~ Prisms and Antiprisms ~~ */
+	// https://www.youtube.com/watch?v=01fSnAs0q0Q
+	dict[steno::Phrase {"PREUFPL"}] = "prism";
+	dict[steno::Phrase {"AEPBT/PREUFPL"}] = "antiprism";
+	dict[steno::Phrase {"TK*EU"} | _hedron] = "dihedron";
+	dict[steno::Phrase {"SPAPBD"}] = "expand"; // verb
+	dict[steno::Phrase {"RA*UPL"}] = "{rhombi^}";
 
 	auto inflections = steno::Dictionary {};
 	// -HEDRON words
@@ -77,6 +87,10 @@ int main() {
 		dict[steno::Stroke {"TRUPBTD"}] = "truncated";
 		dict[steno::Stroke {"TRUPBGT"}] = "truncating";
 		dict[steno::Stroke {"TRUPBTS"}] = "truncates";
+
+		dict[steno::Phrase {"SPAPBTD"}] = "expanded";
+		dict[steno::Phrase {"SPAPBGD"}] = "expanding";
+		dict[steno::Phrase {"SPAPBDZ"}] = "expands";
 	
 		// Noun entries
 		dict[steno::Stroke {"TRUPBGSZ"}] = "truncations";
