@@ -38,6 +38,11 @@ int main() {
 	dict[steno::Phrase {"SPAPBD"}] = "expand"; // verb
 	dict[steno::Phrase {"RA*UPL"}] = "{rhombi^}";
 
+	/* ~~ Dihedra, Hosohedra and Spherical Polyhedra ~~ */
+	// https://www.youtube.com/watch?v=n7rqeRkqsU4
+	dict[steno::Phrase {"TKAOEPBLGT"}] = "degenerate"; // adjective
+	dict[steno::Phrase {"HOS"} | _hedron] = "hosohedron";
+	
 	auto inflections = steno::Dictionary {};
 	// -HEDRON words
 	for (auto const& entry : dict) if (entry.phrase().back() == _hedron) {
