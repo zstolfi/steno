@@ -6,30 +6,54 @@
 #include <string>
 #include <map>
 
-struct ReverseDictionary : std::multimap<std::string, steno::Phrase> {
+class ReverseDictionary {
+	std::multimap<std::string, steno::Phrase> map {};
+
+public:
 	ReverseDictionary(steno::Dictionary const& d) {
 		for (auto const& [phrase, text] : d) {
-			auto [lower, upper] = this->equal_range(text);
+			auto [lower, upper] = map.equal_range(text);
 			bool seen = false;
 			for (auto it=lower; it!=upper; ++it) {
 				if (it->second == phrase) { seen = true; break; }
 			}
-			if (!seen) this->insert({text, phrase});
+			if (!seen) map.insert({text, phrase});
 		}
 	}
-};
 
-using ReverseEntry = std::pair<std::string, steno::Phrase>;
-
-struct Word {
-	std::string text {};
-	friend std::istream& operator>>(std::istream& is, Word& w) {
-		is >> w.text;
-		return is;
+	std::vector<steno::Brief> find(std::string text) const {
+		std::vector<steno::Brief> result {};
+		auto [lower, upper] = map.equal_range(text);
+		for (auto it=lower; it!=upper; ++it) {
+			result.emplace_back(it->second, it->first);
+		}
+		return result;
 	}
 };
 
-ReverseEntry best(std::vector<ReverseEntry> const& options) {
+class MorphemeIterator {
+	std::istream* input {};
+	std::string current {};
+	/* Context goes here ... */
+
+public:
+	MorphemeIterator& operator++() {
+		*input >> current;
+		if (!*input) return *this = MorphemeIterator {};
+		return *this;
+	}
+
+	using difference_type = unsigned;
+	using value_type = std::string;
+
+	MorphemeIterator() {}
+	MorphemeIterator(std::istream& is): input{&is} {}
+	auto operator<=>(MorphemeIterator const&) const = default;
+	std::string operator*() { return current; }
+	void operator++(int) { ++*this; }
+};
+
+steno::Brief best(std::vector<steno::Brief> const& options) {
 	return options[0];
 }
 
@@ -39,15 +63,14 @@ void reverseTranslate(
 	ReverseDictionary const& dict
 ) {
 	std::string result {};
-	using Iter = std::istream_iterator<Word>;
+	using Iter = MorphemeIterator;
 	for (Iter it {input}; it != Iter {}; ++it) {
-		auto& word = *it;
-		auto [begin, end] = dict.equal_range(word.text);
-		std::vector<ReverseEntry> options {begin, end};
+		auto word = *it;
+		auto options = dict.find(word);
 		if (!options.empty()) {
-			output << best(options).second << "\n";
+			output << best(options).phrase() << "\n";
 		}
-		else output << word.text << "\n";
+		else output << word << "\n";
 	}
 }
 
