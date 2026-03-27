@@ -13,7 +13,8 @@ CXXFLAGS   += -I$(STENO) -I$(BOOST)/parser/include
 CXXFLAGS   += -isystem $(GTEST)/include
 
 # ~~~~ Rules ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-all : test example validate number_builder polyhedra \
+all : test example validate reverse_translate \
+number_builder polyhedra \
 numbers/numbers_advanced
 
 example : example.o steno.o
@@ -22,7 +23,7 @@ example : example.o steno.o
 validate : validate.o steno.o
 	$(CXX) $(LDFLAGS) $^ -o $@
 
-parser_test : steno.o steno_parsers.o
+reverse_translate : steno.o steno_parsers.o
 
 steno_parsers.o : $(STENO)/steno_parsers.cc
 	$(CXX) $(CXXFLAGS) -c $< -o $@

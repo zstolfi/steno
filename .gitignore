@@ -8,6 +8,7 @@
 examples/test
 examples/example
 examples/validate
+examples/reverse_translate
 examples/number_builder
 examples/polyhedra
 examples/numbers/numbers_advanced
