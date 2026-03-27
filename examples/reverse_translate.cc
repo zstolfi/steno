@@ -2,9 +2,44 @@
 #include "steno_parsers.hh"
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <vector>
 #include <string>
+#include <set>
 #include <map>
+#include <regex>
+#include <format>
+#include <cctype>
+
+std::vector<std::string> lex(std::string input) {
+	std::regex const pattern {R"([A-Za-z]+|[^\s])"};
+	using Iter = std::regex_iterator<std::string::iterator>;
+	Iter begin {input.begin(), input.end(), pattern}, end {};
+
+	std::set<char> const sentenceEnders = {'.', '?', '!'};
+	bool sentenceStart = true;
+
+	std::vector<std::string> result {};
+	for (auto it=begin; it!=end; ++it) {
+		auto morpheme = it->str();
+		char& first = morpheme.front();
+		if (sentenceStart && std::isalpha(first)) {
+			first = std::tolower(first);
+			sentenceStart = false;
+		}
+		if (sentenceEnders.contains(first)) sentenceStart = true;
+
+		if (isalpha(first)) result.push_back(morpheme);
+		else result.push_back('{' + morpheme + '}');
+	}
+	return result;
+}
+
+std::vector<std::string> lex(std::istream& input) {
+	using Iter = std::istreambuf_iterator<char>;
+	Iter begin {input}, end {};
+	return lex(std::string {begin, end});
+}
 
 class ReverseDictionary {
 	std::multimap<std::string, steno::Phrase> map {};
@@ -31,28 +66,6 @@ public:
 	}
 };
 
-class MorphemeIterator {
-	std::istream* input {};
-	std::string current {};
-	/* Context goes here ... */
-
-public:
-	MorphemeIterator& operator++() {
-		*input >> current;
-		if (!*input) return *this = MorphemeIterator {};
-		return *this;
-	}
-
-	using difference_type = unsigned;
-	using value_type = std::string;
-
-	MorphemeIterator() {}
-	MorphemeIterator(std::istream& is): input{&is} {}
-	auto operator<=>(MorphemeIterator const&) const = default;
-	std::string operator*() { return current; }
-	void operator++(int) { ++*this; }
-};
-
 steno::Brief best(std::vector<steno::Brief> const& options) {
 	return options[0];
 }
@@ -62,10 +75,7 @@ void reverseTranslate(
 	std::ostream& output,
 	ReverseDictionary const& dict
 ) {
-	std::string result {};
-	using Iter = MorphemeIterator;
-	for (Iter it {input}; it != Iter {}; ++it) {
-		auto word = *it;
+	for (auto word : lex(input)) {
 		auto options = dict.find(word);
 		if (!options.empty()) {
 			output << best(options).phrase() << "\n";
