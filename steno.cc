@@ -46,6 +46,11 @@ bool Stroke::operator[](Key k) const {
 	return get(k);
 }
 
+Stroke& Stroke::clear() {
+	*this = NoStroke;
+	return *this;
+}
+
 // Range-for compatability
 Stroke::Iterator Stroke::begin() const {
 	return Iterator {*this};
@@ -266,6 +271,11 @@ std::string& Brief::text() {
 
 std::string const& Brief::text() const {
 	return m_text;
+}
+
+Brief& Brief::clear() {
+	*this = NoBrief;
+	return *this;
 }
 
 // Concatenation

@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <functional>
 #include <cstdint>
+#include <cassert>
 
 namespace steno {
 
@@ -85,6 +86,7 @@ public:
 	Stroke& unset(Key);
 	Reference operator[](Key);
 	bool operator[](Key) const;
+	Stroke& clear();
 
 	// Range-for compatability
 	Iterator begin() const;
@@ -270,6 +272,7 @@ public:
 	template <std::size_t I> friend auto&& get(Brief&);
 	template <std::size_t I> friend auto&& get(Brief const&);
 	template <std::size_t I> friend auto&& get(Brief&&);
+	Brief& clear();
 
 	// Comparison
 	bool operator== (Brief const&) const = default;

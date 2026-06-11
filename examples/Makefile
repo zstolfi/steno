@@ -1,15 +1,14 @@
 # ~~~~ Compilers & Options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 CXX         = clang++
-CXXFLAGS    = -std=c++20 -O1 -Wall -ferror-limit=10
 LDFLAGS     = 
+CXXFLAGS    = -std=c++20 -O0 -g -Wall -ferror-limit=24
 
 # ~~~~ Directories ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 STENO       = ..
-BOOST       = $(STENO)/.include/boost
 GTEST       = $(STENO)/.include/googletest/googletest
 
 # ~~~~ Flags ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-CXXFLAGS   += -I$(STENO) -I$(BOOST)/parser/include
+CXXFLAGS   += -I$(STENO)
 CXXFLAGS   += -isystem $(GTEST)/include
 
 # ~~~~ Rules ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
@@ -25,7 +24,7 @@ validate : validate.o steno.o
 
 reverse_translate : steno.o steno_parsers.o
 
-steno_parsers.o : $(STENO)/steno_parsers.cc
+steno_parsers.o : $(STENO)/steno_parsers.cc $(STENO)/steno_parsers.hh Makefile
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 number_builder : number_builder.o steno.o
@@ -70,4 +69,6 @@ test.o : test.cc $(STENO)/steno.cc $(STENO)/steno.hh $(GTEST_INC)
 
 # ~~~~ Commands ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 clean :
-	rm -f *.o *.a test example validate number_builder
+	rm -f *.o *.a test example validate reverse_translate \
+number_builder polyhedra \
+numbers/numbers_advanced
