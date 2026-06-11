@@ -13,7 +13,7 @@ enum FileType {
 	Plain, JSON, RTF,
 };
 
-// TODO: Maybe make FileType a template parameter.
+// TODO: Make FileType a template parameter.
 class EntryIterator {
 	ParserInput* input {};
 	FileType type {};

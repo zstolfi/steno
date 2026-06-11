@@ -3,17 +3,18 @@
 #include <sstream>
 
 namespace /*anonymous*/ {
-	bool isWhitespace(char c) {
-		return c == ' ' || c == '\t' || c == '\n' || c == '\r';
-	}
+
+bool isWhitespace(char c) {
+	return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+}
+
 } // namespace /*anonymous*/
 
 namespace steno {
 
 void EntryIterator::next() {
-	bool got = false;
-	do {
-		if (type == Plain) {
+	if (type == Plain) {
+		do {
 			std::string line {};
 			std::getline(*input, line);
 			if (std::all_of(line.begin(), line.end(), isWhitespace)) continue;
@@ -23,17 +24,34 @@ void EntryIterator::next() {
 				Phrase {line.substr(0, split)},
 				line.substr(split+1),
 			};
-			got = true;
-		}
-		else if (type == JSON) {
-			fail(/* TODO */);
-		}
-		else if (type == RTF) {
-			fail(/* TODO */);
-		} else {
-			fail();
-		}
-	} while (!over() && !got);
+		} while (!over() && current.failed());
+	}
+	// TODO: Listen for escape characters.
+	else if (type == JSON) {
+		do {
+			std::string stringL {}, stringR {};
+			enum { Form, StrL, Colon, StrR, Accept } state {Form};
+			for (char c; input->get(c); /**/) {
+				/**/ if (state != StrL && state != StrR && isWhitespace(c)) ;
+				else if (state == Form && c == '"') state = StrL;
+				else if (state == StrL && c == '"') state = Colon;
+				else if (state == StrL) stringL += c;
+				else if (state == Colon && c == '"') state = StrR;
+				else if (state == Colon && c != ':') break;
+				else if (state == StrR && c == '"') state = Accept;
+				else if (state == StrR) stringR += c;
+				else if (state == Accept) {
+					current = Brief {Phrase {stringL}, stringR};
+					break;
+				}
+			}
+		} while (!over() && current.failed());
+	}
+	else if (type == RTF) {
+		fail(/* TODO */);
+	} else {
+		fail();
+	}
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
