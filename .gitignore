@@ -11,6 +11,7 @@
 examples/test
 examples/example
 examples/validate
+examples/dictionary_open
 examples/reverse_translate
 examples/number_builder
 examples/polyhedra

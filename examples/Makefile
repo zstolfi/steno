@@ -12,8 +12,8 @@ CXXFLAGS   += -I$(STENO)
 CXXFLAGS   += -isystem $(GTEST)/include
 
 # ~~~~ Rules ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-all : test example validate reverse_translate \
-number_builder polyhedra \
+all : test example validate dictionary_open \
+reverse_translate number_builder polyhedra \
 numbers/numbers_advanced
 
 example : example.o steno.o
@@ -23,6 +23,8 @@ validate : validate.o steno.o
 	$(CXX) $(LDFLAGS) $^ -o $@
 
 reverse_translate : steno.o steno_parsers.o
+
+dictionary_open : steno.o steno_parsers.o
 
 steno_parsers.o : $(STENO)/steno_parsers.cc $(STENO)/steno_parsers.hh Makefile
 	$(CXX) $(CXXFLAGS) -c $< -o $@
@@ -69,6 +71,6 @@ test.o : test.cc $(STENO)/steno.cc $(STENO)/steno.hh $(GTEST_INC)
 
 # ~~~~ Commands ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 clean :
-	rm -f *.o *.a test example validate reverse_translate \
-number_builder polyhedra \
+	rm -f *.o *.a test example validate dictionary_open \
+reverse_translate number_builder polyhedra \
 numbers/numbers_advanced
