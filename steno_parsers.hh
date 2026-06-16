@@ -56,6 +56,8 @@ private:
 		assert(ft != NoFileType);
 		return ft;
 	}
+
+	std::string parseStringJSON();
 };
 
 static_assert(std::forward_iterator<EntryIterator>);

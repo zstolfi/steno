@@ -26,25 +26,29 @@ void EntryIterator::next() {
 			};
 		} while (!over() && current.failed());
 	}
-	// TODO: Listen for escape characters.
 	else if (type == JSON) {
 		do {
 			std::string stringL {}, stringR {};
-			enum { Form, StrL, Colon, StrR, Accept } state {Form};
-			for (char c; input->get(c); /**/) {
-				/**/ if (state != StrL && state != StrR && isWhitespace(c)) ;
-				else if (state == Form && c == '"') state = StrL;
-				else if (state == StrL && c == '"') state = Colon;
-				else if (state == StrL) stringL += c;
-				else if (state == Colon && c == '"') state = StrR;
-				else if (state == Colon && c != ':') break;
-				else if (state == StrR && c == '"') state = Accept;
-				else if (state == StrR) stringR += c;
-				else if (state == Accept) {
-					current = Brief {Phrase {stringL}, stringR};
-					break;
+			enum { StrL, Colon, StrR, Accept } state {StrL};
+			while (!over() && state != Accept) {
+				if (state == StrL) {
+					while (*input && input->peek() != '"') input->get();
+					stringL = parseStringJSON();
+					state = Colon;
+				}
+				else if (state == Colon) {
+					for (char c; input->get(c); /**/) {
+						if (isWhitespace(c)) /**/;
+						else if (c == ':') { state = StrR; break; }
+						else fail();
+					}
+				}
+				else if (state == StrR) {
+					stringR = parseStringJSON();
+					state = Accept;
 				}
 			}
+			current = Brief {Phrase {stringL}, stringR};
 		} while (!over() && current.failed());
 	}
 	else if (type == RTF) {
@@ -52,6 +56,32 @@ void EntryIterator::next() {
 	} else {
 		fail();
 	}
+}
+
+std::string EntryIterator::parseStringJSON() {
+	char c {}; std::string result {};
+	while (input->get(c) && isWhitespace(c)) /**/;
+	if (c != '"') return {};
+	while (input->get(c)) {
+		if (c == '\\') {
+			if (!*input) fail();
+			char c = input->get();
+			/**/ if (c == 'b') result += '\b';
+			else if (c == 'f') result += '\f';
+			else if (c == 'n') result += '\n';
+			else if (c == 'r') result += '\r';
+			else if (c == 't') result += '\t';
+			else if (c == 'u') {
+				/* TODO: UTF-8 encoding */
+				std::string hex {};
+				for (int i=0; i<4; i++) hex += input->get();
+			}
+			else result += c;
+		}
+		else if (c == '"') break;
+		else result += c;
+	}
+	return result;
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
