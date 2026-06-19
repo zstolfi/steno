@@ -6,7 +6,6 @@
 namespace steno {
 
 using ParserInput = std::istream;
-using ParserDictionaryFn = std::optional<Dictionary> (ParserInput&);
 
 enum FileType {
 	NoFileType,

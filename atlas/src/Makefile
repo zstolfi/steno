@@ -6,12 +6,10 @@ CXXFLAGS    = -std=c++20 -Wall -O3 -ferror-limit=20
 LDFLAGS     = --shell-file shell.html -sMAX_WEBGL_VERSION=2 -sASYNCIFY
 FUNCTIONS   = _setDragOver,_showDebug
 METHODS     = FS
-BOOST_LIBS  = parser
 
 # ~~~~ Directories ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 STENO       = ../..
 IMGUI       = $(STENO)/.include/imgui
-BOOST       = $(STENO)/.include/boost
 STB         = $(STENO)/.include/stb
 ASSETS      = assets
 WWW         = ..
@@ -32,7 +30,6 @@ comma = ,
 
 # ~~~~ Flags ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 CXXFLAGS   += -I$(IMGUI) -I$(IMGUI)/backends -I$(STENO) -I$(STB)
-CXXFLAGS   += $(BOOST_LIBS:%=-I$(BOOST)/%/include)
 LDFLAGS    +=  -sALLOW_MEMORY_GROWTH=1
 LDFLAGS    += -sEXPORTED_FUNCTIONS=_main,_malloc,_free$(if $(FUNCTIONS),$(comma)$(FUNCTIONS))
 LDFLAGS    += -sEXPORTED_RUNTIME_METHODS=ccall,cwrap$(if $(METHODS),$(comma)$(METHODS))

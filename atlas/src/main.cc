@@ -11,40 +11,33 @@
 
 #pragma clang diagnostic push
 struct Dictionary {
-#	pragma clang diagnostic ignored "-Wc99-designator"
-	using ParserFn = steno::ParserDictionaryFn;
 	using TextureFn = ImTextureID (std::span<uint8_t const>, int W, int H);
 	using TextureFn_Arg = std::function<TextureFn>;
 	std::string name;
 	steno::Dictionary entries;
 	Atlas atlas;
 
-	enum Type { Unknown, Text, JSON, RTF };
-	Dictionary(std::istream& input, std::string name, Type type)
+	Dictionary(std::istream& input, std::string name, steno::FileType type)
 	: name{name} {
-		std::istreambuf_iterator<char> begin {input}, end {};
-		std::vector<char> bytes {begin, end};
-		auto tryParser = std::bind_front(&Dictionary::tryParser, this, bytes);
-		auto parse = (ParserFn* []) {
-			[Text] = steno::parsePlain,
-			[JSON] = steno::parseJSON,
-			[RTF]  = steno::parseRTF,
-		} [type];
-		/**/ if (!parse && tryParser(steno::parseGuess));
-		else if (!parse) { std::printf("Unkown filetype for %s\n", name.c_str()); return; }
-		else if (tryParser(parse) || tryParser(steno::parseGuess));
+		if (auto result = steno::parseDictionary(input, type)) {
+			this->entries = *result;
+			std::printf("%zu entries parsed.\n", result->size());
+		}
 		else { std::printf("Parse failed for %s\n", name.c_str()); return; }
+		std::printf("Generating atlas...\n");
 		atlas = Atlas {entries};
+		std::printf("Atlas generated.\n");
 	}
 
 	Dictionary(std::istream& input, std::filesystem::path path) {
-		Type type = Unknown;
+		steno::FileType type = steno::NoFileType;
 		if (std::string extension = path.extension(); !extension.empty()) {
 			for (char& c : extension) c = std::tolower(c);
-			/**/ if (extension == ".txt" ) type = Text;
-			else if (extension == ".json") type = JSON;
-			else if (extension == ".rtf" ) type = RTF ;
+			/**/ if (extension == ".txt" ) type = steno::Plain;
+			else if (extension == ".json") type = steno::JSON;
+			else if (extension == ".rtf" ) type = steno::RTF;
 		}
+		std::printf("Parsing %s...\n", path.c_str());
 		*this = Dictionary(input, path.filename(), type);
 	}
 
@@ -58,15 +51,7 @@ struct Dictionary {
 		);
 		JS::offerDownload(imgPath.c_str());
 	}
-
-private:
-	bool tryParser(std::vector<char> const& bytes, ParserFn* parse) {
-		auto result = parse(bytes);
-		if (result) this->entries = *result;
-		return (bool)result;
-	}
 };
-#pragma clang diagnostic pop
 
 struct State {
 	// Window state

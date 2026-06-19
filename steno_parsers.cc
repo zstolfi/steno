@@ -41,7 +41,7 @@ void EntryIterator::next() {
 					for (char c; input->get(c); /**/) {
 						if (isWhitespace(c)) /**/;
 						else if (c == ':') { state = StrR; break; }
-						else fail();
+						else { fail(); return; }
 					}
 				}
 				else if (state == StrR) {
@@ -81,7 +81,7 @@ void EntryIterator::next() {
 			}
 			auto ending = line.size() - (over()? 0: primer.size());
 			auto split = line.find('}');
-			if (split == line.npos) fail();
+			if (split == line.npos) { fail(); return; }
 			current = Brief {
 				Phrase {line.substr(0, split)},
 				line.substr(split+1, ending - (split+1)),
@@ -99,7 +99,7 @@ std::string EntryIterator::parseStringJSON() {
 	if (c != '"') return {};
 	while (input->get(c)) {
 		if (c == '\\') {
-			if (!*input) fail();
+			if (!*input) { fail(); return {}; }
 			char c = input->get();
 			/**/ if (c == 'b') result += '\b';
 			else if (c == 'f') result += '\f';

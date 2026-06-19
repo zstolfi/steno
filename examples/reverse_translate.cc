@@ -90,9 +90,7 @@ int main(int argc, char const* argv[]) {
 	steno::Dictionary forwardDictionary {};
 	for (std::string path : args) {
 		if (std::ifstream file {path}) {
-			std::istreambuf_iterator<char> begin {file}, end {};
-			std::vector<char> bytes {begin, end};
-			if (auto result = steno::parseGuess(bytes)) {
+			if (auto result = steno::parseDictionary(file)) {
 				for (auto const& entry : *result) {
 					forwardDictionary.insert(entry);
 				}
