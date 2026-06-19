@@ -316,7 +316,7 @@ public:
 	Dictionary& operator=(Dictionary&&     ) = default;
 
 	// Class constructors
-	// see steno_parsers.hh
+	// Use parseDictionary() for file type support.
 	Dictionary(std::span<Brief const>);
 
 	// Fail-state query
@@ -407,10 +407,10 @@ enum class Format : long {
 	// Width                XX
 	Packed        = 0b00'00'01,
 	Wide          = 0b00'00'10,
-	// Hypen             XX   
+	// Hypen             XX
 	Hyphen        = 0b00'01'00,
 	NoHyphen      = 0b00'10'00,
-	// Digit          XX      
+	// Digit          XX
 	Numeric       = 0b01'00'00,
 	Alpha         = 0b10'00'00,
 
@@ -438,29 +438,6 @@ std::ostream& operator<<(std::ostream&, Format);
 
 /* ~~ Constexpr Declarations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-constexpr Stroke::Stroke(Key k) {
-	this->m_bits = (uint32_t)k;
-}
-
-constexpr Stroke::Stroke(FromBits_Arg, std::bitset<23> const b) {
-	for (unsigned i=0; i<b.size(); i++) if (b[i]) {
-		this->m_bits |= 1 << (i + Stroke::PadCount);
-	}
-}
-
-constexpr Stroke::Stroke(FromBitsReversed_Arg, std::bitset<23> const b) {
-	for (unsigned i=0; i<b.size(); i++) if (b[22-i]) {
-		this->m_bits |= 1 << (i + Stroke::PadCount);
-	}
-}
-
-template <std::input_iterator I>
-constexpr Stroke::Stroke(I first, I last) {
-	for (auto key=first; key!=last; ++key) {
-		this->m_bits |= (uint32_t)*key;
-	}
-}
-
 constexpr Stroke::Stroke(std::string_view str) {
 	enum State {
 //		Mk, /*!*/
@@ -486,14 +463,14 @@ constexpr Stroke::Stroke(std::string_view str) {
 	// Advancing in the X direction <=> finding next valid input.
 	// Advancing in the Y direction <=> advancing in the switch statement.
 
-	// S_:    STKPWHRAO*EU-                     █TKPWHRAO*EU-         
-	// T_:     TKPWHRAO*EU-                     █──█WHRAO*EU-         
-	// K_:      KPWHRAO*EU-                       K│WHRAO*EU-         
-	// P_:       PWHRAO*EU-                        │WHRAO*EU-         
-	// W_:        WHRAO*EU-                        █──█AO*EU-         
-	// H_:         HRAO*EU-                          H│AO*EU-         
-	// R_:          RAO*EU-                           │AO*EU-         
-	// A :           AO*EU-                           █─█*EU-         
+	// S_:    STKPWHRAO*EU-                     █TKPWHRAO*EU-
+	// T_:     TKPWHRAO*EU-                     █──█WHRAO*EU-
+	// K_:      KPWHRAO*EU-                       K│WHRAO*EU-
+	// P_:       PWHRAO*EU-                        │WHRAO*EU-
+	// W_:        WHRAO*EU-                        █──█AO*EU-
+	// H_:         HRAO*EU-                          H│AO*EU-
+	// R_:          RAO*EU-                           │AO*EU-
+	// A :           AO*EU-                           █─█*EU-
 	// O :            O*EUFRPBLGTSDZ                    │*EUFRPBLGTSDZ
 	// x :             *EUFRPBLGTSDZ                    █──█FRPBLGTSDZ
 	// E :              EUFRPBLGTSDZ                      E│FRPBLGTSDZ
@@ -555,6 +532,29 @@ constexpr Stroke::Stroke(std::string_view str) {
 		if (!valid) break;
 	}
 	if (!valid) failConstruction(str);
+}
+
+constexpr Stroke::Stroke(Key k) {
+	this->m_bits = (uint32_t)k;
+}
+
+constexpr Stroke::Stroke(FromBits_Arg, std::bitset<23> const b) {
+	for (unsigned i=0; i<b.size(); i++) if (b[i]) {
+		this->m_bits |= 1 << (i + Stroke::PadCount);
+	}
+}
+
+constexpr Stroke::Stroke(FromBitsReversed_Arg, std::bitset<23> const b) {
+	for (unsigned i=0; i<b.size(); i++) if (b[22-i]) {
+		this->m_bits |= 1 << (i + Stroke::PadCount);
+	}
+}
+
+template <std::input_iterator I>
+constexpr Stroke::Stroke(I first, I last) {
+	for (auto key=first; key!=last; ++key) {
+		this->m_bits |= (uint32_t)*key;
+	}
 }
 
 static constexpr auto NoStroke = Stroke {};

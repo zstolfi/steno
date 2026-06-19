@@ -127,13 +127,12 @@ std::optional<Dictionary> parseDictionary(ParserInput& input, FileType type) {
 	if (type != NoFileType) {
 		EntryIterator begin {input, type}, end {};
 		if (begin == end) return {};
-		// TODO: Proper range constructors for steno types.
-		return Dictionary {std::vector<Brief> {begin, end}};
+		return Dictionary {begin, end};
 	}
 	// In order to guess the file type we lose the luxury of being able to
 	// iterate our data as it comes in. There's probably an advanced solution
 	// which uses the first 100 or so bytes to determine the winning file type
-	// and process the (potentially ginormous) rest of the file that way.
+	// and processes the (potentially ginormous) rest of the file that way.
 	else {
 		std::istreambuf_iterator<char> begin {input}, end {};
 		std::string entireFile {begin, end};

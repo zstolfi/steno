@@ -35,7 +35,7 @@ auto hilbert_inv(std::array<unsigned, 2> pos) -> unsigned {
 
 	// Definition of the first iteration of the Hilbert curve.
 	//     curve: [3]──[2]    curve^T: [1]──[2]
-	//                  │               │    │ 
+	//                  │               │    │
 	//            [0]──[1]             [0]  [3]
 	static constexpr int curve [2][2] = {{0, 1}, {3, 2}};
 	static constexpr int curveT[2][2] = {{0, 3}, {1, 2}};
@@ -152,7 +152,7 @@ class Atlas {
 					to = std::min(0xFF, to + (darken? from/4: from));
 				};
 				for (unsigned y=0; y<n; y++)
-				for (unsigned x=0; x<n; x++) {				
+				for (unsigned x=0; x<n; x++) {
 					auto const i = (n/2) * (y/2) + (x/2);
 					auto const j = ( n ) * ( y ) + ( x );
 					addToPixel(smaller[4*i+0], bigger[4*j+0]);

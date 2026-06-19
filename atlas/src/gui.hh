@@ -113,7 +113,7 @@
 //					ImGui::EndTable();
 //				}
 				{ // Instructions
-					auto const instructions = 
+					auto const instructions =
 						"Left Click: \tPan\n"
 						"Right Click:\tDisplay stroke\n"
 						"Scroll:     \tZoom\n"

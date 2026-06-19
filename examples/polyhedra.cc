@@ -42,7 +42,7 @@ int main() {
 	// https://www.youtube.com/watch?v=n7rqeRkqsU4
 	dict[steno::Phrase {"TKAOEPBLGT"}] = "degenerate"; // adjective
 	dict[steno::Phrase {"HOS"} | _hedron] = "hosohedron";
-	
+
 	auto inflections = steno::Dictionary {};
 	// -HEDRON words
 	for (auto const& entry : dict) if (entry.phrase().back() == _hedron) {
@@ -96,7 +96,7 @@ int main() {
 		dict[steno::Phrase {"SPAPBTD"}] = "expanded";
 		dict[steno::Phrase {"SPAPBGD"}] = "expanding";
 		dict[steno::Phrase {"SPAPBDZ"}] = "expands";
-	
+
 		// Noun entries
 		dict[steno::Stroke {"TRUPBGSZ"}] = "truncations";
 		dict[steno::Phrase {"RAUPLSZ"}] = "rhombuses";
@@ -135,6 +135,6 @@ int main() {
 	dict.merge(std::move(inflections));
 
 	for (auto const& entry : dict) {
-		std::cout << steno::Alpha << entry << "\n";	
+		std::cout << steno::Alpha << entry << "\n";
 	}
 }

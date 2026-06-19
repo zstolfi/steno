@@ -131,6 +131,9 @@ TEST(StenoStroke, BadInputString) {
 	EXPECT_FALSE(steno::Stroke {"RR"});
 	EXPECT_FALSE(steno::Stroke {"1TSDZ"});
 	EXPECT_FALSE(steno::Stroke {"#1TSDZ"});
+	// Lowercase letters are not allowed.
+	EXPECT_FALSE(steno::Stroke {"Tkpwaeut"});
+	EXPECT_FALSE(steno::Stroke {"rbgsz"});
 	// TODO
 }
 
@@ -164,7 +167,7 @@ TEST(StenoStroke, KeyAccessGet) {
 	|	stroke.get(_T) <<  3    |    stroke.get(_S) <<  2
 	|	stroke.get(_D) <<  1    |    stroke.get(_Z) <<  0,
 	//#STKPWHRAO*EUFRPBLGTSDZ
-	// S  P  R O  U      TS  
+	// S  P  R O  U      TS
 	0b01001001010010000001100);
 }
 
@@ -186,7 +189,7 @@ TEST(StenoStroke, KeyAccessBitAnd) {
 	|	(stroke & _T) <<  3    |    (stroke & _S) <<  2
 	|	(stroke & _D) <<  1    |    (stroke & _Z) <<  0,
 	//#STKPWHRAO*EUFRPBLGTSDZ
-	// S  P  R O  U      TS  
+	// S  P  R O  U      TS
 	0b01001001010010000001100);
 }
 
@@ -208,7 +211,7 @@ TEST(StenoStroke, KeyAccessSubscript) {
 	|	stroke[_T] <<  3    |    stroke[_S] <<  2
 	|	stroke[_D] <<  1    |    stroke[_Z] <<  0,
 	//#STKPWHRAO*EUFRPBLGTSDZ
-	// S  P  R O  U      TS  
+	// S  P  R O  U      TS
 	0b01001001010010000001100);
 }
 
@@ -650,12 +653,12 @@ TEST(StenoBrief, Getters) {
 	steno::Brief const ab {{"A/-B"}, "\tayy bee\t"};
 	EXPECT_TRUE(ab.phrase()[0][A]);
 	EXPECT_TRUE(ab.phrase()[1][_B]);
-	EXPECT_NE(ab.text(), "ayy bee");
+	EXPECT_EQ(ab.text(), "ayy bee");
 }
 
 TEST(StenoBrief, StructuredBinding) {
 	steno::Brief brief {{"AP/EL"}, "apple"};
-	  [[maybe_unused]] auto        [strokes, text] = brief;  
+	  [[maybe_unused]] auto        [strokes, text] = brief;
 	{ [[maybe_unused]] auto      & [strokes, text] = brief; }
 	{ [[maybe_unused]] auto const  [strokes, text] = brief; }
 	{ [[maybe_unused]] auto const& [strokes, text] = brief; }
@@ -677,7 +680,7 @@ TEST(StenoDictionary, Insertion) {
 	steno::Brief const Entries[] = {
 		{{"EPB/TREU/WUPB"}, "entry 1"},
 		{{"EPB/TREU/TWO"} , "entry 2"},
-	}; 
+	};
 	steno::Dictionary dict {};
 	EXPECT_EQ(dict.begin(), dict.end());
 

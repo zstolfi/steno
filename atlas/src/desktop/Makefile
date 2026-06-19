@@ -19,7 +19,7 @@ OBJECTS     = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
 
 # ~~~~ Flags ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 CXXFLAGS   += -I$(IMGUI) -I$(IMGUI)/backends
-LDFLAGS    += 
+LDFLAGS    +=
 
 # ~~~~ Rules ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 all : $(TARGET)

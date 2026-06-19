@@ -1,6 +1,6 @@
 # ~~~~ Compilers & Options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 CXX         = clang++
-LDFLAGS     = 
+LDFLAGS     =
 CXXFLAGS    = -std=c++20 -O0 -g -Wall -ferror-limit=24
 
 # ~~~~ Directories ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
