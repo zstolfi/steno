@@ -72,6 +72,7 @@ public:
 	constexpr Stroke(std::string_view);
 	constexpr Stroke(FromBits_Arg, std::bitset<23> const);
 	constexpr Stroke(FromBitsReversed_Arg, std::bitset<23> const);
+	template <std::input_iterator I> constexpr Stroke(I, I);
 
 	// Fail-state query
 	bool failed() const;
@@ -450,6 +451,13 @@ constexpr Stroke::Stroke(FromBits_Arg, std::bitset<23> const b) {
 constexpr Stroke::Stroke(FromBitsReversed_Arg, std::bitset<23> const b) {
 	for (unsigned i=0; i<b.size(); i++) if (b[22-i]) {
 		this->m_bits |= 1 << (i + Stroke::PadCount);
+	}
+}
+
+template <std::input_iterator I>
+constexpr Stroke::Stroke(I first, I last) {
+	for (auto key=first; key!=last; ++key) {
+		this->m_bits |= (uint32_t)*key;
 	}
 }
 
