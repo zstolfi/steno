@@ -14,12 +14,13 @@ namespace steno {
 
 void EntryIterator::next() {
 	if (type == Plain) {
-		do {
+		if (!*input) finish();
+		else do {
 			std::string line {};
 			std::getline(*input, line);
 			if (std::all_of(line.begin(), line.end(), isWhitespace)) continue;
 			auto split = line.find('=');
-			if (split == line.npos) fail();
+			if (split == line.npos) { fail(); return; }
 			current = Brief {
 				Phrase {line.substr(0, split)},
 				line.substr(split+1),
@@ -30,7 +31,7 @@ void EntryIterator::next() {
 		do {
 			std::string stringL {}, stringR {};
 			enum { StrL, Colon, StrR, Accept } state {StrL};
-			while (!over() && state != Accept) {
+			while (*input && state != Accept) {
 				if (state == StrL) {
 					while (*input && input->peek() != '"') input->get();
 					stringL = parseStringJSON();
@@ -49,10 +50,44 @@ void EntryIterator::next() {
 				}
 			}
 			current = Brief {Phrase {stringL}, stringR};
+			if (input->eof()) finish();
 		} while (!over() && current.failed());
 	}
 	else if (type == RTF) {
-		fail(/* TODO */);
+		static constexpr std::string_view primer {R"({\*\cxs )"};
+		if (rtfState == rtfHeader) {
+			unsigned count {0};
+			for (char c; input->get(c); /**/) {
+				if (count < primer.size()) {
+					if (c == primer[count]) count++;
+					else count = 0;
+				}
+				if (count == primer.size()) break;
+			}
+		}
+		rtfState = rtfBody;
+
+		if (rtfState == rtfFinal) finish();
+		else do {
+			std::string line {};
+			unsigned count {0};
+			for (char c; input->get(c); /**/) {
+				line += c;
+				if (count < primer.size()) {
+					if (c == primer[count]) count++;
+					else count = 0;
+				}
+				if (count == primer.size()) break;
+			}
+			auto ending = line.size() - (over()? 0: primer.size());
+			auto split = line.find('}');
+			if (split == line.npos) fail();
+			current = Brief {
+				Phrase {line.substr(0, split)},
+				line.substr(split+1, ending - (split+1)),
+			};
+			if (over()) rtfState = rtfFinal;
+		} while (!over() && current.failed());
 	} else {
 		fail();
 	}
@@ -75,6 +110,8 @@ std::string EntryIterator::parseStringJSON() {
 				/* TODO: UTF-8 encoding */
 				std::string hex {};
 				for (int i=0; i<4; i++) hex += input->get();
+				// For the time being let's not discard any data.
+				result += hex;
 			}
 			else result += c;
 		}

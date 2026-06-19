@@ -13,7 +13,7 @@ enum FileType {
 	Plain, JSON, RTF,
 };
 
-// TODO: Make FileType a template parameter.
+// TODO: Split into derived classes.
 class EntryIterator {
 	ParserInput* input {};
 	FileType type {};
@@ -44,12 +44,17 @@ public:
 	}
 
 private:
-	void fail() {
-		input->setstate(std::ios_base::failbit);
+	void finish() {
+		input = nullptr;
+	}
+
+	void fail(std::string message={}) {
+		if (!message.empty()) std::cerr << message << "\n";
+		input = nullptr;
 	}
 
 	bool over() const {
-		return input == nullptr || input->eof() || input->fail();
+		return input == nullptr;
 	}
 
 	FileType checkType(FileType ft) const {
@@ -58,6 +63,8 @@ private:
 	}
 
 	std::string parseStringJSON();
+
+	enum { rtfHeader, rtfBody, rtfFinal } rtfState {rtfHeader};
 };
 
 static_assert(std::forward_iterator<EntryIterator>);
