@@ -6,8 +6,7 @@ namespace steno {
 
 template <>
 void EntryIterator<Plain>::next() {
-	if (!*input) finish();
-	else do {
+	do {
 		std::string line {};
 		std::getline(*input, line);
 		if (std::all_of(line.begin(), line.end(), isWhitespace)) continue;
@@ -18,6 +17,7 @@ void EntryIterator<Plain>::next() {
 			line.substr(split+1),
 		};
 	} while (!over() && current.failed());
+	if (input->eof()) finish();
 }
 
 template <>

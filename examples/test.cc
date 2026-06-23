@@ -894,4 +894,26 @@ TEST(StenoDictionary, AssociativeExpressions) {
 #include "steno_parsers.hh"
 #include <fstream>
 
+TEST(StenoParseDictionary, EmptyInput) {
+	std::istringstream iss {};
+	{
+		steno::EntryIterator<steno::Plain> begin {iss}, end {};
+		EXPECT_EQ(begin, end);
+//		EXPECT_FALSE(begin.error);
+	} {
+		steno::EntryIterator<steno::Json> begin {iss}, end {};
+		EXPECT_EQ(begin, end);
+//		EXPECT_TRUE(begin.error);
+	} {
+		steno::EntryIterator<steno::Rtf> begin {iss}, end {};
+		EXPECT_EQ(begin, end);
+//		EXPECT_TRUE(begin.error);
+	}
+
+}
+
 TEST(StenoParseDictionary, Plain) {/* TODO */}
+
+TEST(StenoParseDictionary, Json) {/* TODO */}
+
+TEST(StenoParseDictionary, Rtf) {/* TODO */}
