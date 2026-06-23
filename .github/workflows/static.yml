@@ -47,7 +47,12 @@ jobs:
           version: ${{ env.EM_VERSION }}
           actions-cache-folder: ${{ env.EM_CACHE_FOLDER }}
 
-      # Build steps go here
+      # Build steps
+      - name: Test API
+        run: |
+          make -C examples test
+          ./examples/test
+
       - name: Build application
         run: make -C atlas/src
 

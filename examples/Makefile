@@ -63,7 +63,7 @@ gtest.a : gtest-all.o
 gtest_main.a : gtest-all.o gtest_main.o
 	$(AR) $(ARFLAGS) $@ $^
 
-test : test.o steno.o gtest_main.a
+test : test.o steno.o steno_parsers.o gtest_main.a
 	$(CXX) $(LDFLAGS) $^ -o $@
 
 test.o : test.cc $(STENO)/steno.cc $(STENO)/steno.hh $(GTEST_INC)

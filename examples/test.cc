@@ -673,7 +673,7 @@ TEST(StenoBrief, ToString) {
 	EXPECT_EQ(steno::toString(brief), "3/#/14/15, 3.1415");
 }
 
-/* ~~ Brief Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ Dictionary Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 // Modeled after https://en.cppreference.com/w/cpp/named_req/AssociativeContainer
 
 TEST(StenoDictionary, Insertion) {
@@ -887,4 +887,19 @@ TEST(StenoDictionary, AssociativeExpressions) {
 	EXPECT_EXPRESSION(b.at(b.begin()->phrase()), X::mapped_type const&);
 	EXPECT_THROW(std::ignore = a.at(steno::NoStroke), std::out_of_range);
 	EXPECT_THROW(std::ignore = b.at(steno::NoStroke), std::out_of_range);
+}
+
+/* ~~ Dictionary Parser Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+#include "steno_parsers.hh"
+#include <fstream>
+
+TEST(StenoParseDictionary, Plain) {
+	std::ifstream file {"./examples/test-dictionaries/states.txt"};
+	EXPECT_TRUE(file);
+	auto result = steno::parseDictionary(file, steno::Plain);
+	EXPECT_TRUE(result);
+	EXPECT_EQ(result->size(), 50);
+
+	// TODO
 }
