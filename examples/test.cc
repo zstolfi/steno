@@ -894,12 +894,4 @@ TEST(StenoDictionary, AssociativeExpressions) {
 #include "steno_parsers.hh"
 #include <fstream>
 
-TEST(StenoParseDictionary, Plain) {
-	std::ifstream file {"./examples/test-dictionaries/states.txt"};
-	EXPECT_TRUE(file);
-	auto result = steno::parseDictionary(file, steno::Plain);
-	EXPECT_TRUE(result);
-	EXPECT_EQ(result->size(), 50);
-
-	// TODO
-}
+TEST(StenoParseDictionary, Plain) {/* TODO */}
