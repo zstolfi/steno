@@ -4,6 +4,8 @@
 
 namespace steno {
 
+/* ~~ Plain-Text Dictionary Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
 template <>
 void EntryIterator<Plain>::next() {
 	do {
@@ -19,6 +21,8 @@ void EntryIterator<Plain>::next() {
 	} while (!over() && current.failure());
 	if (input->eof()) finish();
 }
+
+/* ~~ JSON Dictionary Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 template <>
 void EntryIterator<Json>::next() {
@@ -50,6 +54,14 @@ void EntryIterator<Json>::next() {
 		return result;
 	};
 
+	if (state.value == JsonState::FirstChar) {
+		// Make sure the first token is '[' or '{', otherwise the file is not
+		// JSON or not interesting.
+		while (*input && isWhitespace(input->peek())) input->get();
+		if (!input) fail();
+		if (input->peek() != '[' && input->peek() != '{') { fail(); return; };
+		state.value = JsonState::Body;
+	}
 	do {
 		std::string stringL {}, stringR {};
 		enum { StrL, Colon, StrR, Accept } state {StrL};
@@ -76,10 +88,21 @@ void EntryIterator<Json>::next() {
 	} while (!over() && current.failure());
 }
 
+/* ~~ RTF/CRE Dictionary Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
 template <>
 void EntryIterator<Rtf>::next() {
+	static constexpr std::string_view magic {R"({\rtf1)"};
 	static constexpr std::string_view primer {R"({\*\cxs )"};
 	if (state.value == RtfState::Header) {
+		static_assert(magic.size() != 0);
+		std::string front {};
+		for (char c; input->get(c); /**/) {
+			front += c;
+			if (front.size() == magic.size()) break;
+		}
+		if (front != magic) { fail(); return; }
+
 		unsigned count {0};
 		for (char c; input->get(c); /**/) {
 			if (count < primer.size()) {
