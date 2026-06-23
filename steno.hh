@@ -75,7 +75,7 @@ public:
 	template <std::input_iterator I> constexpr Stroke(I, I);
 
 	// Fail-state query
-	bool failed() const;
+	bool failure() const;
 	operator bool() const;
 
 	// Getters and Setters
@@ -172,7 +172,7 @@ public:
 	Phrase(std::span<Stroke const>);
 
 	// Fail-state query
-	bool failed() const;
+	bool failure() const;
 	operator bool() const;
 
 	// Comparison
@@ -262,7 +262,7 @@ public:
 	Brief(Brief const&, std::string_view);
 
 	// Fail-state query
-	bool failed() const;
+	bool failure() const;
 	operator bool() const;
 
 	// Getters and Setters
@@ -320,8 +320,8 @@ public:
 	Dictionary(std::span<Brief const>);
 
 	// Fail-state query
-	bool failed() const;
-	void eraseFailed();
+	bool failure() const;
+	void eraseFailures();
 	void clean();
 
 	// Comparison

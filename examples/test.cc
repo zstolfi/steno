@@ -47,14 +47,14 @@ TEST(StenoStroke, EmptyConstruction) {
 	EXPECT_EQ(steno::Stroke (), steno::NoStroke);
 	EXPECT_EQ(steno::Stroke {}, steno::NoStroke);
 	EXPECT_EQ(steno::Stroke {"-"}, steno::NoStroke);
-	EXPECT_TRUE(steno::Stroke {""}.failed());
-	EXPECT_TRUE(steno::Stroke {" "}.failed());
+	EXPECT_TRUE(steno::Stroke {""}.failure());
+	EXPECT_TRUE(steno::Stroke {" "}.failure());
 }
 
 TEST(StenoStroke, GoodInputString) {
 	// We can't EXPECT_TRUE for the empty stroke, it's treated like 0.
 	EXPECT_FALSE(steno::Stroke {"-"});
-	EXPECT_FALSE(steno::Stroke {"-"}.failed());
+	EXPECT_FALSE(steno::Stroke {"-"}.failure());
 	EXPECT_TRUE(steno::Stroke {"#STKPWHRAO*EUFRPBLGTSDZ"}); // All keys
 	EXPECT_TRUE(steno::Stroke {" STKPWHR  -            "}); // Left
 	EXPECT_TRUE(steno::Stroke {"        AO*EU          "}); // Middle
@@ -385,14 +385,14 @@ TEST(StenoPhrase, EmptyConstruction) {
 	EXPECT_EQ(steno::Phrase (), steno::NoPhrase);
 	EXPECT_EQ(steno::Phrase {}, steno::NoPhrase);
 	EXPECT_EQ(steno::Phrase {"-"}, steno::NoPhrase);
-	EXPECT_TRUE(steno::Phrase {""}.failed());
-	EXPECT_TRUE(steno::Phrase {" "}.failed());
+	EXPECT_TRUE(steno::Phrase {""}.failure());
+	EXPECT_TRUE(steno::Phrase {" "}.failure());
 }
 
 TEST(StenoPhrase, GoodInputString) {
 	// We can't EXPECT_TRUE for the empty phrase, it's treated like 0.
 	EXPECT_FALSE(steno::Phrase {"-"});
-	EXPECT_FALSE(steno::Phrase {"-"}.failed());
+	EXPECT_FALSE(steno::Phrase {"-"}.failure());
 	// TODO
 }
 
@@ -899,15 +899,15 @@ TEST(StenoParseDictionary, EmptyInput) {
 	{
 		steno::EntryIterator<steno::Plain> begin {iss}, end {};
 		EXPECT_EQ(begin, end);
-//		EXPECT_FALSE(begin.error);
+		EXPECT_FALSE(begin.failure());
 	} {
 		steno::EntryIterator<steno::Json> begin {iss}, end {};
 		EXPECT_EQ(begin, end);
-//		EXPECT_TRUE(begin.error);
+		EXPECT_TRUE(begin.failure());
 	} {
 		steno::EntryIterator<steno::Rtf> begin {iss}, end {};
 		EXPECT_EQ(begin, end);
-//		EXPECT_TRUE(begin.error);
+		EXPECT_TRUE(begin.failure());
 	}
 
 }

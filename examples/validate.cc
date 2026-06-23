@@ -5,7 +5,7 @@ int main() {
 	std::cout << "# ''''''' Program Begin ''''''' #\n";
 	for (std::string line; std::getline(std::cin, line);) {
 		const steno::Stroke stroke {line};
-		if (stroke.failed()) std::cout << line << "\tREJECT!\n";
+		if (stroke.failure()) std::cout << line << "\tREJECT!\n";
 		else {
 			std::cout << line << "\tACCEPT!\t";
 			std::cout << "|" << steno::Wide << stroke << "|\t";

@@ -11,12 +11,12 @@ namespace steno {
 /* ~~ Stroke Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 // Fail-state query
-bool Stroke::failed() const {
+bool Stroke::failure() const {
 	return m_bits & FailBit;
 }
 
 Stroke::operator bool() const {
-	return m_bits && !failed();
+	return m_bits && !failure();
 }
 
 // Getters and Setters
@@ -209,15 +209,15 @@ Phrase::Phrase(std::span<Stroke const> span) {
 }
 
 // Fail-state query
-bool Phrase::failed() const {
-	auto hasFailed = [](Stroke s) { return s.failed(); };
+bool Phrase::failure() const {
+	auto hasFailed = [](Stroke s) { return s.failure(); };
 	auto isEmpty = [](Stroke s) { return s == NoStroke; };
 	return ( std::any_of(begin(), end(), hasFailed)           )
 	||     ( !empty() && std::all_of(begin(), end(), isEmpty) );
 }
 
 Phrase::operator bool() const {
-	return !empty() && !failed();
+	return !empty() && !failure();
 }
 
 // Concatenation
@@ -245,7 +245,7 @@ Brief::Brief(Brief const& b, std::string_view s)
 : m_phrase{b.m_phrase}, m_text{s} { normalize(); }
 
 // Fail-state query
-bool Brief::failed() const {
+bool Brief::failure() const {
 	return std::any_of(
 		m_phrase.begin(), m_phrase.end(),
 		[](auto s) { return !s; }
@@ -253,7 +253,7 @@ bool Brief::failed() const {
 }
 
 Brief::operator bool() const {
-	return !m_phrase.empty() && !failed();
+	return !m_phrase.empty() && !failure();
 }
 
 // Getters and Setters
@@ -342,12 +342,12 @@ Dictionary::Dictionary(std::span<Brief const> span) {
 }
 
 // TODO
-//bool Dictionary::failed() const;
-//void Dictionary::eraseFailed();
+//bool Dictionary::failure() const;
+//void Dictionary::eraseFailures();
 
 void Dictionary::clean() {
 	std::erase_if(m_entries, [] (Brief const& b) {
-		return b.failed()
+		return b.failure()
 		||     b.phrase() == NoPhrase
 		||     b.text() == NoText;
 	});

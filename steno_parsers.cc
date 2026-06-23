@@ -16,7 +16,7 @@ void EntryIterator<Plain>::next() {
 			Phrase {line.substr(0, split)},
 			line.substr(split+1),
 		};
-	} while (!over() && current.failed());
+	} while (!over() && current.failure());
 	if (input->eof()) finish();
 }
 
@@ -73,7 +73,7 @@ void EntryIterator<Json>::next() {
 		}
 		current = Brief {Phrase {stringL}, stringR};
 		if (input->eof()) finish();
-	} while (!over() && current.failed());
+	} while (!over() && current.failure());
 }
 
 template <>
@@ -111,7 +111,7 @@ void EntryIterator<Rtf>::next() {
 			line.substr(split+1, ending - (split+1)),
 		};
 		if (over()) state.value = RtfState::Final;
-	} while (!over() && current.failed());
+	} while (!over() && current.failure());
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */

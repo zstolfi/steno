@@ -16,9 +16,10 @@ template <FileType FT>
 class EntryIterator {
 	ParserInput* input {};
 	Brief current {};
+	std::optional<std::string> error {};
 
 	struct PlainState {};
-	struct JsonState {};
+	struct JsonState { enum { FirstChar, Body } value {FirstChar}; };
 	struct RtfState { enum { Header, Body, Final } value {Header}; };
 	using State =
 		std::conditional_t<FT == Plain, PlainState,
@@ -39,6 +40,8 @@ public:
 	EntryIterator(ParserInput& in)
 	:	input{&in} { next(); }
 
+	auto const& failure() const { return error; }
+
 	bool operator==(EntryIterator const& other) const {
 		return this->over() && other.over();
 	}
@@ -57,13 +60,13 @@ private:
 		input = nullptr;
 	}
 
-	void fail(std::string message={}) {
-		if (!message.empty()) std::cerr << message << "\n";
-		input = nullptr;
-	}
-
 	bool over() const {
 		return input == nullptr;
+	}
+
+	void fail(std::string message={}) {
+		error = message;
+		input = nullptr;
 	}
 
 	static constexpr bool isWhitespace(char c) {

@@ -2,7 +2,7 @@
 #include <iostream>
 #include <cassert>
 
-template <class T> bool valid(T t) { return !t.failed(); }
+template <class T> bool valid(T t) { return !t.failure(); }
 
 int main() {
 	std::cout << "# ''''''' Program Begin ''''''' #\n";
