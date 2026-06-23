@@ -9,15 +9,24 @@ using ParserInput = std::istream;
 
 enum FileType {
 	NoFileType,
-	Plain, JSON, RTF,
+	Plain, Json, Rtf,
 };
 
-// TODO: Split into derived classes.
+template <FileType FT>
 class EntryIterator {
 	ParserInput* input {};
-	FileType type {};
 	Brief current {};
 
+	struct PlainState {};
+	struct JsonState {};
+	struct RtfState { enum { Header, Body, Final } value {Header}; };
+	using State =
+		std::conditional_t<FT == Plain, PlainState,
+		std::conditional_t<FT == Json, JsonState,
+		std::conditional_t<FT == Rtf, RtfState,
+	void>>>;
+
+	State state {};
 	void next();
 
 public:
@@ -26,8 +35,9 @@ public:
 
 	EntryIterator()
 	:	input{nullptr} {}
-	EntryIterator(ParserInput& in, FileType ft)
-	:	input{&in}, type{checkType(ft)} { next(); }
+
+	EntryIterator(ParserInput& in)
+	:	input{&in} { next(); }
 
 	bool operator==(EntryIterator const& other) const {
 		return this->over() && other.over();
@@ -56,17 +66,14 @@ private:
 		return input == nullptr;
 	}
 
-	FileType checkType(FileType ft) const {
-		assert(ft != NoFileType);
-		return ft;
+	static constexpr bool isWhitespace(char c) {
+		return c == ' ' || c == '\t' || c == '\n' || c == '\r';
 	}
-
-	std::string parseStringJSON();
-
-	enum { rtfHeader, rtfBody, rtfFinal } rtfState {rtfHeader};
 };
 
-static_assert(std::forward_iterator<EntryIterator>);
+static_assert(std::forward_iterator<EntryIterator<Plain>>);
+static_assert(std::forward_iterator<EntryIterator<Json>>);
+static_assert(std::forward_iterator<EntryIterator<Rtf>>);
 
 std::optional<Dictionary> parseDictionary(ParserInput&, FileType=NoFileType);
 

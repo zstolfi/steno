@@ -34,8 +34,8 @@ struct Dictionary {
 		if (std::string extension = path.extension(); !extension.empty()) {
 			for (char& c : extension) c = std::tolower(c);
 			/**/ if (extension == ".txt" ) type = steno::Plain;
-			else if (extension == ".json") type = steno::JSON;
-			else if (extension == ".rtf" ) type = steno::RTF;
+			else if (extension == ".json") type = steno::Json;
+			else if (extension == ".rtf" ) type = steno::Rtf;
 		}
 		std::printf("Parsing %s...\n", path.c_str());
 		*this = Dictionary(input, path.filename(), type);
