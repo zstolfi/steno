@@ -19,10 +19,19 @@
 
 namespace steno {
 
-/* ~~ API Flags ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ Utilities ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 constexpr struct FromBits_Arg         {} FromBits         {};
 constexpr struct FromBitsReversed_Arg {} FromBitsReversed {};
+
+//template <std::indirectly_readable I>
+template <class I>
+struct Issues : std::vector<I> {
+	operator bool() const { return !this->empty(); }
+};
+
+template <class T>
+class Expected {/* TODO */};
 
 /* ~~ Key ID's ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -45,7 +54,8 @@ enum class Key : uint32_t {
 	_T = 1u<<12, _S = 1u<<11,
 	_D = 1u<<10, _Z = 1u<< 9,
 	// Flags
-//	Mark = 1<<8, OpenLeft = 1<<7, OpenRight = 1<<0,
+//	Mark = 1<<8, OpenLeft = 1<<7, OpenRight = 1<<6,
+//	Fail = 1<<0,
 };
 
 /* ~~ Stroke Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -74,10 +84,6 @@ public:
 	constexpr Stroke(FromBitsReversed_Arg, std::bitset<23> const);
 	template <std::input_iterator I> constexpr Stroke(I, I);
 
-	// Fail-state query
-	bool failure() const;
-	operator bool() const;
-
 	// Getters and Setters
 	class Reference;
 	class Iterator;
@@ -89,7 +95,12 @@ public:
 	bool operator[](Key) const;
 	Stroke& clear();
 
-	// Range-for compatability
+	// Fail-state query
+	Issues<Iterator> issues();
+	Issues<Iterator> issues() const;
+	operator bool() const;
+
+	// Range-for compatibility
 	Iterator begin() const;
 	Iterator end() const;
 
@@ -109,9 +120,9 @@ public:
 	friend Stroke operator&(Stroke, Stroke const&);
 	friend Stroke operator^(Stroke, Stroke const&);
 
-public:
 	// Key proxy class
 	class Reference {
+		friend class Stroke;
 		Stroke* parent;
 		Key key;
 
@@ -124,6 +135,7 @@ public:
 	};
 
 	class Iterator {
+		friend class Stroke;
 		// Matches the bits of this Stroke.
 		// The leading bit => the Key the iterator "points" to.
 		uint32_t m_bits = 0;
@@ -137,15 +149,18 @@ public:
 		Key operator*() const;
 		using difference_type = int;
 		using value_type = Key;
-		using pointer = void;
-		using reference = void;
-		using iterator_category = std::forward_iterator_tag;
 	};
+	// TODO: Figure out why this assert doesn't work. Then modify line 27.
+//	static_assert(std::indirectly_readable<Iterator>);
 
 private:
+	static constexpr auto
+	//            #STKPWHRAO*EUFRPBLGTSDZ !~~      X
+	FailBit   = 0b00000000000000000000000'00000000'1,
+	FlagsMask = 0b00000000000000000000000'11111111'1;
+
 	uint32_t getFlags() const;
 	void setFlags(uint32_t);
-	void failConstruction(std::string_view = "");
 };
 
 // Key promotion
@@ -172,7 +187,8 @@ public:
 	Phrase(std::span<Stroke const>);
 
 	// Fail-state query
-	bool failure() const;
+	Issues<Stroke /* */*> issues();
+	Issues<Stroke const*> issues() const;
 	operator bool() const;
 
 	// Comparison
@@ -261,10 +277,6 @@ public:
 	Brief(Phrase const&, std::string_view);
 	Brief(Brief const&, std::string_view);
 
-	// Fail-state query
-	bool failure() const;
-	operator bool() const;
-
 	// Getters and Setters
 	Phrase&       phrase();
 	Phrase const& phrase() const;
@@ -274,6 +286,12 @@ public:
 	template <std::size_t I> friend auto&& get(Brief const&);
 	template <std::size_t I> friend auto&& get(Brief&&);
 	Brief& clear();
+
+	// Fail-state query
+	// TODO: Figure out how to report text issues.
+	Issues<Stroke /* */*> issues();
+	Issues<Stroke const*> issues() const;
+	operator bool() const;
 
 	// Comparison
 	bool operator== (Brief const&) const = default;
@@ -320,8 +338,8 @@ public:
 	Dictionary(std::span<Brief const>);
 
 	// Fail-state query
-	bool failure() const;
-	void eraseFailures();
+	Issues<Brief /* */*> issues();
+	Issues<Brief const*> issues() const;
 	void clean();
 
 	// Comparison
@@ -531,7 +549,7 @@ constexpr Stroke::Stroke(std::string_view str) {
 		}
 		if (!valid) break;
 	}
-	if (!valid) failConstruction(str);
+	if (!valid) m_bits |= FailBit;
 }
 
 constexpr Stroke::Stroke(Key k) {
@@ -561,6 +579,7 @@ static constexpr auto NoStroke = Stroke {};
 static const/**/ auto NoPhrase = Phrase {};
 static const/**/ auto NoBrief  = Brief  {};
 static const/**/ auto NoText   = Text   {};
+// TODO: NoIssues object which acts like std::nullopt
 
 } // namespace steno
 

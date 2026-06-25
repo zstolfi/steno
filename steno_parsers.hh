@@ -2,6 +2,7 @@
 #include "steno.hh"
 #include <iostream>
 #include <optional>
+#include <memory>
 
 namespace steno {
 
@@ -16,7 +17,10 @@ template <FileType FT>
 class EntryIterator {
 	ParserInput* input {};
 	Brief current {};
-	std::optional<std::string> error {};
+
+	// TODO: Flesh out SourceLocation class.
+	using SourceLocation = std::shared_ptr<std::string>;
+	Issues<SourceLocation> issueLocations {};
 
 	struct PlainState {};
 	struct JsonState { enum { FirstChar, Body } value {FirstChar}; };
@@ -40,7 +44,7 @@ public:
 	EntryIterator(ParserInput& in)
 	:	input{&in} { next(); }
 
-	auto const& failure() const { return error; }
+	Issues<SourceLocation> issues() const { return issueLocations; }
 
 	bool operator==(EntryIterator const& other) const {
 		return this->over() && other.over();
@@ -65,7 +69,7 @@ private:
 	}
 
 	void fail(std::string message={}) {
-		error = message;
+		issueLocations.push_back(std::make_shared<std::string>(message));
 		input = nullptr;
 	}
 

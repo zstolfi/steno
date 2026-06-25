@@ -1,22 +1,39 @@
 #include "steno.hh"
-#include <cassert>
-
-namespace /*detail*/ {
-	constexpr auto FailBit   = 0b00000000000000000000000'000000001;
-	constexpr auto FlagsMask = 0b00000000000000000000000'111111111;
-}
 
 namespace steno {
+
+namespace /*detail*/ {
+
+template <class To, class From>
+Issues<To> issuesCast(Issues<From> const& issues) {
+	Issues<To> result {};
+	for (From f : issues) { result.push_back(const_cast<To>(f)); }
+	return result;
+}
+
+} // namespace /*detail*/
 
 /* ~~ Stroke Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 // Fail-state query
-bool Stroke::failure() const {
-	return m_bits & FailBit;
+Issues<Stroke::Iterator> Stroke::issues() const {
+	if (m_bits & FailBit) {
+		Iterator failOnly {};
+		failOnly.m_bits = FailBit;
+		Issues<Iterator> result {};
+		result.push_back(failOnly);
+		return result;
+	}
+//	else return NoIssue;
+	else return {};
+}
+
+Issues<Stroke::Iterator> Stroke::issues() {
+	return std::as_const(*this).issues();
 }
 
 Stroke::operator bool() const {
-	return m_bits && !failure();
+	return *this != NoStroke && !issues();
 }
 
 // Getters and Setters
@@ -136,13 +153,13 @@ Stroke::Iterator& Stroke::Iterator::operator++() {
 }
 
 Stroke::Iterator Stroke::Iterator::operator++(int) {
-	auto result = *this;
+	auto old = *this;
 	++(*this);
-	return result;
+	return old;
 }
 
 Key Stroke::Iterator::operator*() const {
-	// Invalid if bit == 0
+	assert(m_bits != 0);
 	return Key(std::bit_floor(m_bits));
 }
 
@@ -154,11 +171,6 @@ uint32_t Stroke::getFlags() const {
 void Stroke::setFlags(uint32_t flags) {
 	m_bits &= ~FlagsMask;
 	m_bits |= flags;
-}
-
-void Stroke::failConstruction(std::string_view str) {
-//	if (str != "") std::cout << str << "\n";
-	m_bits |= FailBit;
 }
 
 // Key promotion
@@ -209,15 +221,30 @@ Phrase::Phrase(std::span<Stroke const> span) {
 }
 
 // Fail-state query
-bool Phrase::failure() const {
-	auto hasFailed = [](Stroke s) { return s.failure(); };
-	auto isEmpty = [](Stroke s) { return s == NoStroke; };
-	return ( std::any_of(begin(), end(), hasFailed)           )
-	||     ( !empty() && std::all_of(begin(), end(), isEmpty) );
+Issues<Stroke const*> Phrase::issues() const {
+//	if (empty()) return NoIssues;
+	if (empty()) return {};
+
+	Issues<Stroke const*> result {};
+	for (Stroke const& s : m_strokes) {
+		if (s == NoStroke || s.issues()) result.push_back(&s);
+	}
+	return result;
+}
+
+Issues<Stroke*> Phrase::issues() {
+	return issuesCast<Stroke*>(
+		std::as_const(*this).issues()
+	);
 }
 
 Phrase::operator bool() const {
-	return !empty() && !failure();
+	if (empty()) return false;
+
+	for (Stroke const& s : m_strokes) {
+		if (s == NoStroke || s.issues()) return false;
+	}
+	return true;
 }
 
 // Concatenation
@@ -245,15 +272,17 @@ Brief::Brief(Brief const& b, std::string_view s)
 : m_phrase{b.m_phrase}, m_text{s} { normalize(); }
 
 // Fail-state query
-bool Brief::failure() const {
-	return std::any_of(
-		m_phrase.begin(), m_phrase.end(),
-		[](auto s) { return !s; }
-	);
+Issues<Stroke const*> Brief::issues() const {
+	return m_phrase.issues();
+}
+
+Issues<Stroke*> Brief::issues() {
+	return m_phrase.issues();
 }
 
 Brief::operator bool() const {
-	return !m_phrase.empty() && !failure();
+	if (m_phrase.empty() && m_text.empty()) return false;
+	else return (bool)m_phrase;
 }
 
 // Getters and Setters
@@ -341,13 +370,23 @@ Dictionary::Dictionary(std::span<Brief const> span) {
 	insert(span.begin(), span.end());
 }
 
-// TODO
-//bool Dictionary::failure() const;
-//void Dictionary::eraseFailures();
+Issues<Brief const*> Dictionary::issues() const {
+	Issues<Brief const*> result {};
+	for (Brief const& b : m_entries) {
+		if (b.issues()) result.push_back(&b);
+	}
+	return result;
+}
+
+Issues<Brief*> Dictionary::issues() {
+	return issuesCast<Brief*>(
+		std::as_const(*this).issues()
+	);
+}
 
 void Dictionary::clean() {
 	std::erase_if(m_entries, [] (Brief const& b) {
-		return b.failure()
+		return b.issues()
 		||     b.phrase() == NoPhrase
 		||     b.text() == NoText;
 	});

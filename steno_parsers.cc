@@ -13,12 +13,12 @@ void EntryIterator<Plain>::next() {
 		std::getline(*input, line);
 		if (std::all_of(line.begin(), line.end(), isWhitespace)) continue;
 		auto split = line.find('=');
-		if (split == line.npos) { fail(); return; }
+		if (split == line.npos) return fail();
 		current = Brief {
 			Phrase {line.substr(0, split)},
 			line.substr(split+1),
 		};
-	} while (!over() && current.failure());
+	} while (!over() && current.issues());
 	if (input->eof()) finish();
 }
 
@@ -58,8 +58,8 @@ void EntryIterator<Json>::next() {
 		// Make sure the first token is '[' or '{', otherwise the file is not
 		// JSON or not interesting.
 		while (*input && isWhitespace(input->peek())) input->get();
-		if (!input) fail();
-		if (input->peek() != '[' && input->peek() != '{') { fail(); return; };
+		if (!input) return fail();
+		if (input->peek() != '[' && input->peek() != '{') return fail();;
 		state.value = JsonState::Body;
 	}
 	do {
@@ -75,7 +75,7 @@ void EntryIterator<Json>::next() {
 				for (char c; input->get(c); /**/) {
 					if (isWhitespace(c)) /**/;
 					else if (c == ':') { state = StrR; break; }
-					else { fail(); return; }
+					else return fail();
 				}
 			}
 			else if (state == StrR) {
@@ -85,7 +85,7 @@ void EntryIterator<Json>::next() {
 		}
 		current = Brief {Phrase {stringL}, stringR};
 		if (input->eof()) finish();
-	} while (!over() && current.failure());
+	} while (!over() && current.issues());
 }
 
 /* ~~ RTF/CRE Dictionary Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -101,7 +101,7 @@ void EntryIterator<Rtf>::next() {
 			front += c;
 			if (front.size() == magic.size()) break;
 		}
-		if (front != magic) { fail(); return; }
+		if (front != magic) return fail();
 
 		unsigned count {0};
 		for (char c; input->get(c); /**/) {
@@ -128,13 +128,13 @@ void EntryIterator<Rtf>::next() {
 		}
 		auto ending = line.size() - (over()? 0: primer.size());
 		auto split = line.find('}');
-		if (split == line.npos) { fail(); return; }
+		if (split == line.npos) return fail();
 		current = Brief {
 			Phrase {line.substr(0, split)},
 			line.substr(split+1, ending - (split+1)),
 		};
 		if (over()) state.value = RtfState::Final;
-	} while (!over() && current.failure());
+	} while (!over() && current.issues());
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
