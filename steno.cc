@@ -265,10 +265,10 @@ Phrase operator|(Stroke lhs, Stroke const& rhs) {
 /* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 // Class constructors
-Brief::Brief(Phrase const& p, std::string_view s)
+Brief::Brief(Phrase const& p, Text s)
 : m_phrase{p}, m_text{s} { normalize(); }
 
-Brief::Brief(Brief const& b, std::string_view s)
+Brief::Brief(Brief const& b, Text s)
 : m_phrase{b.m_phrase}, m_text{s} { normalize(); }
 
 // Fail-state query
@@ -294,11 +294,11 @@ Phrase const& Brief::phrase() const {
 	return m_phrase;
 }
 
-std::string& Brief::text() {
+Text& Brief::text() {
 	return m_text;
 }
 
-std::string const& Brief::text() const {
+Text const& Brief::text() const {
 	return m_text;
 }
 
@@ -318,16 +318,16 @@ Brief operator|(Brief lhs, Brief const& rhs) {
 	lhs |= rhs; return lhs;
 }
 
-Brief& Brief::operator+=(std::string_view str) {
+Brief& Brief::operator+=(Text str) {
 	m_text += str;
 	return *this;
 }
 
-Brief operator+(Brief b, std::string_view str) {
+Brief operator+(Brief b, Text str) {
 	b += str; return b;
 }
 
-Brief operator+(std::string_view str, Brief b) {
+Brief operator+(Text str, Brief b) {
 	Brief result {b.m_phrase, str};
 	return result += str;
 }
@@ -348,11 +348,11 @@ Brief& Brief::normalize() {
 }
 
 // Phrase promotion
-Brief operator+(Phrase p, std::string_view str) {
+Brief operator+(Phrase p, Text str) {
 	return Brief {p, ""} + str;
 }
 
-Brief operator+(std::string_view str, Phrase p) {
+Brief operator+(Text str, Phrase p) {
 	return str + Brief {p, ""};
 }
 

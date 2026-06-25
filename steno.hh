@@ -263,9 +263,11 @@ Phrase operator|(Stroke, Stroke const&);
 
 /* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+using Text = std::string;
+
 class Brief {
 	Phrase m_phrase {};
-	std::string m_text {};
+	Text m_text {};
 
 public:
 	// Default construction/assignment
@@ -274,14 +276,14 @@ public:
 	Brief& operator=(Brief const&) = default;
 
 	// Class constructors
-	Brief(Phrase const&, std::string_view);
-	Brief(Brief const&, std::string_view);
+	Brief(Phrase const&, Text);
+	Brief(Brief const&, Text);
 
 	// Getters and Setters
 	Phrase&       phrase();
 	Phrase const& phrase() const;
-	std::string&       text();
-	std::string const& text() const;
+	Text&         text();
+	Text const&   text() const;
 	template <std::size_t I> friend auto&& get(Brief&);
 	template <std::size_t I> friend auto&& get(Brief const&);
 	template <std::size_t I> friend auto&& get(Brief&&);
@@ -300,9 +302,9 @@ public:
 	// Concatenation
 	Brief& operator|=(Brief);
 	friend Brief operator|(Brief, Brief const&);
-	Brief& operator+=(std::string_view);
-	friend Brief operator+(Brief, std::string_view);
-	friend Brief operator+(std::string_view, Brief);
+	Brief& operator+=(Text);
+	friend Brief operator+(Brief, Text);
+	friend Brief operator+(Text, Brief);
 
 private:
 	Brief& normalize();
@@ -315,12 +317,10 @@ private:
 };
 
 // Phrase promotion
-Brief operator+(Phrase, std::string_view);
-Brief operator+(std::string_view, Phrase);
+Brief operator+(Phrase, Text);
+Brief operator+(Text, Phrase);
 
 /* ~~ Dictionary Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
-using Text = std::string;
 
 class Dictionary {
 	std::deque<Brief> m_entries {};
