@@ -948,28 +948,55 @@ TEST(StenoDictionary, AssociativeExpressions) {
 /* ~~ Dictionary Parser Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 #include "steno_parsers.hh"
-#include <fstream>
 
-TEST(StenoParseDictionary, EmptyInput) {
-	std::istringstream iss {};
-	{
-		steno::EntryIterator<steno::Plain> begin {iss}, end {};
-		EXPECT_EQ(begin, end);
-		EXPECT_FALSE(begin.issues());
-	} {
-		steno::EntryIterator<steno::Json> begin {iss}, end {};
-		EXPECT_EQ(begin, end);
-		EXPECT_TRUE(begin.issues());
-	} {
-		steno::EntryIterator<steno::Rtf> begin {iss}, end {};
-		EXPECT_EQ(begin, end);
-		EXPECT_TRUE(begin.issues());
-	}
-
+using enum steno::FileType;
+template <steno::FileType FT>
+auto Iter(std::string str) {
+	std::istringstream iss {str};
+	return steno::EntryIterator<FT> {iss};
 }
 
-TEST(StenoParseDictionary, Plain) {/* TODO */}
+/* ~~ Plain-Text ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-TEST(StenoParseDictionary, Json) {/* TODO */}
+TEST(StenoParsePlain, EmptyInput) {
+	// Correct
+	EXPECT_TRUE(!Iter<Plain>("").issues());
+	EXPECT_TRUE(!Iter<Plain>(" ").issues());
+	EXPECT_TRUE(!Iter<Plain>("\t").issues());
+	EXPECT_TRUE(!Iter<Plain>("\n").issues());
+	EXPECT_TRUE(!Iter<Plain>("\r\n").issues());
+	// Incorrect
+	EXPECT_FALSE(!Iter<Plain>("; Comments not allowed.").issues());
+}
 
-TEST(StenoParseDictionary, Rtf) {/* TODO */}
+/* ~~ JSON ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+TEST(StenoParseJson, EmptyInput) {
+	// Correct
+	EXPECT_TRUE(!Iter<Json>("[]").issues());
+	EXPECT_TRUE(!Iter<Json>("{}").issues());
+	EXPECT_TRUE(!Iter<Json>(" [] ").issues());
+	EXPECT_TRUE(!Iter<Json>(" {} ").issues());
+	// Incorrect
+	EXPECT_FALSE(!Iter<Json>("").issues());
+	EXPECT_FALSE(!Iter<Json>(" ").issues());
+	EXPECT_FALSE(!Iter<Json>("\t").issues());
+	EXPECT_FALSE(!Iter<Json>("\n").issues());
+	EXPECT_FALSE(!Iter<Json>("\r\n").issues());
+	EXPECT_FALSE(!Iter<Json>("null").issues());
+	EXPECT_FALSE(!Iter<Json>("false").issues());
+	EXPECT_FALSE(!Iter<Json>("true").issues());
+	EXPECT_FALSE(!Iter<Json>("\"\"").issues());
+}
+
+/* ~~ RTF/CRE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+TEST(StenoParseRtf, EmptyInput) {
+	EXPECT_TRUE(!Iter<Rtf>(R"({\rtf1\cxdict
+		{\stylesheet}
+	})").issues());
+	// Incorrect
+	EXPECT_FALSE(!Iter<Rtf>(R"()").issues());
+	EXPECT_FALSE(!Iter<Rtf>(R"({})").issues());
+	EXPECT_FALSE(!Iter<Rtf>(R"({\rtf1})").issues());
+}
