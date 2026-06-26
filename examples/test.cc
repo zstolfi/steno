@@ -1,4 +1,5 @@
 #include "steno.hh"
+#include "steno_parsers.hh"
 #include <gtest/gtest.h>
 #include <iterator>
 #include <concepts>
@@ -945,58 +946,76 @@ TEST(StenoDictionary, AssociativeExpressions) {
 	EXPECT_THROW(std::ignore = b.at(steno::NoStroke), std::out_of_range);
 }
 
-/* ~~ Dictionary Parser Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ Plain-Text Dictionary Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-#include "steno_parsers.hh"
-
-using enum steno::FileType;
-template <steno::FileType FT>
-auto Iter(std::string str) {
+steno::EntryIterator<steno::Plain> plain {};
+steno::EntryIterator<steno::Plain>& parsePlain(std::string str) {
 	std::istringstream iss {str};
-	return steno::EntryIterator<FT> {iss};
+	return plain = steno::EntryIterator<steno::Plain> {iss};
 }
-
-/* ~~ Plain-Text ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 TEST(StenoParsePlain, EmptyInput) {
 	// Correct
-	EXPECT_TRUE(!Iter<Plain>("").issues());
-	EXPECT_TRUE(!Iter<Plain>(" ").issues());
-	EXPECT_TRUE(!Iter<Plain>("\t").issues());
-	EXPECT_TRUE(!Iter<Plain>("\n").issues());
-	EXPECT_TRUE(!Iter<Plain>("\r\n").issues());
+	EXPECT_TRUE(!parsePlain("").issues());
+	EXPECT_TRUE(!parsePlain(" ").issues());
+	EXPECT_TRUE(!parsePlain("\t").issues());
+	EXPECT_TRUE(!parsePlain("\n").issues());
+	EXPECT_TRUE(!parsePlain("\r\n").issues());
 	// Incorrect
-	EXPECT_FALSE(!Iter<Plain>("; Comments not allowed.").issues());
+	EXPECT_FALSE(!parsePlain("; Comments not allowed.").issues());
 }
 
-/* ~~ JSON ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+TEST(StenoParsePlain, SingleEntry) {
+	// Correct
+	EXPECT_TRUE(!parsePlain("- = ").issues());
+	EXPECT_EQ(*plain, steno::NoBrief); // The first call may invoke next(),
+	EXPECT_EQ(*plain, steno::NoBrief); // but the second definitely shouldn't.
+	EXPECT_TRUE(!parsePlain("SPROUTS = sprouts").issues());
+	EXPECT_EQ(*plain, (steno::Brief {{"SPROUTS"}, "sprouts"}));
+	EXPECT_TRUE(!parsePlain("KWALZ = =").issues());
+	EXPECT_EQ(*plain, (steno::Brief {{"KWALZ"}, "="}));
+}
+
+/* ~~ JSON Dictionary Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+steno::EntryIterator<steno::Json> json {};
+steno::EntryIterator<steno::Json>& parseJson(std::string str) {
+	std::istringstream iss {str};
+	return json = steno::EntryIterator<steno::Json> {iss};
+}
 
 TEST(StenoParseJson, EmptyInput) {
 	// Correct
-	EXPECT_TRUE(!Iter<Json>("[]").issues());
-	EXPECT_TRUE(!Iter<Json>("{}").issues());
-	EXPECT_TRUE(!Iter<Json>(" [] ").issues());
-	EXPECT_TRUE(!Iter<Json>(" {} ").issues());
+	EXPECT_TRUE(!parseJson("[]").issues());
+	EXPECT_TRUE(!parseJson("{}").issues());
+	EXPECT_TRUE(!parseJson(" [] ").issues());
+	EXPECT_TRUE(!parseJson(" {} ").issues());
 	// Incorrect
-	EXPECT_FALSE(!Iter<Json>("").issues());
-	EXPECT_FALSE(!Iter<Json>(" ").issues());
-	EXPECT_FALSE(!Iter<Json>("\t").issues());
-	EXPECT_FALSE(!Iter<Json>("\n").issues());
-	EXPECT_FALSE(!Iter<Json>("\r\n").issues());
-	EXPECT_FALSE(!Iter<Json>("null").issues());
-	EXPECT_FALSE(!Iter<Json>("false").issues());
-	EXPECT_FALSE(!Iter<Json>("true").issues());
-	EXPECT_FALSE(!Iter<Json>("\"\"").issues());
+	EXPECT_FALSE(!parseJson("").issues());
+	EXPECT_FALSE(!parseJson(" ").issues());
+	EXPECT_FALSE(!parseJson("\t").issues());
+	EXPECT_FALSE(!parseJson("\n").issues());
+	EXPECT_FALSE(!parseJson("\r\n").issues());
+	EXPECT_FALSE(!parseJson("null").issues());
+	EXPECT_FALSE(!parseJson("false").issues());
+	EXPECT_FALSE(!parseJson("true").issues());
+	EXPECT_FALSE(!parseJson("\"\"").issues());
 }
 
-/* ~~ RTF/CRE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ RTF/CRE Dictionary Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+steno::EntryIterator<steno::Rtf> rtf {};
+steno::EntryIterator<steno::Rtf>& parseRtf(std::string str) {
+	std::istringstream iss {str};
+	return rtf = steno::EntryIterator<steno::Rtf> {iss};
+}
 
 TEST(StenoParseRtf, EmptyInput) {
-	EXPECT_TRUE(!Iter<Rtf>(R"({\rtf1\cxdict
+	EXPECT_TRUE(!parseRtf(R"({\rtf1\cxdict
 		{\stylesheet}
 	})").issues());
 	// Incorrect
-	EXPECT_FALSE(!Iter<Rtf>(R"()").issues());
-	EXPECT_FALSE(!Iter<Rtf>(R"({})").issues());
-	EXPECT_FALSE(!Iter<Rtf>(R"({\rtf1})").issues());
+	EXPECT_FALSE(!parseRtf(R"()").issues());
+	EXPECT_FALSE(!parseRtf(R"({})").issues());
+	EXPECT_FALSE(!parseRtf(R"({\rtf1})").issues());
 }

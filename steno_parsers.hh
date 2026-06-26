@@ -18,7 +18,7 @@ enum FileType {
 
 template <FileType FT>
 class EntryIterator {
-	std::istream* input {};
+	std::istream* input {nullptr};
 	Brief current {};
 
 	// TODO: Flesh out SourceLocation class.
@@ -42,11 +42,11 @@ public:
 	using value_type = Brief;
 	using difference_type = std::ptrdiff_t;
 
-	EntryIterator()
-	:	input{nullptr} {}
+	EntryIterator() = default;
+	EntryIterator(EntryIterator const&) = default;
+	EntryIterator& operator=(EntryIterator const&) = default;
 
-	EntryIterator(std::istream& in)
-	:	input{&in} { setup(); next(); }
+	EntryIterator(std::istream& in): input{&in} { setup(); next(); }
 
 	Issues<SourceLocation> issues() const { return issueLocations; }
 
