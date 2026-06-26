@@ -139,7 +139,7 @@ void EntryIterator<Rtf>::next() {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-std::optional<Dictionary> parseDictionary(ParserInput& input, FileType type) {
+std::optional<Dictionary> parseDictionary(std::istream& input, FileType type) {
 	if (type != NoFileType) {
 		if (type == Plain) {
 			EntryIterator<Plain> begin {input}, end {};

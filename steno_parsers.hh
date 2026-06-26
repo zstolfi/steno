@@ -1,21 +1,24 @@
 #pragma once
 #include "steno.hh"
-#include <iostream>
+#include <istream>
 #include <optional>
 #include <memory>
 
 namespace steno {
-
-using ParserInput = std::istream;
 
 enum FileType {
 	NoFileType,
 	Plain, Json, Rtf,
 };
 
+// Parsing steno dictionaries is done with iterators. This means we don't have
+// to wait for the end of the file to process our data. For most formats this is
+// easy to implement. But worst case scenario, the 'setup' function can run a
+// first pass, store everything in 'state', and we iterate through that.
+
 template <FileType FT>
 class EntryIterator {
-	ParserInput* input {};
+	std::istream* input {};
 	Brief current {};
 
 	// TODO: Flesh out SourceLocation class.
@@ -32,6 +35,7 @@ class EntryIterator {
 	void>>>;
 
 	State state {};
+	void setup() {}
 	void next();
 
 public:
@@ -41,8 +45,8 @@ public:
 	EntryIterator()
 	:	input{nullptr} {}
 
-	EntryIterator(ParserInput& in)
-	:	input{&in} { next(); }
+	EntryIterator(std::istream& in)
+	:	input{&in} { setup(); next(); }
 
 	Issues<SourceLocation> issues() const { return issueLocations; }
 
@@ -82,6 +86,6 @@ static_assert(std::forward_iterator<EntryIterator<Plain>>);
 static_assert(std::forward_iterator<EntryIterator<Json>>);
 static_assert(std::forward_iterator<EntryIterator<Rtf>>);
 
-std::optional<Dictionary> parseDictionary(ParserInput&, FileType=NoFileType);
+std::optional<Dictionary> parseDictionary(std::istream&, FileType=NoFileType);
 
 } // namespace steno
