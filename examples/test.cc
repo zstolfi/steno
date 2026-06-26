@@ -134,7 +134,41 @@ TEST(StenoStroke, BadInputString) {
 	// Lowercase letters are not allowed.
 	EXPECT_FALSE(steno::Stroke {"Tkpwaeut"});
 	EXPECT_FALSE(steno::Stroke {"rbgsz"});
-	// TODO
+	EXPECT_FALSE(steno::Stroke {"PHeuL"});
+	EXPECT_FALSE(steno::Stroke {"hrA*EUt"});
+	EXPECT_FALSE(steno::Stroke {"SPaoeD"});
+	EXPECT_FALSE(steno::Stroke {"tpAOEd"});
+	// Every key and flag must appear in the correct order.
+	EXPECT_FALSE(steno::Stroke {"HRATE"});
+	EXPECT_FALSE(steno::Stroke {"HRAEUT*"});
+	EXPECT_FALSE(steno::Stroke {"HRAEU*T"});
+	EXPECT_FALSE(steno::Stroke {"HR*AEUT"});
+	EXPECT_FALSE(steno::Stroke {"1#"});
+	EXPECT_FALSE(steno::Stroke {"2#"});
+	EXPECT_FALSE(steno::Stroke {"3#"});
+	EXPECT_FALSE(steno::Stroke {"4#"});
+	EXPECT_FALSE(steno::Stroke {"5#"});
+	EXPECT_FALSE(steno::Stroke {"0#"});
+	EXPECT_FALSE(steno::Stroke {"6#"});
+	EXPECT_FALSE(steno::Stroke {"7#"});
+	EXPECT_FALSE(steno::Stroke {"8#"});
+	EXPECT_FALSE(steno::Stroke {"9#"});
+	EXPECT_FALSE(steno::Stroke {"S#"});
+	EXPECT_FALSE(steno::Stroke {"K#"});
+	EXPECT_FALSE(steno::Stroke {"-Z#"});
+	EXPECT_FALSE(steno::Stroke {"*#"});
+	EXPECT_FALSE(steno::Stroke {"-#"});
+	// Cannot press nothing and something at the same time.
+	EXPECT_FALSE(steno::Stroke {"A-"});
+	EXPECT_FALSE(steno::Stroke {"O-"});
+	EXPECT_FALSE(steno::Stroke {"*-"});
+	EXPECT_FALSE(steno::Stroke {"E-"});
+	EXPECT_FALSE(steno::Stroke {"U-"});
+	EXPECT_FALSE(steno::Stroke {"-A"});
+	EXPECT_FALSE(steno::Stroke {"-O"});
+	EXPECT_FALSE(steno::Stroke {"-*"});
+	EXPECT_FALSE(steno::Stroke {"-E"});
+	EXPECT_FALSE(steno::Stroke {"-U"});
 }
 
 TEST(StenoStroke, Getters) {
@@ -257,7 +291,12 @@ TEST(StenoStroke, Addition) {
 	EXPECT_EQ(test += steno::Stroke {"-S"}, steno::Stroke {"TES"});
 	EXPECT_EQ(test += steno::Stroke {"*" }, steno::Stroke {"T*ES"});
 
-	// TODO: Chaining
+	using enum steno::Key;
+	steno::Stroke chaining {K_ + H_ + A + E + U + _P + _B + _G};
+	EXPECT_EQ(chaining, steno::Stroke {"KHAEUPBG"});
+
+	steno::Stroke doubled {T_+T_ + K_+K_ + U+U +_B+_B +_L+_L + _D+_D};
+	EXPECT_EQ(doubled, steno::Stroke {"TKUBLD"});
 }
 
 TEST(StenoStroke, Subtraction) {
@@ -390,14 +429,31 @@ TEST(StenoPhrase, EmptyConstruction) {
 }
 
 TEST(StenoPhrase, GoodInputString) {
-	// We can't EXPECT_TRUE for the empty phrase, it's treated like 0.
+	// Zero strokes
+	// The empty phrase acts like 0. It isn't truthy, but it also has no issues.
 	EXPECT_FALSE(steno::Phrase {"-"});
 	EXPECT_FALSE(steno::Phrase {"-"}.issues());
-	// TODO
+	// Single strokes
+	EXPECT_TRUE(steno::Phrase {"KW*"}); // Q
+	EXPECT_TRUE(steno::Phrase {"S*"});  // S
+	EXPECT_TRUE(steno::Phrase {"KR*"}); // C
+	EXPECT_TRUE(steno::Phrase {"SR*"}); // V
+	// Multiple Strokes
+	EXPECT_TRUE(steno::Phrase {"TKHREUB/RELT"}); // deliberately
+	EXPECT_TRUE(steno::Phrase {"STEP/-G"});      // stepping
+	EXPECT_TRUE(steno::Phrase {"SPWAOUT"});      // into the
+	EXPECT_TRUE(steno::Phrase {"STRAOET"});      // street
+	EXPECT_TRUE(steno::Phrase {"SKP-"});         // and
+	EXPECT_TRUE(steno::Phrase {"PH*ETD/KHREU"}); // methodically
+	EXPECT_TRUE(steno::Phrase {"TPHOBG/-G"});    // knocking
+	EXPECT_TRUE(steno::Phrase {"PAOEBL/*Z"});    // people's
+	EXPECT_TRUE(steno::Phrase {"HATS"});         // hats
+	EXPECT_TRUE(steno::Phrase {"OF"});           // off
 }
 
 TEST(StenoPhrase, BadInputString) {
 	// Construction from an empty string is probably an error.
+	EXPECT_FALSE(steno::Phrase {""});
 	EXPECT_FALSE(steno::Phrase {"/"});
 	EXPECT_FALSE(steno::Phrase {"//"});
 	EXPECT_FALSE(steno::Phrase {"1/"});
