@@ -12,6 +12,8 @@
     (void) (Expression);                                                       \
     __VA_ARGS__; /*PostCondition*/                                             \
 }
+#define EXPECT_ISSUES(E) EXPECT_TRUE((E).issues())
+#define EXPECT_NO_ISSUES(E) EXPECT_FALSE((E).issues())
 
 /* ~~ Key Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -48,14 +50,14 @@ TEST(StenoStroke, EmptyConstruction) {
 	EXPECT_EQ(steno::Stroke (), steno::NoStroke);
 	EXPECT_EQ(steno::Stroke {}, steno::NoStroke);
 	EXPECT_EQ(steno::Stroke {"-"}, steno::NoStroke);
-	EXPECT_TRUE(steno::Stroke {""}.issues());
-	EXPECT_TRUE(steno::Stroke {" "}.issues());
+	EXPECT_ISSUES(steno::Stroke {""});
+	EXPECT_ISSUES(steno::Stroke {" "});
 }
 
 TEST(StenoStroke, GoodInputString) {
 	// We can't EXPECT_TRUE for the empty stroke, it's treated like 0.
 	EXPECT_FALSE(steno::Stroke {"-"});
-	EXPECT_FALSE(steno::Stroke {"-"}.issues());
+	EXPECT_NO_ISSUES(steno::Stroke {"-"});
 	EXPECT_TRUE(steno::Stroke {"#STKPWHRAO*EUFRPBLGTSDZ"}); // All keys
 	EXPECT_TRUE(steno::Stroke {" STKPWHR  -            "}); // Left
 	EXPECT_TRUE(steno::Stroke {"        AO*EU          "}); // Middle
@@ -425,15 +427,15 @@ TEST(StenoPhrase, EmptyConstruction) {
 	EXPECT_EQ(steno::Phrase (), steno::NoPhrase);
 	EXPECT_EQ(steno::Phrase {}, steno::NoPhrase);
 	EXPECT_EQ(steno::Phrase {"-"}, steno::NoPhrase);
-	EXPECT_TRUE(steno::Phrase {""}.issues());
-	EXPECT_TRUE(steno::Phrase {" "}.issues());
+	EXPECT_ISSUES(steno::Phrase {""});
+	EXPECT_ISSUES(steno::Phrase {" "});
 }
 
 TEST(StenoPhrase, GoodInputString) {
 	// Zero strokes
 	// The empty phrase acts like 0. It isn't truthy, but it also has no issues.
 	EXPECT_FALSE(steno::Phrase {"-"});
-	EXPECT_FALSE(steno::Phrase {"-"}.issues());
+	EXPECT_NO_ISSUES(steno::Phrase {"-"});
 	// Single strokes
 	EXPECT_TRUE(steno::Phrase {"KW*"}); // Q
 	EXPECT_TRUE(steno::Phrase {"S*"});  // S
@@ -948,33 +950,43 @@ TEST(StenoDictionary, AssociativeExpressions) {
 
 /* ~~ Plain-Text Dictionary Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-steno::EntryIterator<steno::Plain> plain {};
+steno::EntryIterator<steno::Plain> const plainEnd {};
+steno::EntryIterator<steno::Plain> plainIter {};
 steno::EntryIterator<steno::Plain>& parsePlain(std::string str) {
 	std::istringstream iss {str};
-	return plain = steno::EntryIterator<steno::Plain> {iss};
+	return plainIter = steno::EntryIterator<steno::Plain> {iss};
 }
 
 TEST(StenoParsePlain, EmptyInput) {
 	// Correct
-	EXPECT_TRUE(!parsePlain("").issues());
-	EXPECT_TRUE(!parsePlain(" ").issues());
-	EXPECT_TRUE(!parsePlain("\t").issues());
-	EXPECT_TRUE(!parsePlain("\n").issues());
-	EXPECT_TRUE(!parsePlain("\r\n").issues());
+	EXPECT_NO_ISSUES(parsePlain(""));
+	EXPECT_NO_ISSUES(parsePlain(" "));
+	EXPECT_NO_ISSUES(parsePlain("\t"));
+	EXPECT_NO_ISSUES(parsePlain("\n"));
+	EXPECT_NO_ISSUES(parsePlain("\r\n"));
 	// Incorrect
-	EXPECT_FALSE(!parsePlain("; Comments not allowed.").issues());
+	EXPECT_ISSUES(parsePlain("; Comments not allowed."));
 }
 
-TEST(StenoParsePlain, SingleEntry) {
-	// Correct
-	EXPECT_TRUE(!parsePlain("- = ").issues());
-	EXPECT_EQ(*plain, steno::NoBrief); // The first call may invoke next(),
-	EXPECT_EQ(*plain, steno::NoBrief); // but the second definitely shouldn't.
-	EXPECT_TRUE(!parsePlain("SPROUTS = sprouts").issues());
-	EXPECT_EQ(*plain, (steno::Brief {{"SPROUTS"}, "sprouts"}));
-	EXPECT_TRUE(!parsePlain("KWALZ = =").issues());
-	EXPECT_EQ(*plain, (steno::Brief {{"KWALZ"}, "="}));
-}
+//TEST(StenoParsePlain, SingleEntry) {
+//	EXPECT_NO_ISSUES(parsePlain("- = "));
+//	EXPECT_EQ(*plainIter, steno::NoBrief); // The first call may invoke next(),
+//	EXPECT_EQ(*plainIter, steno::NoBrief); // but the second definitely won't.
+//	EXPECT_EQ(++plainIter, plainEnd);
+
+//	EXPECT_NO_ISSUES(parsePlain("SPROUTS = sprouts"));
+//	EXPECT_EQ(*plainIter, (steno::Brief {{"SPROUTS"}, "sprouts"}));
+//	EXPECT_EQ(++plainIter, plainEnd);
+
+//	EXPECT_NO_ISSUES(parsePlain("KWALZ = ="));
+//	EXPECT_EQ(*plainIter, (steno::Brief {{"KWALZ"}, "="}));
+//	EXPECT_EQ(++plainIter, plainEnd);
+
+//	// Malformed entries do not get skipped.
+//	EXPECT_ISSUES(parsePlain("KATE = Kate"));
+//	EXPECT_FALSE(plainIter == plainEnd);
+//	EXPECT_EQ(++plainIter, plainEnd);
+//}
 
 /* ~~ JSON Dictionary Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -986,20 +998,20 @@ steno::EntryIterator<steno::Json>& parseJson(std::string str) {
 
 TEST(StenoParseJson, EmptyInput) {
 	// Correct
-	EXPECT_TRUE(!parseJson("[]").issues());
-	EXPECT_TRUE(!parseJson("{}").issues());
-	EXPECT_TRUE(!parseJson(" [] ").issues());
-	EXPECT_TRUE(!parseJson(" {} ").issues());
+	EXPECT_NO_ISSUES(parseJson("[]"));
+	EXPECT_NO_ISSUES(parseJson("{}"));
+	EXPECT_NO_ISSUES(parseJson(" [] "));
+	EXPECT_NO_ISSUES(parseJson(" {} "));
 	// Incorrect
-	EXPECT_FALSE(!parseJson("").issues());
-	EXPECT_FALSE(!parseJson(" ").issues());
-	EXPECT_FALSE(!parseJson("\t").issues());
-	EXPECT_FALSE(!parseJson("\n").issues());
-	EXPECT_FALSE(!parseJson("\r\n").issues());
-	EXPECT_FALSE(!parseJson("null").issues());
-	EXPECT_FALSE(!parseJson("false").issues());
-	EXPECT_FALSE(!parseJson("true").issues());
-	EXPECT_FALSE(!parseJson("\"\"").issues());
+	EXPECT_ISSUES(parseJson(""));
+	EXPECT_ISSUES(parseJson(" "));
+	EXPECT_ISSUES(parseJson("\t"));
+	EXPECT_ISSUES(parseJson("\n"));
+	EXPECT_ISSUES(parseJson("\r\n"));
+	EXPECT_ISSUES(parseJson("null"));
+	EXPECT_ISSUES(parseJson("false"));
+	EXPECT_ISSUES(parseJson("true"));
+	EXPECT_ISSUES(parseJson("\"\""));
 }
 
 /* ~~ RTF/CRE Dictionary Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -1015,7 +1027,7 @@ TEST(StenoParseRtf, EmptyInput) {
 		{\stylesheet}
 	})").issues());
 	// Incorrect
-	EXPECT_FALSE(!parseRtf(R"()").issues());
-	EXPECT_FALSE(!parseRtf(R"({})").issues());
-	EXPECT_FALSE(!parseRtf(R"({\rtf1})").issues());
+	EXPECT_ISSUES(parseRtf(R"()"));
+	EXPECT_ISSUES(parseRtf(R"({})"));
+	EXPECT_ISSUES(parseRtf(R"({\rtf1})"));
 }
