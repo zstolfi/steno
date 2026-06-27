@@ -22,8 +22,21 @@ void EntryIterator<Plain>::next() {
 
 /* ~~ JSON Dictionary Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+
+struct JsonState {
+	enum { FirstChar, Body } value {FirstChar};
+};
+
+template <>
+void EntryIterator<Json>::setup() {
+	parseState = JsonState {};
+}
+
 template <>
 void EntryIterator<Json>::next() {
+	auto& state = std::any_cast<JsonState&>(parseState);
+
+	// TODO: Move this outside the next() function.
 	auto parseString = [this] () -> std::string {
 		char c {}; std::string result {};
 		while (input->get(c) && isWhitespace(c)) /**/;
@@ -64,23 +77,23 @@ void EntryIterator<Json>::next() {
 		state.value = JsonState::Body;
 	}
 	std::string stringL {}, stringR {};
-	enum { StrL, Colon, StrR, Accept } state {StrL};
-	while (*input && state != Accept) {
-		if (state == StrL) {
+	enum { StrL, Colon, StrR, Accept } entryState {StrL};
+	while (*input && entryState != Accept) {
+		if (entryState == StrL) {
 			while (*input && input->peek() != '"') input->get();
 			stringL = parseString();
-			state = Colon;
+			entryState = Colon;
 		}
-		else if (state == Colon) {
+		else if (entryState == Colon) {
 			for (char c; input->get(c); /**/) {
 				if (isWhitespace(c)) /**/;
-				else if (c == ':') { state = StrR; break; }
+				else if (c == ':') { entryState = StrR; break; }
 				else return fail("expected ':'");
 			}
 		}
-		else if (state == StrR) {
+		else if (entryState == StrR) {
 			stringR = parseString();
-			state = Accept;
+			entryState = Accept;
 		}
 	}
 	current = Brief {Phrase {stringL}, stringR};
@@ -88,8 +101,19 @@ void EntryIterator<Json>::next() {
 
 /* ~~ RTF/CRE Dictionary Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+struct RtfState {
+	enum { Header, Body, Final } value {Header};
+};
+
+template <>
+void EntryIterator<Rtf>::setup() {
+	parseState = RtfState {};
+}
+
 template <>
 void EntryIterator<Rtf>::next() {
+	auto& state = std::any_cast<RtfState&>(parseState);
+
 	static constexpr std::string_view magic {R"({\rtf1)"};
 	static constexpr std::string_view primer {R"({\*\cxs )"};
 	if (state.value == RtfState::Header) {

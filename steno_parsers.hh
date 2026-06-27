@@ -3,6 +3,7 @@
 #include <istream>
 #include <optional>
 #include <memory>
+#include <any>
 
 namespace steno {
 
@@ -25,16 +26,7 @@ class EntryIterator {
 	using SourceLocation = std::shared_ptr<std::string>;
 	Issues<SourceLocation> issueLocations {};
 
-	struct PlainState {};
-	struct JsonState { enum { FirstChar, Body } value {FirstChar}; };
-	struct RtfState { enum { Header, Body, Final } value {Header}; };
-	using State =
-		std::conditional_t<FT == Plain, PlainState,
-		std::conditional_t<FT == Json, JsonState,
-		std::conditional_t<FT == Rtf, RtfState,
-	void>>>;
-
-	State state {};
+	std::any parseState {};
 	void setup() {}
 	void next();
 
