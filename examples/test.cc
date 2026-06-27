@@ -950,58 +950,74 @@ TEST(StenoDictionary, AssociativeExpressions) {
 
 /* ~~ Plain-Text Dictionary Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+static std::istringstream iss {};
+
 steno::EntryIterator<steno::Plain> const plainEnd {};
 steno::EntryIterator<steno::Plain> plainIter {};
 steno::EntryIterator<steno::Plain>& parsePlain(std::string str) {
-	std::istringstream iss {str};
+	iss = std::istringstream {str};
 	return plainIter = steno::EntryIterator<steno::Plain> {iss};
 }
 
 TEST(StenoParsePlain, EmptyInput) {
 	// Correct
 	EXPECT_NO_ISSUES(parsePlain(""));
+	EXPECT_EQ(plainIter, plainEnd);
 	EXPECT_NO_ISSUES(parsePlain(" "));
+	EXPECT_EQ(plainIter, plainEnd);
 	EXPECT_NO_ISSUES(parsePlain("\t"));
+	EXPECT_EQ(plainIter, plainEnd);
 	EXPECT_NO_ISSUES(parsePlain("\n"));
+	EXPECT_EQ(plainIter, plainEnd);
 	EXPECT_NO_ISSUES(parsePlain("\r\n"));
+	EXPECT_EQ(plainIter, plainEnd);
 	// Incorrect
 	EXPECT_ISSUES(parsePlain("; Comments not allowed."));
 }
 
-//TEST(StenoParsePlain, SingleEntry) {
-//	EXPECT_NO_ISSUES(parsePlain("- = "));
-//	EXPECT_EQ(*plainIter, steno::NoBrief); // The first call may invoke next(),
-//	EXPECT_EQ(*plainIter, steno::NoBrief); // but the second definitely won't.
-//	EXPECT_EQ(++plainIter, plainEnd);
+TEST(StenoParsePlain, SingleEntry) {
+	EXPECT_NO_ISSUES(parsePlain("- = "));
+	EXPECT_NE(plainIter, plainEnd);
+	EXPECT_EQ(*plainIter, steno::NoBrief); // The first call may invoke next(),
+	EXPECT_EQ(*plainIter, steno::NoBrief); // but the second definitely won't.
+	EXPECT_EQ(++plainIter, plainEnd);
 
-//	EXPECT_NO_ISSUES(parsePlain("SPROUTS = sprouts"));
-//	EXPECT_EQ(*plainIter, (steno::Brief {{"SPROUTS"}, "sprouts"}));
-//	EXPECT_EQ(++plainIter, plainEnd);
+	EXPECT_NO_ISSUES(parsePlain("SPROUTS = sprouts"));
+	EXPECT_NE(plainIter, plainEnd);
+	EXPECT_EQ(*plainIter, (steno::Brief {{"SPROUTS"}, "sprouts"}));
+	EXPECT_EQ(++plainIter, plainEnd);
 
-//	EXPECT_NO_ISSUES(parsePlain("KWALZ = ="));
-//	EXPECT_EQ(*plainIter, (steno::Brief {{"KWALZ"}, "="}));
-//	EXPECT_EQ(++plainIter, plainEnd);
+	EXPECT_NO_ISSUES(parsePlain("KWALZ = ="));
+	EXPECT_NE(plainIter, plainEnd);
+	EXPECT_EQ(*plainIter, (steno::Brief {{"KWALZ"}, "="}));
+	EXPECT_EQ(++plainIter, plainEnd);
 
-//	// Malformed entries do not get skipped.
-//	EXPECT_ISSUES(parsePlain("KATE = Kate"));
-//	EXPECT_FALSE(plainIter == plainEnd);
-//	EXPECT_EQ(++plainIter, plainEnd);
-//}
+	// Malformed entries do not get skipped.
+	EXPECT_NO_ISSUES(parsePlain("WRONG = wrong"));
+	EXPECT_NE(plainIter, plainEnd);
+	EXPECT_ISSUES(*plainIter);
+	EXPECT_EQ(++plainIter, plainEnd);
+}
 
 /* ~~ JSON Dictionary Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-steno::EntryIterator<steno::Json> json {};
+steno::EntryIterator<steno::Json> const jsonEnd {};
+steno::EntryIterator<steno::Json> jsonIter {};
 steno::EntryIterator<steno::Json>& parseJson(std::string str) {
-	std::istringstream iss {str};
-	return json = steno::EntryIterator<steno::Json> {iss};
+	iss = std::istringstream {str};
+	return jsonIter = steno::EntryIterator<steno::Json> {iss};
 }
 
 TEST(StenoParseJson, EmptyInput) {
 	// Correct
 	EXPECT_NO_ISSUES(parseJson("[]"));
+	EXPECT_EQ(jsonIter, jsonEnd);
 	EXPECT_NO_ISSUES(parseJson("{}"));
+	EXPECT_EQ(jsonIter, jsonEnd);
 	EXPECT_NO_ISSUES(parseJson(" [] "));
+	EXPECT_EQ(jsonIter, jsonEnd);
 	EXPECT_NO_ISSUES(parseJson(" {} "));
+	EXPECT_EQ(jsonIter, jsonEnd);
 	// Incorrect
 	EXPECT_ISSUES(parseJson(""));
 	EXPECT_ISSUES(parseJson(" "));
@@ -1014,18 +1030,43 @@ TEST(StenoParseJson, EmptyInput) {
 	EXPECT_ISSUES(parseJson("\"\""));
 }
 
+TEST(StenoParseJson, SingleEntry) {
+	EXPECT_NO_ISSUES(parseJson(R"({"1": "one"})"));
+	EXPECT_NE(jsonIter, jsonEnd);
+	EXPECT_EQ(*jsonIter, (steno::Brief {{"1"}, "one"}));
+	EXPECT_EQ(++jsonIter, jsonEnd);
+
+	EXPECT_NO_ISSUES(parseJson(R"( [{"1": "one"}] )"));
+	EXPECT_NO_ISSUES(parseJson(R"( [{"1": "one"},] )"));
+	EXPECT_NO_ISSUES(parseJson(R"( {"1": "one"}, )"));
+
+	EXPECT_NO_ISSUES(parseJson(R"({"  K W   O E       T   ": "\""})"));
+	EXPECT_NO_ISSUES(parseJson(R"({"S    HRA *   R B      ": "\/"})"));
+	EXPECT_NO_ISSUES(parseJson(R"({"   PWHRA *   R B      ": "\\"})"));
+	EXPECT_NO_ISSUES(parseJson(R"({"  K W   O*E       T   ": "\""})"));
+	EXPECT_NO_ISSUES(parseJson(R"({"   P   A *EU R   G    ": "\n"})"));
+	EXPECT_NO_ISSUES(parseJson(R"({" T     A *     B      ": "\t"})"));
+
+	// Incorrect
+	EXPECT_ISSUES(parseJson(R"(SEUPBL = single)"));
+	EXPECT_ISSUES(parseJson(R"("KWOETD = quoted")"));
+	EXPECT_ISSUES(parseJson(R"(["TPH-/APB/RA*E = in an array"])"));
+}
+
 /* ~~ RTF/CRE Dictionary Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-steno::EntryIterator<steno::Rtf> rtf {};
+steno::EntryIterator<steno::Rtf> const rtfEnd {};
+steno::EntryIterator<steno::Rtf> rtfIter {};
 steno::EntryIterator<steno::Rtf>& parseRtf(std::string str) {
-	std::istringstream iss {str};
-	return rtf = steno::EntryIterator<steno::Rtf> {iss};
+	iss = std::istringstream {str};
+	return rtfIter = steno::EntryIterator<steno::Rtf> {iss};
 }
 
 TEST(StenoParseRtf, EmptyInput) {
-	EXPECT_TRUE(!parseRtf(R"({\rtf1\cxdict
+	// currect
+	EXPECT_NO_ISSUES(parseRtf(R"({\rtf1\cxdict
 		{\stylesheet}
-	})").issues());
+	})"));
 	// Incorrect
 	EXPECT_ISSUES(parseRtf(R"()"));
 	EXPECT_ISSUES(parseRtf(R"({})"));

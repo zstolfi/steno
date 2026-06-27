@@ -8,18 +8,16 @@ namespace steno {
 
 template <>
 void EntryIterator<Plain>::next() {
-	do {
-		std::string line {};
-		std::getline(*input, line);
-		if (std::all_of(line.begin(), line.end(), isWhitespace)) continue;
-		auto split = line.find('=');
-		if (split == line.npos) return fail();
-		current = Brief {
-			Phrase {line.substr(0, split)},
-			line.substr(split+1),
-		};
-	} while (!over() && current.issues());
-	if (input->eof()) finish();
+	if (input->eof()) return finish();
+	std::string line {};
+	std::getline(*input, line);
+	if (std::all_of(line.begin(), line.end(), isWhitespace)) return next();
+	auto split = line.find('=');
+	if (split == line.npos) return fail("expected '='");
+	current = Brief {
+		Phrase {line.substr(0, split)},
+		line.substr(split+1),
+	};
 }
 
 /* ~~ JSON Dictionary Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -54,38 +52,38 @@ void EntryIterator<Json>::next() {
 		return result;
 	};
 
+	if (input->eof()) return finish();
 	if (state.value == JsonState::FirstChar) {
 		// Make sure the first token is '[' or '{', otherwise the file is not
 		// JSON or not interesting.
 		while (*input && isWhitespace(input->peek())) input->get();
-		if (!input) return fail();
-		if (input->peek() != '[' && input->peek() != '{') return fail();;
+		if (!*input) return fail("empty JSON file");
+		if (input->peek() != '[' && input->peek() != '{') {
+			return fail("JSON file does not start with array or object");
+		}
 		state.value = JsonState::Body;
 	}
-	do {
-		std::string stringL {}, stringR {};
-		enum { StrL, Colon, StrR, Accept } state {StrL};
-		while (*input && state != Accept) {
-			if (state == StrL) {
-				while (*input && input->peek() != '"') input->get();
-				stringL = parseString();
-				state = Colon;
-			}
-			else if (state == Colon) {
-				for (char c; input->get(c); /**/) {
-					if (isWhitespace(c)) /**/;
-					else if (c == ':') { state = StrR; break; }
-					else return fail();
-				}
-			}
-			else if (state == StrR) {
-				stringR = parseString();
-				state = Accept;
+	std::string stringL {}, stringR {};
+	enum { StrL, Colon, StrR, Accept } state {StrL};
+	while (*input && state != Accept) {
+		if (state == StrL) {
+			while (*input && input->peek() != '"') input->get();
+			stringL = parseString();
+			state = Colon;
+		}
+		else if (state == Colon) {
+			for (char c; input->get(c); /**/) {
+				if (isWhitespace(c)) /**/;
+				else if (c == ':') { state = StrR; break; }
+				else return fail("expected ':'");
 			}
 		}
-		current = Brief {Phrase {stringL}, stringR};
-		if (input->eof()) finish();
-	} while (!over() && current.issues());
+		else if (state == StrR) {
+			stringR = parseString();
+			state = Accept;
+		}
+	}
+	current = Brief {Phrase {stringL}, stringR};
 }
 
 /* ~~ RTF/CRE Dictionary Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */

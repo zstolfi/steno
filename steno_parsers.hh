@@ -48,7 +48,7 @@ public:
 
 	EntryIterator(std::istream& in): input{&in} { setup(); next(); }
 
-	Issues<SourceLocation> issues() const { return issueLocations; }
+	Issues<SourceLocation> const& issues() const { return issueLocations; }
 
 	bool operator==(EntryIterator const& other) const {
 		return this->over() && other.over();
