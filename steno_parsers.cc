@@ -81,6 +81,7 @@ void EntryIterator<Json>::next() {
 	while (*input && entryState != Accept) {
 		if (entryState == StrL) {
 			while (*input && input->peek() != '"') input->get();
+			if (!*input) return finish();
 			stringL = parseString();
 			entryState = Colon;
 		}
