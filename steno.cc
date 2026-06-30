@@ -173,11 +173,11 @@ Stroke operator^(Key lhs, Key rhs) {
 	return Stroke {lhs} ^ Stroke {rhs};
 }
 
-/* ~~ Phrase Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ Chain Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 // Class constructors
-Phrase::Phrase(std::string_view str) {
-	// How to spell the empty phrase (\s*-\s*)
+Chain::Chain(std::string_view str) {
+	// How to spell the empty chain (\s*-\s*)
 	if (auto i = str.find_first_not_of(" \t"); i != str.npos)
 	if (auto j = str.find_last_not_of(" \t"); j != str.npos)
 	if (i == j && str.find('-') != str.npos) return;
@@ -191,31 +191,31 @@ Phrase::Phrase(std::string_view str) {
 	push(i, str.size());
 }
 
-Phrase::Phrase(Stroke x) {
+Chain::Chain(Stroke x) {
 	insert(end(), x);
 }
 
-Phrase::Phrase(std::span<Stroke const> span) {
+Chain::Chain(std::span<Stroke const> span) {
 	insert(end(), span.begin(), span.end());
 }
 
 // Concatenation
-Phrase& Phrase::operator|=(Phrase p) {
+Chain& Chain::operator|=(Chain p) {
 	insert(end(), p.begin(), p.end());
 	return *this;
 }
 
-Phrase operator|(Phrase lhs, Phrase const& rhs) {
+Chain operator|(Chain lhs, Chain const& rhs) {
 	lhs |= rhs; return lhs;
 }
 
 // Stroke promotion
-Phrase operator|(Stroke lhs, Stroke const& rhs) {
-	return Phrase {lhs, rhs};
+Chain operator|(Stroke lhs, Stroke const& rhs) {
+	return Chain {lhs, rhs};
 }
 
 // Fail-state query
-Issues<Stroke const*> Phrase::issues() const {
+Issues<Stroke const*> Chain::issues() const {
 //	if (empty()) return NoIssues;
 	if (empty()) return {};
 
@@ -226,7 +226,7 @@ Issues<Stroke const*> Phrase::issues() const {
 	return result;
 }
 
-Phrase::operator bool() const {
+Chain::operator bool() const {
 	if (empty()) return false;
 
 	for (Stroke const& s : m_strokes) {
@@ -238,27 +238,27 @@ Phrase::operator bool() const {
 /* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 // Class constructors
-Brief::Brief(Phrase const& p, Text s)
-: m_phrase{p}, m_text{s} { normalize(); }
+Brief::Brief(Chain const& p, Phrase s)
+: m_chain{p}, m_phrase{s} { normalize(); }
 
-Brief::Brief(Brief const& b, Text s)
-: m_phrase{b.m_phrase}, m_text{s} { normalize(); }
+Brief::Brief(Brief const& b, Phrase s)
+: m_chain{b.m_chain}, m_phrase{s} { normalize(); }
 
 // Getters and Setters
+Chain& Brief::chain() {
+	return m_chain;
+}
+
+Chain const& Brief::chain() const {
+	return m_chain;
+}
+
 Phrase& Brief::phrase() {
 	return m_phrase;
 }
 
 Phrase const& Brief::phrase() const {
 	return m_phrase;
-}
-
-Text& Brief::text() {
-	return m_text;
-}
-
-Text const& Brief::text() const {
-	return m_text;
 }
 
 Brief& Brief::clear() {
@@ -268,18 +268,18 @@ Brief& Brief::clear() {
 
 // Fail-state query
 Issues<Stroke const*> Brief::issues() const {
-	return m_phrase.issues();
+	return m_chain.issues();
 }
 
 Brief::operator bool() const {
-	if (m_phrase.empty() && m_text.empty()) return false;
-	else return (bool)m_phrase;
+	if (m_chain.empty() && m_phrase.empty()) return false;
+	else return (bool)m_chain;
 }
 
 // Concatenation
 Brief& Brief::operator|=(Brief other) {
-	m_phrase |= other.m_phrase;
-	m_text += other.m_text;
+	m_chain |= other.m_chain;
+	m_phrase += other.m_phrase;
 	return *this;
 }
 
@@ -287,41 +287,41 @@ Brief operator|(Brief lhs, Brief const& rhs) {
 	lhs |= rhs; return lhs;
 }
 
-Brief& Brief::operator+=(Text str) {
-	m_text += str;
+Brief& Brief::operator+=(Phrase str) {
+	m_phrase += str;
 	return *this;
 }
 
-Brief operator+(Brief b, Text str) {
+Brief operator+(Brief b, Phrase str) {
 	b += str; return b;
 }
 
-Brief operator+(Text str, Brief b) {
-	Brief result {b.m_phrase, str};
+Brief operator+(Phrase str, Brief b) {
+	Brief result {b.m_chain, str};
 	return result += str;
 }
 
 // Internal
 Brief& Brief::normalize() {
-	// Remove empty strokes in m_phrase.
-	m_phrase.erase(
-		std::remove(m_phrase.begin(), m_phrase.end(), NoStroke),
-		m_phrase.end()
+	// Remove empty strokes in m_chain.
+	m_chain.erase(
+		std::remove(m_chain.begin(), m_chain.end(), NoStroke),
+		m_chain.end()
 	);
 	// Remove leading or trailing whitespace.
 	constexpr std::string_view Whitespace {" \t\n\r"};
-	auto i = m_text.find_first_not_of(Whitespace);
-	auto j = m_text.find_last_not_of(Whitespace);
-	m_text = (i != m_text.npos)? m_text.substr(i, j-i + 1): "";
+	auto i = m_phrase.find_first_not_of(Whitespace);
+	auto j = m_phrase.find_last_not_of(Whitespace);
+	m_phrase = (i != m_phrase.npos)? m_phrase.substr(i, j-i + 1): "";
 	return *this;
 }
 
-// Phrase promotion
-Brief operator+(Phrase p, Text str) {
+// Chain promotion
+Brief operator+(Chain p, Phrase str) {
 	return Brief {p, ""} + str;
 }
 
-Brief operator+(Text str, Phrase p) {
+Brief operator+(Phrase str, Chain p) {
 	return str + Brief {p, ""};
 }
 
@@ -330,7 +330,7 @@ Brief operator+(Text str, Phrase p) {
 namespace /*detail*/ {
 	constexpr struct {
 		bool operator()(Brief const& a, Brief const& b) const {
-			return a.phrase() < b.phrase();
+			return a.chain() < b.chain();
 		}
 	} EntryCompare {};
 }
@@ -342,8 +342,8 @@ Dictionary::Dictionary(std::span<Brief const> span) {
 void Dictionary::clean() {
 	std::erase_if(m_entries, [] (Brief const& b) {
 		return b.issues()
-		||     b.phrase() == NoPhrase
-		||     b.text() == NoText;
+		||     b.chain() == NoChain
+		||     b.phrase() == NoPhrase;
 	});
 }
 
@@ -353,14 +353,14 @@ Dictionary::iterator Dictionary::insert(Brief const& b) {
 	// Efficiently find our sorted position
 	auto position = std::lower_bound(begin(), end(), b, EntryCompare);
 	// Our entry doesn't already exist
-	if (position == end() || position->phrase() != b.phrase()) {
+	if (position == end() || position->chain() != b.chain()) {
 		// Insert our entry sorted
 		return m_entries.insert(position, b);
 	}
 	// Entry already exists
 	else {
 		// Overwrite previous value
-		position->text() = b.text();
+		position->phrase() = b.phrase();
 		return position;
 	}
 }
@@ -369,7 +369,7 @@ void Dictionary::insert(std::initializer_list<Brief> il) {
 	insert(il.begin(), il.end());
 }
 
-std::size_t Dictionary::erase(Phrase p) {
+std::size_t Dictionary::erase(Chain p) {
 	auto it = find(p);
 	if (it != end()) m_entries.erase(it);
 	return it != end();
@@ -395,75 +395,75 @@ void Dictionary::clear() {
 	m_entries.clear();
 }
 
-bool Dictionary::contains(Phrase const& p) const {
+bool Dictionary::contains(Chain const& p) const {
 	return find(p) != end();
 }
 
-Dictionary::iterator Dictionary::find(Phrase const& p) {
+Dictionary::iterator Dictionary::find(Chain const& p) {
 	auto it = std::lower_bound(begin(), end(), Brief {p, ""}, EntryCompare);
-	if (it == end() || it->phrase() != p) return end();
+	if (it == end() || it->chain() != p) return end();
 	else return it;
 }
 
-Dictionary::const_iterator Dictionary::find(Phrase const& p) const {
+Dictionary::const_iterator Dictionary::find(Chain const& p) const {
 	auto it = std::lower_bound(begin(), end(), Brief {p, ""}, EntryCompare);
-	if (it == end() || it->phrase() != p) return end();
+	if (it == end() || it->chain() != p) return end();
 	else return it;
 }
 
-Dictionary::iterator Dictionary::lower_bound(Phrase const& p) {
+Dictionary::iterator Dictionary::lower_bound(Chain const& p) {
 	return find(p);
 }
 
-Dictionary::const_iterator Dictionary::lower_bound(Phrase const& p) const {
+Dictionary::const_iterator Dictionary::lower_bound(Chain const& p) const {
 	return find(p);
 }
 
-Dictionary::iterator Dictionary::upper_bound(Phrase const& p) {
+Dictionary::iterator Dictionary::upper_bound(Chain const& p) {
 	auto it = find(p);
 	if (it != end()) return it+1;
 	else return end();
 }
 
-Dictionary::const_iterator Dictionary::upper_bound(Phrase const& p) const {
+Dictionary::const_iterator Dictionary::upper_bound(Chain const& p) const {
 	auto it = find(p);
 	if (it != end()) return it+1;
 	else return end();
 }
 
 std::pair<Dictionary::iterator, Dictionary::iterator>
-Dictionary::equal_range(Phrase const& p) {
+Dictionary::equal_range(Chain const& p) {
 	auto it = find(p);
 	if (it != end()) return {it, it+1};
 	else return {end(), end()};
 }
 
 std::pair<Dictionary::const_iterator, Dictionary::const_iterator>
-Dictionary::equal_range(Phrase const& p) const {
+Dictionary::equal_range(Chain const& p) const {
 	auto it = find(p);
 	if (it != end()) return {it, it+1};
 	else return {end(), end()};
 }
 
 // Map methods
-Text& Dictionary::operator[](Phrase const& p) {
+Phrase& Dictionary::operator[](Chain const& p) {
 	auto it = find(p);
-	if (it != end()) return it->text();
+	if (it != end()) return it->phrase();
 	else {
-		auto it = emplace(p, NoText);
-		return it->text();
+		auto it = emplace(p, NoPhrase);
+		return it->phrase();
 	}
 }
 
-Text& Dictionary::at(Phrase const& p) {
+Phrase& Dictionary::at(Chain const& p) {
 	auto it = find(p);
-	if (it != end()) return it->text();
+	if (it != end()) return it->phrase();
 	else throw std::out_of_range {toString(p)};
 }
 
-Text const& Dictionary::at(Phrase const& p) const {
+Phrase const& Dictionary::at(Chain const& p) const {
 	auto it = find(p);
-	if (it != end()) return it->text();
+	if (it != end()) return it->phrase();
 	else throw std::out_of_range {toString(p)};
 }
 
@@ -548,7 +548,7 @@ std::string toString(Stroke s, Format format) {
 	return result;
 }
 
-std::string toString(Phrase const& p, Format format) {
+std::string toString(Chain const& p, Format format) {
 	std::string result = "";
 	for (int i=0; auto stroke : p) {
 		if (i++) result += '/';
@@ -558,7 +558,7 @@ std::string toString(Phrase const& p, Format format) {
 }
 
 std::string toString(Brief const& b, Format format) {
-	return toString(b.phrase(), format) + ", " + b.text();
+	return toString(b.chain(), format) + ", " + b.phrase();
 }
 
 std::ostream& operator<<(std::ostream& os, Stroke s) {
@@ -567,7 +567,7 @@ std::ostream& operator<<(std::ostream& os, Stroke s) {
 	return os << toString(s, format);
 }
 
-std::ostream& operator<<(std::ostream& os, Phrase const& p) {
+std::ostream& operator<<(std::ostream& os, Chain const& p) {
 	auto format = Format(os.iword(Format_xalloc));
 	if (!bits(format)) format = StrokeDefault;
 	return os << toString(p, format);
@@ -597,7 +597,7 @@ std::size_t std::hash<steno::Stroke>::operator()(steno::Stroke const& x) const {
 }
 
 // https://stackoverflow.com/a/72073933
-std::size_t std::hash<steno::Phrase>::operator()(steno::Phrase const& x) const {
+std::size_t std::hash<steno::Chain>::operator()(steno::Chain const& x) const {
 	std::size_t seed = x.size();
 	for (auto stroke : x) {
 		uint32_t n = stroke.m_bits;

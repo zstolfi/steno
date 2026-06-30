@@ -169,30 +169,30 @@ Stroke operator-(Key, Key);
 Stroke operator&(Key, Key);
 Stroke operator^(Key, Key);
 
-/* ~~ Phrase Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ Chain Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-class Phrase {
+class Chain {
 	std::vector<Stroke> m_strokes {};
 
 public:
 	// Default construction/assignment
-	Phrase() = default;
-	Phrase(Phrase const&) = default;
-	Phrase& operator=(Phrase const&) = default;
+	Chain() = default;
+	Chain(Chain const&) = default;
+	Chain& operator=(Chain const&) = default;
 
 	// Class constructors
-	Phrase(std::string_view);
-	Phrase(Stroke);
-	Phrase(std::span<Stroke const>);
+	Chain(std::string_view);
+	Chain(Stroke);
+	Chain(std::span<Stroke const>);
 
 	// Comparison
-	bool operator== (Phrase const&) const = default;
-	auto operator<=>(Phrase const&) const = default;
+	bool operator== (Chain const&) const = default;
+	auto operator<=>(Chain const&) const = default;
 	template <class T> friend struct std::hash;
 
 	// Concatenation
-	Phrase& operator|=(Phrase);
-	friend Phrase operator|(Phrase, Phrase const&);
+	Chain& operator|=(Chain);
+	friend Chain operator|(Chain, Chain const&);
 
 	// Fail-state query
 	Issues<Stroke const*> issues() const;
@@ -217,7 +217,7 @@ public:
 	auto c##Name() const { return m_strokes.c##Name(); }
 	USE(begin) USE(end) USE(rbegin) USE(rend)
 #	undef USE
-	void swap(Phrase& other) { std::swap(*this, other); };
+	void swap(Chain& other) { std::swap(*this, other); };
 	std::size_t size    () const { return m_strokes.size    (); }
 	std::size_t max_size() const { return m_strokes.max_size(); }
 	bool        empty   () const { return m_strokes.empty   (); }
@@ -225,9 +225,9 @@ public:
 public:
 	// Sequence methods
 	template <std::input_iterator I>
-	Phrase(I first, I last): m_strokes(first, last) {}
-	Phrase(std::initializer_list<Stroke> il): m_strokes(il) {};
-	Phrase(std::size_t n, Stroke t): m_strokes(n, t) {}
+	Chain(I first, I last): m_strokes(first, last) {}
+	Chain(std::initializer_list<Stroke> il): m_strokes(il) {};
+	Chain(std::size_t n, Stroke t): m_strokes(n, t) {}
 	auto emplace(auto&& ... args) { return m_strokes.emplace(args ... ); }
 	auto insert (auto&& ... args) { return m_strokes.insert (args ... ); }
 	auto erase  (auto&& ... args) { return m_strokes.erase  (args ... ); }
@@ -246,8 +246,8 @@ public:
 	[[nodiscard]] auto& operator[](auto n) const { return m_strokes[n];    }
 	[[nodiscard]] auto& at        (auto n)       { return m_strokes.at(n); }
 	[[nodiscard]] auto& at        (auto n) const { return m_strokes.at(n); }
-	friend void erase   (Phrase& p, auto&& value);
-	friend void erase_if(Phrase& p, auto&& pred);
+	friend void erase   (Chain& p, auto&& value);
+	friend void erase_if(Chain& p, auto&& pred);
 
 private:
 	void erase_impl(auto&& value)
@@ -257,15 +257,17 @@ private:
 };
 
 // Stroke promotion
-Phrase operator|(Stroke, Stroke const&);
+Chain operator|(Stroke, Stroke const&);
+
+/* ~~ Phrase Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+using Phrase = std::string;
 
 /* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-using Text = std::string;
-
 class Brief {
+	Chain m_chain {};
 	Phrase m_phrase {};
-	Text m_text {};
 
 public:
 	// Default construction/assignment
@@ -274,14 +276,14 @@ public:
 	Brief& operator=(Brief const&) = default;
 
 	// Class constructors
-	Brief(Phrase const&, Text);
-	Brief(Brief const&, Text);
+	Brief(Chain const&, Phrase);
+	Brief(Brief const&, Phrase);
 
 	// Getters and Setters
-	Phrase&       phrase();
-	Phrase const& phrase() const;
-	Text&         text();
-	Text const&   text() const;
+	Chain&       chain();
+	Chain const& chain() const;
+	Phrase&         phrase();
+	Phrase const&   phrase() const;
 	template <std::size_t I> friend auto&& get(Brief&);
 	template <std::size_t I> friend auto&& get(Brief const&);
 	template <std::size_t I> friend auto&& get(Brief&&);
@@ -294,28 +296,28 @@ public:
 	// Concatenation
 	Brief& operator|=(Brief);
 	friend Brief operator|(Brief, Brief const&);
-	Brief& operator+=(Text);
-	friend Brief operator+(Brief, Text);
-	friend Brief operator+(Text, Brief);
+	Brief& operator+=(Phrase);
+	friend Brief operator+(Brief, Phrase);
+	friend Brief operator+(Phrase, Brief);
 
 	// Fail-state query
-	// TODO: Figure out how to report text issues.
+	// TODO: Figure out how to report phrase issues.
 	Issues<Stroke const*> issues() const;
 	operator bool() const;
 
 private:
 	Brief& normalize();
 	template <std::size_t I> auto&& get_impl() &
-	{ if constexpr (I==0) return m_phrase; if constexpr (I==1) return m_text; }
+	{ if constexpr (I==0) return m_chain; if constexpr (I==1) return m_phrase; }
 	template <std::size_t I> auto&& get_impl() const&
-	{ if constexpr (I==0) return m_phrase; if constexpr (I==1) return m_text; }
+	{ if constexpr (I==0) return m_chain; if constexpr (I==1) return m_phrase; }
 	template <std::size_t I> auto&& get_impl() &&
-	{ if constexpr (I==0) return m_phrase; if constexpr (I==1) return m_text; }
+	{ if constexpr (I==0) return m_chain; if constexpr (I==1) return m_phrase; }
 };
 
-// Phrase promotion
-Brief operator+(Phrase, Text);
-Brief operator+(Text, Phrase);
+// Chain promotion
+Brief operator+(Chain, Phrase);
+Brief operator+(Phrase, Chain);
 
 /* ~~ Dictionary Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -370,8 +372,8 @@ public:
 
 public:
 	// Associative types
-	using key_type = Phrase;
-	using mapped_type = Text;
+	using key_type = Chain;
+	using mapped_type = Phrase;
 
 	// Associative methods
 	iterator insert(Brief const&);
@@ -382,27 +384,27 @@ public:
 	void insert(I i, I j) { for (I it=i; it!=j; ++it) insert(*it); }
 	void insert(std::initializer_list<Brief>);
 	iterator emplace(auto&& ... args) { return insert(Brief {args ... }); }
-	std::size_t erase(Phrase);
+	std::size_t erase(Chain);
 	iterator erase(const_iterator);
 	iterator erase(const_iterator, const_iterator);
 	void merge(Dictionary&);
 	void merge(Dictionary&&);
 	void clear();
-	bool contains(Phrase const&) const;
-	/*  */iterator find(Phrase const&);
-	const_iterator find(Phrase const&) const;
-	/*  */iterator lower_bound(Phrase const&);
-	const_iterator lower_bound(Phrase const&) const;
-	/*  */iterator upper_bound(Phrase const&);
-	const_iterator upper_bound(Phrase const&) const;
-	std::pair</*  */iterator, /*  */iterator> equal_range(Phrase const&);
-	std::pair<const_iterator, const_iterator> equal_range(Phrase const&) const;
+	bool contains(Chain const&) const;
+	/*  */iterator find(Chain const&);
+	const_iterator find(Chain const&) const;
+	/*  */iterator lower_bound(Chain const&);
+	const_iterator lower_bound(Chain const&) const;
+	/*  */iterator upper_bound(Chain const&);
+	const_iterator upper_bound(Chain const&) const;
+	std::pair</*  */iterator, /*  */iterator> equal_range(Chain const&);
+	std::pair<const_iterator, const_iterator> equal_range(Chain const&) const;
 
 	// Map methods
-	Text& operator[](Phrase const&);
-	Text const& operator[](Phrase const&) const;
-	Text& at(Phrase const&);
-	Text const& at(Phrase const&) const;
+	Phrase& operator[](Chain const&);
+	Phrase const& operator[](Chain const&) const;
+	Phrase& at(Chain const&);
+	Phrase const& at(Chain const&) const;
 	friend void erase   (Dictionary& p, auto&& value);
 	friend void erase_if(Dictionary& p, auto&& pred);
 
@@ -430,7 +432,7 @@ enum class Format : long {
 
 	StrokeDefault = 0b01'01'01,
 	KeyDefault    = 0b00'10'00,
-	// TODO: More formatting options for Phrases and upward
+	// TODO: More formatting options for Chains and upward
 };
 using enum Format;
 Format operator|(Format, Format);
@@ -440,11 +442,11 @@ char toChar     (Key);
 char toCharShift(Key);
 std::string toString(Key          , Format = KeyDefault);
 std::string toString(Stroke       , Format = StrokeDefault);
-std::string toString(Phrase const&, Format = StrokeDefault);
+std::string toString(Chain const&, Format = StrokeDefault);
 std::string toString(Brief  const&, Format = StrokeDefault);
 std::ostream& operator<<(std::ostream&, Key          );
 std::ostream& operator<<(std::ostream&, Stroke       );
-std::ostream& operator<<(std::ostream&, Phrase const&);
+std::ostream& operator<<(std::ostream&, Chain const&);
 std::ostream& operator<<(std::ostream&, Brief  const&);
 
 // Format as manipulator
@@ -572,9 +574,9 @@ constexpr Stroke::Stroke(I first, I last) {
 }
 
 static constexpr auto NoStroke = Stroke {};
-static const/**/ auto NoPhrase = Phrase {};
+static const/**/ auto NoChain = Chain {};
 static const/**/ auto NoBrief  = Brief  {};
-static const/**/ auto NoText   = Text   {};
+static const/**/ auto NoPhrase   = Phrase   {};
 // TODO: NoIssues object which acts like std::nullopt
 
 } // namespace steno
@@ -584,19 +586,19 @@ static const/**/ auto NoText   = Text   {};
 template <> struct std::hash<steno::Stroke>
 { std::size_t operator()(steno::Stroke const&) const; };
 
-template <> struct std::hash<steno::Phrase>
-{ std::size_t operator()(steno::Phrase const&) const; };
+template <> struct std::hash<steno::Chain>
+{ std::size_t operator()(steno::Chain const&) const; };
 
 template <> struct std::tuple_size<steno::Brief>
 : std::integral_constant<size_t, 2> {};
 
 template <std::size_t I> struct std::tuple_element<I, steno::Brief>
-: std::conditional<I == 0, steno::Phrase, std::string>
+: std::conditional<I == 0, steno::Chain, std::string>
 { static_assert(I < 2); };
 
 namespace steno {
-void erase   (Phrase&     t, auto&& x) { t.erase_impl(x);    }
-void erase_if(Phrase&     t, auto&& f) { t.erase_if_impl(f); }
+void erase   (Chain&     t, auto&& x) { t.erase_impl(x);    }
+void erase_if(Chain&     t, auto&& f) { t.erase_if_impl(f); }
 void erase   (Dictionary& t, auto&& x) { t.erase_impl(x);    }
 void erase_if(Dictionary& t, auto&& f) { t.erase_if_impl(f); }
 template <std::size_t I> auto&& get(Brief&       b) { return b.get_impl<I>(); }
