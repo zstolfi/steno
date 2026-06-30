@@ -24,9 +24,9 @@ namespace steno {
 constexpr struct FromBits_Arg         {} FromBits         {};
 constexpr struct FromBitsReversed_Arg {} FromBitsReversed {};
 
-//template <std::indirectly_readable I>
-template <class I>
-struct Issues : std::vector<I> {
+template <class T>
+struct Issues : std::vector<T> {
+	using std::vector<T>::vector;
 	operator bool() const { return !this->empty(); }
 };
 
@@ -95,11 +95,6 @@ public:
 	bool operator[](Key) const;
 	Stroke& clear();
 
-	// Fail-state query
-	Issues<Iterator> issues();
-	Issues<Iterator> issues() const;
-	operator bool() const;
-
 	// Range-for compatibility
 	Iterator begin() const;
 	Iterator end() const;
@@ -119,6 +114,10 @@ public:
 	friend Stroke operator-(Stroke, Stroke const&);
 	friend Stroke operator&(Stroke, Stroke const&);
 	friend Stroke operator^(Stroke, Stroke const&);
+
+	// Fail-state query
+	Issues<Key> issues() const;
+	operator bool() const;
 
 	// Key proxy class
 	class Reference {
@@ -150,7 +149,7 @@ public:
 		using difference_type = int;
 		using value_type = Key;
 	};
-	// TODO: Figure out why this assert doesn't work. Then modify line 27.
+	// TODO: Figure out why this assert doesn't work.
 //	static_assert(std::indirectly_readable<Iterator>);
 
 private:
@@ -186,11 +185,6 @@ public:
 	Phrase(Stroke);
 	Phrase(std::span<Stroke const>);
 
-	// Fail-state query
-	Issues<Stroke /* */*> issues();
-	Issues<Stroke const*> issues() const;
-	operator bool() const;
-
 	// Comparison
 	bool operator== (Phrase const&) const = default;
 	auto operator<=>(Phrase const&) const = default;
@@ -199,6 +193,10 @@ public:
 	// Concatenation
 	Phrase& operator|=(Phrase);
 	friend Phrase operator|(Phrase, Phrase const&);
+
+	// Fail-state query
+	Issues<Stroke const*> issues() const;
+	operator bool() const;
 
 public:
 	// Container types
@@ -289,12 +287,6 @@ public:
 	template <std::size_t I> friend auto&& get(Brief&&);
 	Brief& clear();
 
-	// Fail-state query
-	// TODO: Figure out how to report text issues.
-	Issues<Stroke /* */*> issues();
-	Issues<Stroke const*> issues() const;
-	operator bool() const;
-
 	// Comparison
 	bool operator== (Brief const&) const = default;
 	auto operator<=>(Brief const&) const = default;
@@ -305,6 +297,11 @@ public:
 	Brief& operator+=(Text);
 	friend Brief operator+(Brief, Text);
 	friend Brief operator+(Text, Brief);
+
+	// Fail-state query
+	// TODO: Figure out how to report text issues.
+	Issues<Stroke const*> issues() const;
+	operator bool() const;
 
 private:
 	Brief& normalize();
@@ -337,14 +334,13 @@ public:
 	// Use parseDictionary() for file type support.
 	Dictionary(std::span<Brief const>);
 
-	// Fail-state query
-	Issues<Brief /* */*> issues();
-	Issues<Brief const*> issues() const;
-	void clean();
-
 	// Comparison
 	bool operator== (Dictionary const&) const = default;
 	auto operator<=>(Dictionary const&) const = default;
+
+	// Fail-state query
+	Issues<Brief const*> issues() const;
+	void clean();
 
 public:
 	// Container types

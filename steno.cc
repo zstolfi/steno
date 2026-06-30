@@ -2,39 +2,7 @@
 
 namespace steno {
 
-namespace /*detail*/ {
-
-template <class To, class From>
-Issues<To> issuesCast(Issues<From> const& issues) {
-	Issues<To> result {};
-	for (From f : issues) { result.push_back(const_cast<To>(f)); }
-	return result;
-}
-
-} // namespace /*detail*/
-
 /* ~~ Stroke Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
-// Fail-state query
-Issues<Stroke::Iterator> Stroke::issues() const {
-	if (m_bits & FailBit) {
-		Iterator failOnly {};
-		failOnly.m_bits = FailBit;
-		Issues<Iterator> result {};
-		result.push_back(failOnly);
-		return result;
-	}
-//	else return NoIssue;
-	else return {};
-}
-
-Issues<Stroke::Iterator> Stroke::issues() {
-	return std::as_const(*this).issues();
-}
-
-Stroke::operator bool() const {
-	return *this != NoStroke && !issues();
-}
 
 // Getters and Setters
 uint32_t Stroke::raw() const {
@@ -68,7 +36,7 @@ Stroke& Stroke::clear() {
 	return *this;
 }
 
-// Range-for compatability
+// Range-for compatibility
 Stroke::Iterator Stroke::begin() const {
 	return Iterator {*this};
 }
@@ -126,6 +94,17 @@ Stroke operator&(Stroke lhs, Stroke const& rhs) {
 
 Stroke operator^(Stroke lhs, Stroke const& rhs) {
 	lhs ^= rhs; return lhs;
+}
+
+// Fail-state query
+Issues<Key> Stroke::issues() const {
+	if (m_bits & FailBit) return {Key(FailBit)};
+//	else return NoIssue;
+	else return {};
+}
+
+Stroke::operator bool() const {
+	return *this != NoStroke && !issues();
 }
 
 // Key proxy class
@@ -220,33 +199,6 @@ Phrase::Phrase(std::span<Stroke const> span) {
 	insert(end(), span.begin(), span.end());
 }
 
-// Fail-state query
-Issues<Stroke const*> Phrase::issues() const {
-//	if (empty()) return NoIssues;
-	if (empty()) return {};
-
-	Issues<Stroke const*> result {};
-	for (Stroke const& s : m_strokes) {
-		if (s == NoStroke || s.issues()) result.push_back(&s);
-	}
-	return result;
-}
-
-Issues<Stroke*> Phrase::issues() {
-	return issuesCast<Stroke*>(
-		std::as_const(*this).issues()
-	);
-}
-
-Phrase::operator bool() const {
-	if (empty()) return false;
-
-	for (Stroke const& s : m_strokes) {
-		if (s == NoStroke || s.issues()) return false;
-	}
-	return true;
-}
-
 // Concatenation
 Phrase& Phrase::operator|=(Phrase p) {
 	insert(end(), p.begin(), p.end());
@@ -262,6 +214,27 @@ Phrase operator|(Stroke lhs, Stroke const& rhs) {
 	return Phrase {lhs, rhs};
 }
 
+// Fail-state query
+Issues<Stroke const*> Phrase::issues() const {
+//	if (empty()) return NoIssues;
+	if (empty()) return {};
+
+	Issues<Stroke const*> result {};
+	for (Stroke const& s : m_strokes) {
+		if (s == NoStroke || s.issues()) result.push_back(&s);
+	}
+	return result;
+}
+
+Phrase::operator bool() const {
+	if (empty()) return false;
+
+	for (Stroke const& s : m_strokes) {
+		if (s == NoStroke || s.issues()) return false;
+	}
+	return true;
+}
+
 /* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 // Class constructors
@@ -270,20 +243,6 @@ Brief::Brief(Phrase const& p, Text s)
 
 Brief::Brief(Brief const& b, Text s)
 : m_phrase{b.m_phrase}, m_text{s} { normalize(); }
-
-// Fail-state query
-Issues<Stroke const*> Brief::issues() const {
-	return m_phrase.issues();
-}
-
-Issues<Stroke*> Brief::issues() {
-	return m_phrase.issues();
-}
-
-Brief::operator bool() const {
-	if (m_phrase.empty() && m_text.empty()) return false;
-	else return (bool)m_phrase;
-}
 
 // Getters and Setters
 Phrase& Brief::phrase() {
@@ -305,6 +264,16 @@ Text const& Brief::text() const {
 Brief& Brief::clear() {
 	*this = NoBrief;
 	return *this;
+}
+
+// Fail-state query
+Issues<Stroke const*> Brief::issues() const {
+	return m_phrase.issues();
+}
+
+Brief::operator bool() const {
+	if (m_phrase.empty() && m_text.empty()) return false;
+	else return (bool)m_phrase;
 }
 
 // Concatenation
@@ -368,20 +337,6 @@ namespace /*detail*/ {
 
 Dictionary::Dictionary(std::span<Brief const> span) {
 	insert(span.begin(), span.end());
-}
-
-Issues<Brief const*> Dictionary::issues() const {
-	Issues<Brief const*> result {};
-	for (Brief const& b : m_entries) {
-		if (b.issues()) result.push_back(&b);
-	}
-	return result;
-}
-
-Issues<Brief*> Dictionary::issues() {
-	return issuesCast<Brief*>(
-		std::as_const(*this).issues()
-	);
 }
 
 void Dictionary::clean() {
