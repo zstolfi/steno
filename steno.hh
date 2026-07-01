@@ -171,14 +171,11 @@ Stroke operator^(Key, Key);
 
 /* ~~ Chain Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-class Chain {
-	std::vector<Stroke> m_strokes {};
 
+class Chain : public std::vector<Stroke> {
 public:
 	// Default construction/assignment
-	Chain() = default;
-	Chain(Chain const&) = default;
-	Chain& operator=(Chain const&) = default;
+	using std::vector<Stroke>::vector;
 
 	// Class constructors
 	Chain(std::string_view);
@@ -188,7 +185,6 @@ public:
 	// Comparison
 	bool operator== (Chain const&) const = default;
 	auto operator<=>(Chain const&) const = default;
-	template <class T> friend struct std::hash;
 
 	// Concatenation
 	Chain& operator|=(Chain);
@@ -198,54 +194,7 @@ public:
 	Issues<Stroke const*> issues() const;
 	operator bool() const;
 
-public:
-	// Container types
-	using value_type = Stroke;
-	using reference = Stroke&;
-	using const_reference = Stroke const&;
-	using iterator = decltype(m_strokes)::iterator;
-	using const_iterator = decltype(m_strokes)::const_iterator;
-	using reverse_iterator = std::reverse_iterator<iterator>;
-	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-	using difference_type = std::ptrdiff_t;
-	using size_type = std::size_t;
-
-	// Container methods
-#	define USE(Name) \
-	auto    Name()       { return m_strokes.   Name(); } \
-	auto    Name() const { return m_strokes.   Name(); } \
-	auto c##Name() const { return m_strokes.c##Name(); }
-	USE(begin) USE(end) USE(rbegin) USE(rend)
-#	undef USE
-	void swap(Chain& other) { std::swap(*this, other); };
-	std::size_t size    () const { return m_strokes.size    (); }
-	std::size_t max_size() const { return m_strokes.max_size(); }
-	bool        empty   () const { return m_strokes.empty   (); }
-
-public:
-	// Sequence methods
-	template <std::input_iterator I>
-	Chain(I first, I last): m_strokes(first, last) {}
-	Chain(std::initializer_list<Stroke> il): m_strokes(il) {};
-	Chain(std::size_t n, Stroke t): m_strokes(n, t) {}
-	auto emplace(auto&& ... args) { return m_strokes.emplace(args ... ); }
-	auto insert (auto&& ... args) { return m_strokes.insert (args ... ); }
-	auto erase  (auto&& ... args) { return m_strokes.erase  (args ... ); }
-	auto clear  (auto&& ... args) { return m_strokes.clear  (args ... ); }
-	auto assign (auto&& ... args) { return m_strokes.assign (args ... ); }
-
 	// Vector methods
-	auto& front  ()       { return m_strokes.front(); }
-	auto& front  () const { return m_strokes.front(); }
-	auto& back   ()       { return m_strokes.back (); }
-	auto& back   () const { return m_strokes.back (); }
-	auto  emplace_back(auto&& ... args)   { m_strokes.emplace_back(args ... ); }
-	auto  push_back   (auto&& ... args)   { m_strokes.push_back   (args ... ); }
-	auto  pop_back  ()                    { m_strokes.pop_back    ();          }
-	[[nodiscard]] auto& operator[](auto n)       { return m_strokes[n];    }
-	[[nodiscard]] auto& operator[](auto n) const { return m_strokes[n];    }
-	[[nodiscard]] auto& at        (auto n)       { return m_strokes.at(n); }
-	[[nodiscard]] auto& at        (auto n) const { return m_strokes.at(n); }
 	friend void erase   (Chain& p, auto&& value);
 	friend void erase_if(Chain& p, auto&& pred);
 
@@ -606,5 +555,5 @@ template <std::size_t I> auto&& get(Brief const& b) { return b.get_impl<I>(); }
 template <std::size_t I> auto&& get(Brief&&      b) { return b.get_impl<I>(); }
 }
 
-using steno::erase;
-using steno::erase_if;
+//using steno::erase;
+//using steno::erase_if;

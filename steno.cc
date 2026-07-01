@@ -220,7 +220,7 @@ Issues<Stroke const*> Chain::issues() const {
 	if (empty()) return {};
 
 	Issues<Stroke const*> result {};
-	for (Stroke const& s : m_strokes) {
+	for (Stroke const& s : *this) {
 		if (s == NoStroke || s.issues()) result.push_back(&s);
 	}
 	return result;
@@ -229,7 +229,7 @@ Issues<Stroke const*> Chain::issues() const {
 Chain::operator bool() const {
 	if (empty()) return false;
 
-	for (Stroke const& s : m_strokes) {
+	for (Stroke const& s : *this) {
 		if (s == NoStroke || s.issues()) return false;
 	}
 	return true;

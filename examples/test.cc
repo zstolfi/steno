@@ -8,7 +8,9 @@
 #define EXPECT_SAME_TYPE(T, U) EXPECT_TRUE((std::same_as<T, U>))
 #define EXPECT_CONCEPT(C, ...) EXPECT_TRUE((C<__VA_ARGS__>))
 #define EXPECT_EXPRESSION(Expression, Type, ... ) {                            \
-    EXPECT_SAME_TYPE(Type, decltype(Expression));                              \
+    if (std::string {#Type} != "void") {                                       \
+        EXPECT_SAME_TYPE(Type, decltype(Expression));                          \
+    }                                                                          \
     (void) (Expression);                                                       \
     __VA_ARGS__; /*PostCondition*/                                             \
 }
@@ -591,9 +593,9 @@ TEST(StenoChain, ContainerExpressions) {
 		EXPECT_EXPRESSION(std::swap(lhs, rhs), void,
 			EXPECT_EQ(lhs, One); EXPECT_EQ(rhs, Two)
 		);
-		// std::erase[_if] will not work, instead we provide global functions.
-		EXPECT_EXPRESSION(erase(v, steno::NoStroke)           , void);
-		EXPECT_EXPRESSION(erase_if(v, [] (auto) { return 1; }), void);
+		// std::erase[_if] will not work, instead we provide our own.
+		EXPECT_EXPRESSION(steno::erase(v, steno::NoStroke)           , void);
+		EXPECT_EXPRESSION(steno::erase_if(v, [] (auto) { return 1; }), void);
 	}
 	EXPECT_EXPRESSION(v.size()    , C::size_type);
 	EXPECT_EXPRESSION(v.max_size(), C::size_type);
@@ -937,8 +939,8 @@ TEST(StenoDictionary, AssociativeExpressions) {
 		EXPECT_EXPRESSION(std::swap(lhs, rhs), void,
 			EXPECT_EQ(lhs, Value1); EXPECT_EQ(rhs, Value2)
 		);
-		EXPECT_EXPRESSION(erase(a, steno::NoBrief)            , void);
-		EXPECT_EXPRESSION(erase_if(a, [] (auto) { return 1; }), void);
+		EXPECT_EXPRESSION(steno::erase(a, steno::NoBrief)            , void);
+		EXPECT_EXPRESSION(steno::erase_if(a, [] (auto) { return 1; }), void);
 	}
 	// Map specific
 	a = b;
