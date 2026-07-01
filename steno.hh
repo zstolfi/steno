@@ -35,6 +35,9 @@ class Expected {/* TODO */};
 
 /* ~~ Key ID's ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+//   Keys are bit-fields that identify their part of the Stroke::m_bits integer.
+// Their order is based on the physical layout of a steno keyboard.
+
 enum class Key : uint32_t {
 	// Number Bar
 	Num = 1u<<31,
@@ -59,6 +62,9 @@ enum class Key : uint32_t {
 };
 
 /* ~~ Stroke Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+//   Strokes represent a subset of the steno keyboard pressed simultaneously.
+// They can be manipulated like bitsets, or treated as a container of Keys.
 
 class Stroke {
 	uint32_t m_bits
@@ -171,6 +177,7 @@ Stroke operator^(Key, Key);
 
 /* ~~ Chain Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+// Chains are sequences of strokes.
 
 class Chain : public std::vector<Stroke> {
 public:
@@ -208,11 +215,27 @@ private:
 // Stroke promotion
 Chain operator|(Stroke, Stroke const&);
 
+/* ~~ Text Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+//   Texts are arbitrarily sized strings which follow orthographic rules.
+// As such, they depend on some locale. This can be selected at compile time, or
+// at run time.
+
+using Text = std::string; // TODO
+
 /* ~~ Phrase Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-using Phrase = std::string;
+//   Phrases are strings with embedded formatting information.
+// This information modifies the context of any created Text object, such as
+// instructions to capitalize the next phrase, join to the next or previous
+// phrase without a space (affix), etc.
+
+using Phrase = std::string; // TODO
 
 /* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+//   Briefs associate Chains and Phrases, and can be manipulated like either.
+// They are primarily used as Dictionary entries.
 
 class Brief {
 	Chain m_chain {};
@@ -269,6 +292,8 @@ Brief operator+(Chain, Phrase);
 Brief operator+(Phrase, Chain);
 
 /* ~~ Dictionary Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+// Dictionaries provide fast look-up for many stored entries.
 
 class Dictionary {
 	std::deque<Brief> m_entries {};
@@ -367,12 +392,14 @@ private:
 
 /* ~~ String Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-// We use 'long' for ios_base::iword compatability.
+// Formats can be used inside a std::ostream or passed as function arguments.
+
+// We use 'long' for ios_base::iword compatibility.
 enum class Format : long {
 	// Width                XX
 	Packed        = 0b00'00'01,
 	Wide          = 0b00'00'10,
-	// Hypen             XX
+	// Hyphen            XX
 	Hyphen        = 0b00'01'00,
 	NoHyphen      = 0b00'10'00,
 	// Digit          XX
