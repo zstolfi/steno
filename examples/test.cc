@@ -420,62 +420,62 @@ TEST(StenoStroke, ToString) {
 	}
 }
 
-/* ~~ Chain Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ StrokeList Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 // Modeled after https://en.cppreference.com/w/cpp/named_req/SequenceContainer
 
-TEST(StenoChain, EmptyConstruction) {
-	steno::Chain chain;
-	EXPECT_EQ(chain, steno::NoChain);
-	EXPECT_EQ(steno::Chain (), steno::NoChain);
-	EXPECT_EQ(steno::Chain {}, steno::NoChain);
-	EXPECT_EQ(steno::Chain {"-"}, steno::NoChain);
-	EXPECT_ISSUES(steno::Chain {""});
-	EXPECT_ISSUES(steno::Chain {" "});
+TEST(StenoStrokeList, EmptyConstruction) {
+	steno::StrokeList strokeList;
+	EXPECT_EQ(strokeList, steno::NoStrokeList);
+	EXPECT_EQ(steno::StrokeList (), steno::NoStrokeList);
+	EXPECT_EQ(steno::StrokeList {}, steno::NoStrokeList);
+	EXPECT_EQ(steno::StrokeList {"-"}, steno::NoStrokeList);
+	EXPECT_ISSUES(steno::StrokeList {""});
+	EXPECT_ISSUES(steno::StrokeList {" "});
 }
 
-TEST(StenoChain, GoodInputString) {
+TEST(StenoStrokeList, GoodInputString) {
 	// Zero strokes
-	// The empty chain acts like 0. It isn't truthy, but it also has no issues.
-	EXPECT_FALSE(steno::Chain {"-"});
-	EXPECT_NO_ISSUES(steno::Chain {"-"});
+	// The empty strokeList acts like 0. It isn't truthy, but it also has no issues.
+	EXPECT_FALSE(steno::StrokeList {"-"});
+	EXPECT_NO_ISSUES(steno::StrokeList {"-"});
 	// Single strokes
-	EXPECT_TRUE(steno::Chain {"KW*"}); // Q
-	EXPECT_TRUE(steno::Chain {"S*"});  // S
-	EXPECT_TRUE(steno::Chain {"KR*"}); // C
-	EXPECT_TRUE(steno::Chain {"SR*"}); // V
+	EXPECT_TRUE(steno::StrokeList {"KW*"}); // Q
+	EXPECT_TRUE(steno::StrokeList {"S*"});  // S
+	EXPECT_TRUE(steno::StrokeList {"KR*"}); // C
+	EXPECT_TRUE(steno::StrokeList {"SR*"}); // V
 	// Multiple Strokes
-	EXPECT_TRUE(steno::Chain {"TKHREUB/RELT"}); // deliberately
-	EXPECT_TRUE(steno::Chain {"STEP/-G"});      // stepping
-	EXPECT_TRUE(steno::Chain {"SPWAOUT"});      // into the
-	EXPECT_TRUE(steno::Chain {"STRAOET"});      // street
-	EXPECT_TRUE(steno::Chain {"SKP-"});         // and
-	EXPECT_TRUE(steno::Chain {"PH*ETD/KHREU"}); // methodically
-	EXPECT_TRUE(steno::Chain {"TPHOBG/-G"});    // knocking
-	EXPECT_TRUE(steno::Chain {"PAOEBL/*Z"});    // people's
-	EXPECT_TRUE(steno::Chain {"HATS"});         // hats
-	EXPECT_TRUE(steno::Chain {"OF"});           // off
+	EXPECT_TRUE(steno::StrokeList {"TKHREUB/RELT"}); // deliberately
+	EXPECT_TRUE(steno::StrokeList {"STEP/-G"});      // stepping
+	EXPECT_TRUE(steno::StrokeList {"SPWAOUT"});      // into the
+	EXPECT_TRUE(steno::StrokeList {"STRAOET"});      // street
+	EXPECT_TRUE(steno::StrokeList {"SKP-"});         // and
+	EXPECT_TRUE(steno::StrokeList {"PH*ETD/KHREU"}); // methodically
+	EXPECT_TRUE(steno::StrokeList {"TPHOBG/-G"});    // knocking
+	EXPECT_TRUE(steno::StrokeList {"PAOEBL/*Z"});    // people's
+	EXPECT_TRUE(steno::StrokeList {"HATS"});         // hats
+	EXPECT_TRUE(steno::StrokeList {"OF"});           // off
 }
 
-TEST(StenoChain, BadInputString) {
+TEST(StenoStrokeList, BadInputString) {
 	// Construction from an empty string is probably an error.
-	EXPECT_FALSE(steno::Chain {""});
-	EXPECT_FALSE(steno::Chain {"/"});
-	EXPECT_FALSE(steno::Chain {"//"});
-	EXPECT_FALSE(steno::Chain {"1/"});
-	EXPECT_FALSE(steno::Chain {"/2"});
-	EXPECT_FALSE(steno::Chain {"/3/"});
-	EXPECT_FALSE(steno::Chain {"4//5"});
-	// Any chain made up of only empty strokes is invalid. This is because only
-	// one chain is allowd to act like 0, the one with a size of 0. Any other
-	// "zero-like" chain would imply 0 | 0 != 0, where | is concatenation.
+	EXPECT_FALSE(steno::StrokeList {""});
+	EXPECT_FALSE(steno::StrokeList {"/"});
+	EXPECT_FALSE(steno::StrokeList {"//"});
+	EXPECT_FALSE(steno::StrokeList {"1/"});
+	EXPECT_FALSE(steno::StrokeList {"/2"});
+	EXPECT_FALSE(steno::StrokeList {"/3/"});
+	EXPECT_FALSE(steno::StrokeList {"4//5"});
+	// Any strokeList made up of only empty strokes is invalid. This is because only
+	// one strokeList is allowd to act like 0, the one with a size of 0. Any other
+	// "zero-like" strokeList would imply 0 | 0 != 0, where | is concatenation.
 	// Construction via "-" is allowed and not "", for the same reason zero is
 	// written "0" and not "".
-	EXPECT_FALSE(steno::Chain {"-/-"});
-	EXPECT_FALSE(steno::Chain {"-/-/-"});
+	EXPECT_FALSE(steno::StrokeList {"-/-"});
+	EXPECT_FALSE(steno::StrokeList {"-/-/-"});
 }
 
-TEST(StenoChain, StrokeModify) {
-	steno::Chain p1 {"PHAOUT/ABL"};
+TEST(StenoStrokeList, StrokeModify) {
+	steno::StrokeList p1 {"PHAOUT/ABL"};
 	EXPECT_EQ(p1[0], steno::Stroke {"   P H AO  U      T   "});
 	EXPECT_EQ(p1[1], steno::Stroke {"       A       BL     "});
 
@@ -483,14 +483,14 @@ TEST(StenoChain, StrokeModify) {
 	EXPECT_EQ(p1[0], steno::Stroke {"   P H AO  U      T   "});
 	EXPECT_EQ(p1[1], steno::Stroke {"       A  EU      T D "});
 
-	steno::Chain const p2 {"KOPB/STAPBT"};
+	steno::StrokeList const p2 {"KOPB/STAPBT"};
 	EXPECT_EQ(p2[0], steno::Stroke {"  K     O     PB      "});
 	EXPECT_EQ(p2[1], steno::Stroke {"ST     A      PB  T   "});
 }
 
-TEST(StenoChain, Concatenation) {
+TEST(StenoStrokeList, Concatenation) {
 	using S = steno::Stroke;
-	using P = steno::Chain;
+	using P = steno::StrokeList;
 	EXPECT_EQ(S("1") | S("2") | S("3"), P("1/2/3"));
 	EXPECT_EQ(P("1") | P("2") | P("3"), P("1/2/3"));
 	EXPECT_EQ(P("1   /    2") | S("3"), P("1/2/3"));
@@ -499,29 +499,29 @@ TEST(StenoChain, Concatenation) {
 
 #include <map>
 #include <unordered_map>
-TEST(StenoChain, UseWithMaps) {
-	steno::Chain const array[] = {{"1"}, {"1"}, {"2"}, {"1"}};
+TEST(StenoStrokeList, UseWithMaps) {
+	steno::StrokeList const array[] = {{"1"}, {"1"}, {"2"}, {"1"}};
 
-	std::map<steno::Chain, int> count;
-	for (auto chain : array) count[chain]++;
+	std::map<steno::StrokeList, int> count;
+	for (auto strokeList : array) count[strokeList]++;
 	EXPECT_EQ(count[{"1"}], 3);
 	EXPECT_EQ(count[{"2"}], 1);
 	EXPECT_EQ(count[{"3"}], 0);
 
-	std::unordered_map<steno::Chain, bool> seen;
-	for (auto chain : array) seen[chain] = true;
+	std::unordered_map<steno::StrokeList, bool> seen;
+	for (auto strokeList : array) seen[strokeList] = true;
 	EXPECT_EQ(seen[{"1"}], true);
 	EXPECT_EQ(seen[{"2"}], true);
 	EXPECT_EQ(seen[{"3"}], false);
 }
 
-TEST(StenoChain, ToString) {
-	steno::Chain chain {"#O/#S-/#T-/#P-/#H-/#A/#-F/#-P/#-L/#-T"};
-	EXPECT_EQ(steno::toString(chain), "0/1/2/3/4/5/6/7/8/9");
+TEST(StenoStrokeList, ToString) {
+	steno::StrokeList strokeList {"#O/#S-/#T-/#P-/#H-/#A/#-F/#-P/#-L/#-T"};
+	EXPECT_EQ(steno::toString(strokeList), "0/1/2/3/4/5/6/7/8/9");
 }
 
-TEST(StenoChain, ContainerTypes) {
-	using C  = steno::Chain;
+TEST(StenoStrokeList, ContainerTypes) {
+	using C  = steno::StrokeList;
 	using T  = steno::Stroke;
 	using I  = C::iterator;
 	using IC = C::const_iterator;
@@ -543,15 +543,15 @@ TEST(StenoChain, ContainerTypes) {
 	EXPECT_SAME_TYPE(IC_Traits::difference_type, C::difference_type);
 }
 
-TEST(StenoChain, ContainerStatements) {
-	using C = steno::Chain;
+TEST(StenoStrokeList, ContainerStatements) {
+	using C = steno::StrokeList;
 	{
 		C a;
 		C b = C();
 		EXPECT_TRUE(a.empty());
 		EXPECT_TRUE(b.empty());
-		EXPECT_EQ(a, steno::NoChain);
-		EXPECT_EQ(b, steno::NoChain);
+		EXPECT_EQ(a, steno::NoStrokeList);
+		EXPECT_EQ(b, steno::NoStrokeList);
 	} {
 		auto v = C {"STEPB/OE"};
 		C a(v);
@@ -561,8 +561,8 @@ TEST(StenoChain, ContainerStatements) {
 	}
 }
 
-TEST(StenoChain, ContainerExpressions) {
-	using C = steno::Chain;
+TEST(StenoStrokeList, ContainerExpressions) {
+	using C = steno::StrokeList;
 	auto v = C {"STEPB/OE"};
 	auto lhs = C {};
 	EXPECT_EXPRESSION(C()    , C , EXPECT_TRUE(C().empty()));
@@ -583,8 +583,8 @@ TEST(StenoChain, ContainerExpressions) {
 		EXPECT_EXPRESSION(u == v, bool);
 		EXPECT_EXPRESSION(u != v, bool);
 
-		auto const One = steno::Chain {"WUPB"};
-		auto const Two = steno::Chain {"TWO"};
+		auto const One = steno::StrokeList {"WUPB"};
+		auto const Two = steno::StrokeList {"TWO"};
 		auto lhs = One;
 		auto rhs = Two;
 		EXPECT_EXPRESSION(lhs.swap(rhs), void,
@@ -602,8 +602,8 @@ TEST(StenoChain, ContainerExpressions) {
 	EXPECT_EXPRESSION(v.empty()   , bool);
 }
 
-TEST(StenoChain, ReversibleTypes) {
-	using X = steno::Chain;
+TEST(StenoStrokeList, ReversibleTypes) {
+	using X = steno::StrokeList;
 	X a {};
 	X const b {};
 	using RI = X::reverse_iterator;
@@ -623,8 +623,8 @@ TEST(StenoChain, ReversibleTypes) {
 }
 
 #include <list>
-TEST(StenoChain, SequenceStatements) {
-	using C = steno::Chain;
+TEST(StenoStrokeList, SequenceStatements) {
+	using C = steno::StrokeList;
 	for (C::size_type n : {0, 1, 10, 10000}) {
 		auto const t = C::value_type {"PWHRA*PBG"};
 		C c(n, t);
@@ -642,8 +642,8 @@ TEST(StenoChain, SequenceStatements) {
 	}
 }
 
-TEST(StenoChain, SequenceExpressions) {
-	using C = steno::Chain;
+TEST(StenoStrokeList, SequenceExpressions) {
+	using C = steno::StrokeList;
 	auto v = C {"STEPB/OE/TPRAEUZ"};
 	auto const cv = C {"KO*PBS/TPRAEUZ"};
 	auto i = cv.begin();
@@ -687,33 +687,33 @@ TEST(StenoChain, SequenceExpressions) {
 
 TEST(StenoBrief, Construction) {
 	steno::Brief apple1 {{"AP/EL"}, "apple"};
-	EXPECT_EQ(apple1.chain(), steno::Chain {"AP/EL"});
+	EXPECT_EQ(apple1.strokes(), steno::StrokeList {"AP/EL"});
 	EXPECT_EQ(apple1.phrase(), "apple");
 
 	steno::Brief apple2 {apple1, "Apple ]["};
-	EXPECT_EQ(apple2.chain(), steno::Chain {"AP/EL"});
+	EXPECT_EQ(apple2.strokes(), steno::StrokeList {"AP/EL"});
 	EXPECT_EQ(apple2.phrase(), "Apple ][");
 }
 
 TEST(StenoBrief, Getters) {
 	steno::Brief brief {{"1/2"}, "one, two"};
-	EXPECT_EQ(brief.chain(), steno::Chain {"1/2"});
+	EXPECT_EQ(brief.strokes(), steno::StrokeList {"1/2"});
 	EXPECT_EQ(brief.phrase(), "one, two");
 
-	brief.chain() |= steno::Stroke {"3"};
+	brief.strokes() |= steno::Stroke {"3"};
 	brief.phrase() += ", three";
-	EXPECT_EQ(brief.chain(), steno::Chain {"1/2/3"});
+	EXPECT_EQ(brief.strokes(), steno::StrokeList {"1/2/3"});
 	EXPECT_EQ(brief.phrase(), "one, two, three");
 
 	brief |= steno::Brief {{"4"}, ", four"};
 //	brief |= steno::Brief {{"4"}, "{,}four"};
-	EXPECT_EQ(brief.chain(), steno::Chain {"1/2/3/4"});
+	EXPECT_EQ(brief.strokes(), steno::StrokeList {"1/2/3/4"});
 	EXPECT_EQ(brief.phrase(), "one, two, three, four");
 
 	using enum steno::Key;
 	steno::Brief const ab {{"A/-B"}, "\tayy bee\t"};
-	EXPECT_TRUE(ab.chain()[0][A]);
-	EXPECT_TRUE(ab.chain()[1][_B]);
+	EXPECT_TRUE(ab.strokes()[0][A]);
+	EXPECT_TRUE(ab.strokes()[1][_B]);
 	EXPECT_EQ(ab.phrase(), "ayy bee");
 }
 
@@ -762,10 +762,10 @@ TEST(StenoDictionary, Insertion) {
 	}
 }
 
-TEST(StenoDictionary, ChainAccess) {
+TEST(StenoDictionary, StrokeListAccess) {
 	steno::Dictionary dict {{{"KAOE"}, "value"}};
-	steno::Chain const key {"KAOE"};
-	steno::Chain const newKey {"TPHAOU/KAOE"};
+	steno::StrokeList const key {"KAOE"};
+	steno::StrokeList const newKey {"TPHAOU/KAOE"};
 	EXPECT_CONCEPT(std::convertible_to, decltype(dict[key]), steno::Phrase&);
 
 	EXPECT_TRUE(dict.contains(key));
@@ -776,7 +776,7 @@ TEST(StenoDictionary, ChainAccess) {
 	EXPECT_EQ(dict[newKey], steno::NoPhrase);
 	dict.clean();
 	EXPECT_FALSE(dict.contains(newKey));
-	for (steno::Brief b : dict) EXPECT_NE(b.chain(), newKey);
+	for (steno::Brief b : dict) EXPECT_NE(b.strokes(), newKey);
 
 	dict[newKey] = "new value";
 	EXPECT_TRUE(dict.contains(newKey));
@@ -866,7 +866,7 @@ TEST(StenoDictionary, ContainerExpressions) {
 
 TEST(StenoDictionary, AssociativeTypes) {
 	using X = steno::Dictionary;
-	EXPECT_SAME_TYPE(X::key_type   , steno::Chain);
+	EXPECT_SAME_TYPE(X::key_type   , steno::StrokeList);
 	EXPECT_SAME_TYPE(X::mapped_type, std::string);
 	EXPECT_SAME_TYPE(X::value_type , steno::Brief);
 }
@@ -944,8 +944,8 @@ TEST(StenoDictionary, AssociativeExpressions) {
 	}
 	// Map specific
 	a = b;
-	EXPECT_EXPRESSION(a.at(a.begin()->chain()), X::mapped_type&);
-	EXPECT_EXPRESSION(b.at(b.begin()->chain()), X::mapped_type const&);
+	EXPECT_EXPRESSION(a.at(a.begin()->strokes()), X::mapped_type&);
+	EXPECT_EXPRESSION(b.at(b.begin()->strokes()), X::mapped_type const&);
 	EXPECT_THROW(std::ignore = a.at(steno::NoStroke), std::out_of_range);
 	EXPECT_THROW(std::ignore = b.at(steno::NoStroke), std::out_of_range);
 }

@@ -173,11 +173,11 @@ Stroke operator^(Key lhs, Key rhs) {
 	return Stroke {lhs} ^ Stroke {rhs};
 }
 
-/* ~~ Chain Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ StrokeList Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 // Class constructors
-Chain::Chain(std::string_view str) {
-	// How to spell the empty chain (\s*-\s*)
+StrokeList::StrokeList(std::string_view str) {
+	// How to spell the empty stroke list (\s*-\s*)
 	if (auto i = str.find_first_not_of(" \t"); i != str.npos)
 	if (auto j = str.find_last_not_of(" \t"); j != str.npos)
 	if (i == j && str.find('-') != str.npos) return;
@@ -191,31 +191,31 @@ Chain::Chain(std::string_view str) {
 	push(i, str.size());
 }
 
-Chain::Chain(Stroke x) {
+StrokeList::StrokeList(Stroke x) {
 	insert(end(), x);
 }
 
-Chain::Chain(std::span<Stroke const> span) {
+StrokeList::StrokeList(std::span<Stroke const> span) {
 	insert(end(), span.begin(), span.end());
 }
 
 // Concatenation
-Chain& Chain::operator|=(Chain p) {
+StrokeList& StrokeList::operator|=(StrokeList p) {
 	insert(end(), p.begin(), p.end());
 	return *this;
 }
 
-Chain operator|(Chain lhs, Chain const& rhs) {
+StrokeList operator|(StrokeList lhs, StrokeList const& rhs) {
 	lhs |= rhs; return lhs;
 }
 
 // Stroke promotion
-Chain operator|(Stroke lhs, Stroke const& rhs) {
-	return Chain {lhs, rhs};
+StrokeList operator|(Stroke lhs, Stroke const& rhs) {
+	return StrokeList {lhs, rhs};
 }
 
 // Fail-state query
-Issues<Stroke const*> Chain::issues() const {
+Issues<Stroke const*> StrokeList::issues() const {
 //	if (empty()) return NoIssues;
 	if (empty()) return {};
 
@@ -226,7 +226,7 @@ Issues<Stroke const*> Chain::issues() const {
 	return result;
 }
 
-Chain::operator bool() const {
+StrokeList::operator bool() const {
 	if (empty()) return false;
 
 	for (Stroke const& s : *this) {
@@ -238,19 +238,19 @@ Chain::operator bool() const {
 /* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 // Class constructors
-Brief::Brief(Chain const& p, Phrase s)
-: m_chain{p}, m_phrase{s} { normalize(); }
+Brief::Brief(StrokeList const& p, Phrase s)
+: m_strokeList{p}, m_phrase{s} { normalize(); }
 
 Brief::Brief(Brief const& b, Phrase s)
-: m_chain{b.m_chain}, m_phrase{s} { normalize(); }
+: m_strokeList{b.m_strokeList}, m_phrase{s} { normalize(); }
 
 // Getters and Setters
-Chain& Brief::chain() {
-	return m_chain;
+StrokeList& Brief::strokes() {
+	return m_strokeList;
 }
 
-Chain const& Brief::chain() const {
-	return m_chain;
+StrokeList const& Brief::strokes() const {
+	return m_strokeList;
 }
 
 Phrase& Brief::phrase() {
@@ -268,17 +268,17 @@ Brief& Brief::clear() {
 
 // Fail-state query
 Issues<Stroke const*> Brief::issues() const {
-	return m_chain.issues();
+	return m_strokeList.issues();
 }
 
 Brief::operator bool() const {
-	if (m_chain.empty() && m_phrase.empty()) return false;
-	else return (bool)m_chain;
+	if (m_strokeList.empty() && m_phrase.empty()) return false;
+	else return (bool)m_strokeList;
 }
 
 // Concatenation
 Brief& Brief::operator|=(Brief other) {
-	m_chain |= other.m_chain;
+	m_strokeList |= other.m_strokeList;
 	m_phrase += other.m_phrase;
 	return *this;
 }
@@ -297,16 +297,16 @@ Brief operator+(Brief b, Phrase str) {
 }
 
 Brief operator+(Phrase str, Brief b) {
-	Brief result {b.m_chain, str};
+	Brief result {b.m_strokeList, str};
 	return result += str;
 }
 
 // Internal
 Brief& Brief::normalize() {
-	// Remove empty strokes in m_chain.
-	m_chain.erase(
-		std::remove(m_chain.begin(), m_chain.end(), NoStroke),
-		m_chain.end()
+	// Remove empty strokes in m_strokeList.
+	m_strokeList.erase(
+		std::remove(m_strokeList.begin(), m_strokeList.end(), NoStroke),
+		m_strokeList.end()
 	);
 	// Remove leading or trailing whitespace.
 	constexpr std::string_view Whitespace {" \t\n\r"};
@@ -316,12 +316,12 @@ Brief& Brief::normalize() {
 	return *this;
 }
 
-// Chain promotion
-Brief operator+(Chain p, Phrase str) {
+// StrokeList promotion
+Brief operator+(StrokeList p, Phrase str) {
 	return Brief {p, ""} + str;
 }
 
-Brief operator+(Phrase str, Chain p) {
+Brief operator+(Phrase str, StrokeList p) {
 	return str + Brief {p, ""};
 }
 
@@ -330,7 +330,7 @@ Brief operator+(Phrase str, Chain p) {
 namespace /*detail*/ {
 	constexpr struct {
 		bool operator()(Brief const& a, Brief const& b) const {
-			return a.chain() < b.chain();
+			return a.strokes() < b.strokes();
 		}
 	} EntryCompare {};
 }
@@ -342,7 +342,7 @@ Dictionary::Dictionary(std::span<Brief const> span) {
 void Dictionary::clean() {
 	std::erase_if(m_entries, [] (Brief const& b) {
 		return b.issues()
-		||     b.chain() == NoChain
+		||     b.strokes() == NoStrokeList
 		||     b.phrase() == NoPhrase;
 	});
 }
@@ -353,7 +353,7 @@ Dictionary::iterator Dictionary::insert(Brief const& b) {
 	// Efficiently find our sorted position
 	auto position = std::lower_bound(begin(), end(), b, EntryCompare);
 	// Our entry doesn't already exist
-	if (position == end() || position->chain() != b.chain()) {
+	if (position == end() || position->strokes() != b.strokes()) {
 		// Insert our entry sorted
 		return m_entries.insert(position, b);
 	}
@@ -369,7 +369,7 @@ void Dictionary::insert(std::initializer_list<Brief> il) {
 	insert(il.begin(), il.end());
 }
 
-std::size_t Dictionary::erase(Chain p) {
+std::size_t Dictionary::erase(StrokeList p) {
 	auto it = find(p);
 	if (it != end()) m_entries.erase(it);
 	return it != end();
@@ -395,58 +395,58 @@ void Dictionary::clear() {
 	m_entries.clear();
 }
 
-bool Dictionary::contains(Chain const& p) const {
+bool Dictionary::contains(StrokeList const& p) const {
 	return find(p) != end();
 }
 
-Dictionary::iterator Dictionary::find(Chain const& p) {
+Dictionary::iterator Dictionary::find(StrokeList const& p) {
 	auto it = std::lower_bound(begin(), end(), Brief {p, ""}, EntryCompare);
-	if (it == end() || it->chain() != p) return end();
+	if (it == end() || it->strokes() != p) return end();
 	else return it;
 }
 
-Dictionary::const_iterator Dictionary::find(Chain const& p) const {
+Dictionary::const_iterator Dictionary::find(StrokeList const& p) const {
 	auto it = std::lower_bound(begin(), end(), Brief {p, ""}, EntryCompare);
-	if (it == end() || it->chain() != p) return end();
+	if (it == end() || it->strokes() != p) return end();
 	else return it;
 }
 
-Dictionary::iterator Dictionary::lower_bound(Chain const& p) {
+Dictionary::iterator Dictionary::lower_bound(StrokeList const& p) {
 	return find(p);
 }
 
-Dictionary::const_iterator Dictionary::lower_bound(Chain const& p) const {
+Dictionary::const_iterator Dictionary::lower_bound(StrokeList const& p) const {
 	return find(p);
 }
 
-Dictionary::iterator Dictionary::upper_bound(Chain const& p) {
+Dictionary::iterator Dictionary::upper_bound(StrokeList const& p) {
 	auto it = find(p);
 	if (it != end()) return it+1;
 	else return end();
 }
 
-Dictionary::const_iterator Dictionary::upper_bound(Chain const& p) const {
+Dictionary::const_iterator Dictionary::upper_bound(StrokeList const& p) const {
 	auto it = find(p);
 	if (it != end()) return it+1;
 	else return end();
 }
 
 std::pair<Dictionary::iterator, Dictionary::iterator>
-Dictionary::equal_range(Chain const& p) {
+Dictionary::equal_range(StrokeList const& p) {
 	auto it = find(p);
 	if (it != end()) return {it, it+1};
 	else return {end(), end()};
 }
 
 std::pair<Dictionary::const_iterator, Dictionary::const_iterator>
-Dictionary::equal_range(Chain const& p) const {
+Dictionary::equal_range(StrokeList const& p) const {
 	auto it = find(p);
 	if (it != end()) return {it, it+1};
 	else return {end(), end()};
 }
 
 // Map methods
-Phrase& Dictionary::operator[](Chain const& p) {
+Phrase& Dictionary::operator[](StrokeList const& p) {
 	auto it = find(p);
 	if (it != end()) return it->phrase();
 	else {
@@ -455,19 +455,19 @@ Phrase& Dictionary::operator[](Chain const& p) {
 	}
 }
 
-Phrase& Dictionary::at(Chain const& p) {
+Phrase& Dictionary::at(StrokeList const& p) {
 	auto it = find(p);
 	if (it != end()) return it->phrase();
 	else throw std::out_of_range {toString(p)};
 }
 
-Phrase const& Dictionary::at(Chain const& p) const {
+Phrase const& Dictionary::at(StrokeList const& p) const {
 	auto it = find(p);
 	if (it != end()) return it->phrase();
 	else throw std::out_of_range {toString(p)};
 }
 
-void Dictionary::sort() {
+void Dictionary::normalize() {
 	std::sort(begin(), end(), EntryCompare);
 }
 
@@ -548,7 +548,7 @@ std::string toString(Stroke s, Format format) {
 	return result;
 }
 
-std::string toString(Chain const& p, Format format) {
+std::string toString(StrokeList const& p, Format format) {
 	std::string result = "";
 	for (int i=0; auto stroke : p) {
 		if (i++) result += '/';
@@ -558,7 +558,7 @@ std::string toString(Chain const& p, Format format) {
 }
 
 std::string toString(Brief const& b, Format format) {
-	return toString(b.chain(), format) + ", " + b.phrase();
+	return toString(b.strokes(), format) + ", " + b.phrase();
 }
 
 std::ostream& operator<<(std::ostream& os, Stroke s) {
@@ -567,7 +567,7 @@ std::ostream& operator<<(std::ostream& os, Stroke s) {
 	return os << toString(s, format);
 }
 
-std::ostream& operator<<(std::ostream& os, Chain const& p) {
+std::ostream& operator<<(std::ostream& os, StrokeList const& p) {
 	auto format = Format(os.iword(Format_xalloc));
 	if (!bits(format)) format = StrokeDefault;
 	return os << toString(p, format);
@@ -597,7 +597,7 @@ std::size_t std::hash<steno::Stroke>::operator()(steno::Stroke const& x) const {
 }
 
 // https://stackoverflow.com/a/72073933
-std::size_t std::hash<steno::Chain>::operator()(steno::Chain const& x) const {
+std::size_t std::hash<steno::StrokeList>::operator()(steno::StrokeList const& x) const {
 	std::size_t seed = x.size();
 	for (auto stroke : x) {
 		uint32_t n = stroke.m_bits;

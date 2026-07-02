@@ -15,8 +15,8 @@ void EntryIterator<Plain>::next() {
 	auto split = line.find('=');
 	if (split == line.npos) return fail("expected '='");
 	current = Brief {
-		Chain {line.substr(0, split)},
-		line.substr(split+1),
+		StrokeList {line.substr(0, split)},
+		Text {line.substr(split+1)},
 	};
 }
 
@@ -97,7 +97,7 @@ void EntryIterator<Json>::next() {
 			entryState = Accept;
 		}
 	}
-	current = Brief {Chain {stringL}, stringR};
+	current = Brief {StrokeList {stringL}, Text {stringR}};
 }
 
 /* ~~ RTF/CRE Dictionary Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -153,8 +153,8 @@ void EntryIterator<Rtf>::next() {
 		auto split = line.find('}');
 		if (split == line.npos) return fail();
 		current = Brief {
-			Chain {line.substr(0, split)},
-			line.substr(split+1, ending - (split+1)),
+			StrokeList {line.substr(0, split)},
+			Text {line.substr(split+1, ending - (split+1))},
 		};
 		if (over()) state.value = RtfState::Final;
 	} while (!over() && current.issues());
