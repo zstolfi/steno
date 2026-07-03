@@ -250,10 +250,10 @@ public:
 	Brief(Brief const&, Phrase);
 
 	// Getters and Setters
-	StrokeList&       strokes();
+	StrokeList /* */& strokes();
 	StrokeList const& strokes() const;
-	Phrase&         phrase();
-	Phrase const&   phrase() const;
+	Phrase /* */& phrase();
+	Phrase const& phrase() const;
 	template <std::size_t I> friend auto&& get(Brief&);
 	template <std::size_t I> friend auto&& get(Brief const&);
 	template <std::size_t I> friend auto&& get(Brief&&);
@@ -277,12 +277,14 @@ public:
 
 private:
 	Brief& normalize();
-	template <std::size_t I> auto&& get_impl() &
-	{ if constexpr (I==0) return m_strokeList; if constexpr (I==1) return m_phrase; }
-	template <std::size_t I> auto&& get_impl() const&
-	{ if constexpr (I==0) return m_strokeList; if constexpr (I==1) return m_phrase; }
-	template <std::size_t I> auto&& get_impl() &&
-	{ if constexpr (I==0) return m_strokeList; if constexpr (I==1) return m_phrase; }
+
+#	define GET_IMPL(Attr) \
+	template <std::size_t I> auto&& get_impl() Attr {                          \
+	    if constexpr (I==0) return m_strokeList;                               \
+	    if constexpr (I==1) return m_phrase;                                   \
+	}
+	GET_IMPL(&) GET_IMPL(const&) GET_IMPL(&&)
+#	undef GET_IMPL
 };
 
 // StrokeList promotion
@@ -301,9 +303,9 @@ public:
 	// Default construction/assignment/movement
 	Dictionary() = default;
 	Dictionary(Dictionary const&) = default;
-	Dictionary(Dictionary&&     ) = default;
+	Dictionary(Dictionary&&/* */) = default;
 	Dictionary& operator=(Dictionary const&) = default;
-	Dictionary& operator=(Dictionary&&     ) = default;
+	Dictionary& operator=(Dictionary&&/* */) = default;
 
 	// Class constructors
 	// Use parseDictionary() for file type support.
@@ -370,8 +372,10 @@ public:
 	const_iterator lower_bound(StrokeList const&) const;
 	/*  */iterator upper_bound(StrokeList const&);
 	const_iterator upper_bound(StrokeList const&) const;
-	std::pair</*  */iterator, /*  */iterator> equal_range(StrokeList const&);
-	std::pair<const_iterator, const_iterator> equal_range(StrokeList const&) const;
+	std::pair<iterator, iterator>
+	equal_range(StrokeList const&);
+	std::pair<const_iterator, const_iterator>
+	equal_range(StrokeList const&) const;
 
 	// Map methods
 	Phrase& operator[](StrokeList const&);
@@ -413,16 +417,16 @@ using enum Format;
 Format operator|(Format, Format);
 Format operator|=(Format&, Format);
 
-char toChar     (Key);
+char toChar(Key);
 char toCharShift(Key);
-std::string toString(Key          , Format = KeyDefault);
-std::string toString(Stroke       , Format = StrokeDefault);
+std::string toString(Key, Format = KeyDefault);
+std::string toString(Stroke, Format = StrokeDefault);
 std::string toString(StrokeList const&, Format = StrokeDefault);
-std::string toString(Brief  const&, Format = StrokeDefault);
-std::ostream& operator<<(std::ostream&, Key          );
-std::ostream& operator<<(std::ostream&, Stroke       );
+std::string toString(Brief const&, Format = StrokeDefault);
+std::ostream& operator<<(std::ostream&, Key);
+std::ostream& operator<<(std::ostream&, Stroke);
 std::ostream& operator<<(std::ostream&, StrokeList const&);
-std::ostream& operator<<(std::ostream&, Brief  const&);
+std::ostream& operator<<(std::ostream&, Brief const&);
 
 // Format as manipulator
 std::ostream& operator<<(std::ostream&, Format);

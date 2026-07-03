@@ -420,7 +420,7 @@ TEST(StenoStroke, ToString) {
 	}
 }
 
-/* ~~ StrokeList Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ StrokeList Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 // Modeled after https://en.cppreference.com/w/cpp/named_req/SequenceContainer
 
 TEST(StenoStrokeList, EmptyConstruction) {
@@ -434,8 +434,10 @@ TEST(StenoStrokeList, EmptyConstruction) {
 }
 
 TEST(StenoStrokeList, GoodInputString) {
+	// The empty strokeList acts like 0. It isn't truthy, but there are also no
+	// issues with it.
+
 	// Zero strokes
-	// The empty strokeList acts like 0. It isn't truthy, but it also has no issues.
 	EXPECT_FALSE(steno::StrokeList {"-"});
 	EXPECT_NO_ISSUES(steno::StrokeList {"-"});
 	// Single strokes
@@ -465,11 +467,11 @@ TEST(StenoStrokeList, BadInputString) {
 	EXPECT_FALSE(steno::StrokeList {"/2"});
 	EXPECT_FALSE(steno::StrokeList {"/3/"});
 	EXPECT_FALSE(steno::StrokeList {"4//5"});
-	// Any strokeList made up of only empty strokes is invalid. This is because only
-	// one strokeList is allowd to act like 0, the one with a size of 0. Any other
-	// "zero-like" strokeList would imply 0 | 0 != 0, where | is concatenation.
-	// Construction via "-" is allowed and not "", for the same reason zero is
-	// written "0" and not "".
+	// Any strokeList made up of only empty strokes is invalid. This is because
+	// only one strokeList is allowd to act like 0, the one with a size of 0.
+	// Any other "zero-like" strokeList would imply 0 | 0 != 0, where | is
+	// concatenation. Construction via "-" is allowed and not "", for the same
+	// reason zero is written "0" and not "".
 	EXPECT_FALSE(steno::StrokeList {"-/-"});
 	EXPECT_FALSE(steno::StrokeList {"-/-/-"});
 }

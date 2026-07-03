@@ -173,7 +173,7 @@ Stroke operator^(Key lhs, Key rhs) {
 	return Stroke {lhs} ^ Stroke {rhs};
 }
 
-/* ~~ StrokeList Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ StrokeList Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 // Class constructors
 StrokeList::StrokeList(std::string_view str) {
@@ -592,12 +592,14 @@ std::ostream& operator<<(std::ostream& os, Format f) {
 
 } // namespace steno
 
-std::size_t std::hash<steno::Stroke>::operator()(steno::Stroke const& x) const {
+using namespace steno;
+
+std::size_t std::hash<Stroke>::operator()(Stroke const& x) const {
 	return std::hash<uint32_t> {} (x.m_bits);
 }
 
 // https://stackoverflow.com/a/72073933
-std::size_t std::hash<steno::StrokeList>::operator()(steno::StrokeList const& x) const {
+std::size_t std::hash<StrokeList>::operator()(StrokeList const& x) const {
 	std::size_t seed = x.size();
 	for (auto stroke : x) {
 		uint32_t n = stroke.m_bits;
