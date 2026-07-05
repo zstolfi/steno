@@ -685,6 +685,22 @@ TEST(StenoStrokeList, SequenceExpressions) {
 	EXPECT_THROW(std::ignore = cv.at(cv.size()), std::out_of_range);
 }
 
+/* ~~ Context Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+TEST(StenoContext, CodeSwitch) {/* TODO */}
+
+/* ~~ Phrase Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+TEST(StenoPhrase, Common) {/* TODO */}
+
+/* ~~ Text Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+TEST(StenoText, Common) {/* TODO */}
+
+/* ~~ Supported Languages ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+//#include "language_en.cc"
+
 /* ~~ Brief Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 TEST(StenoBrief, Construction) {
