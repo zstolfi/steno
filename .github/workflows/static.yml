@@ -50,8 +50,8 @@ jobs:
       # Build steps
       - name: Test API
         run: |
-          make -C examples test
-          ./examples/test
+          make -C tests
+          ./tests/test
 
       - name: Build application
         run: make -C atlas/src

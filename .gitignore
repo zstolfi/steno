@@ -8,7 +8,7 @@
 
 # Executables
 *a.out
-examples/test
+tests/test
 examples/example
 examples/validate
 examples/dictionary_open

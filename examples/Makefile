@@ -5,14 +5,12 @@ CXXFLAGS    = -std=c++20 -O0 -g -Wall -ferror-limit=24
 
 # ~~~~ Directories ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 STENO       = ..
-GTEST       = $(STENO)/.include/googletest/googletest
 
 # ~~~~ Flags ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 CXXFLAGS   += -I$(STENO)
-CXXFLAGS   += -isystem $(GTEST)/include
 
 # ~~~~ Rules ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-all : test example validate dictionary_open \
+all : example validate dictionary_open \
 reverse_translate number_builder polyhedra \
 numbers/numbers_advanced
 
@@ -47,30 +45,8 @@ numbers/numbers_advanced : numbers/numbers_advanced.o steno.o
 numbers/%.o : numbers/%.cc
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# ~~~~ Google Test Specific ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-GTEST_INC   = $(GTEST)/include/gtest/*.h $(GTEST)/include/gtest/internal/*.h
-GTEST_SRCS  = $(GTEST)/src/*.cc $(GTEST)/src/*.h $(GTEST_INC)
-
-gtest-all.o : $(GTEST)/src/gtest-all.cc $(GTEST_SRCS)
-	$(CXX) $(CXXFLAGS) -I$(GTEST) -c $< -o $@
-
-gtest_main.o : $(GTEST)/src/gtest_main.cc $(GTEST_SRCS)
-	$(CXX) $(CXXFLAGS) -I$(GTEST) -c $< -o $@
-
-gtest.a : gtest-all.o
-	$(AR) $(ARFLAGS) $@ $^
-
-gtest_main.a : gtest-all.o gtest_main.o
-	$(AR) $(ARFLAGS) $@ $^
-
-test : test.o steno.o steno_parsers.o gtest_main.a
-	$(CXX) $(LDFLAGS) $^ -o $@
-
-test.o : test.cc $(STENO)/steno.cc $(STENO)/steno.hh $(GTEST_INC)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
 # ~~~~ Commands ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 clean :
-	rm -f *.o *.a test example validate dictionary_open \
+	rm -f *.o example validate dictionary_open \
 reverse_translate number_builder polyhedra \
 numbers/numbers_advanced
