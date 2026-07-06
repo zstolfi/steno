@@ -687,19 +687,57 @@ TEST(StenoStrokeList, SequenceExpressions) {
 
 /* ~~ Context Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-TEST(StenoContext, CodeSwitch) {/* TODO */}
+TEST(StenoContext, Construction) {
+	steno::Context c {};
 
-/* ~~ Phrase Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+	// Default context (determined at compile time)
+	c = steno::Context {};
+	EXPECT_EQ(c.language(), steno::DefaultLanguage);
 
-TEST(StenoPhrase, Common) {/* TODO */}
+	// No context
+	c = steno::Context {steno::NoLanguage};
+	EXPECT_EQ(c, NoContext);
+	EXPECT_EQ(c.language(), steno::NoContext);
+
+	c = steno::Context {steno::FromLocale, "C"};
+	EXPECT_EQ(c.language(), steno::NoLanguage);
+
+	// English context
+	c = steno::Context {steno::English};
+	EXPECT_EQ(c.language(), steno::English);
+
+	// TODO: Figure out how to handle different regions
+	c = steno::Context {steno::FromLocale, "en-US"};
+	EXPECT_EQ(c.language(), steno::English);
+}
+
+TEST(StenoContext, CodeSwitch) {
+	steno::Context c {};
+
+	c = steno::Context {steno::NoLanguage};
+	c.codeSwitch(steno::English);
+	EXPECT_EQ(c.language() == steno::English)
+
+	c = steno::Context {steno::English};
+	c.codeSwitch(steno::NoLanguage);
+	EXPECT_EQ(c.language() == steno::NoLanguage)
+
+	c = steno::Context {steno::English};
+	c.codeSwitch(steno::English);
+	EXPECT_EQ(c.language() == steno::English);
+}
 
 /* ~~ Text Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 TEST(StenoText, Common) {/* TODO */}
 
+/* ~~ Phrase Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+TEST(StenoPhrase, Common) {/* TODO */}
+
 /* ~~ Supported Languages ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-//#include "language_en.cc"
+#include "language_en.cc"
 
 /* ~~ Brief Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 

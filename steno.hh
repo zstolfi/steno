@@ -17,6 +17,14 @@
 
 namespace steno {
 
+/* ~~ Library Settings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+#ifdef STENO_DEFAULT_LOCALE
+	constexpr char const* DefaultLocale {STENO_DEFAULT_LOCALE};
+#else
+	constexpr char const* DefaultLocale {"en-US"};
+#endif
+
 /* ~~ Utilities ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 constexpr struct FromBits_Arg         {} FromBits         {};
