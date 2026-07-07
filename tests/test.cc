@@ -8,7 +8,7 @@
 #define EXPECT_SAME_TYPE(T, U) EXPECT_TRUE((std::same_as<T, U>))
 #define EXPECT_CONCEPT(C, ...) EXPECT_TRUE((C<__VA_ARGS__>))
 #define EXPECT_EXPRESSION(Expression, Type, ... ) {                            \
-    if (std::string {#Type} != "void") {                                       \
+    if (std::string_view {#Type} != "void") {                                  \
         EXPECT_SAME_TYPE(Type, decltype(Expression));                          \
     }                                                                          \
     (void) (Expression);                                                       \
@@ -634,7 +634,7 @@ TEST(StenoStrokeList, SequenceStatements) {
 	} {
 		std::list<steno::Stroke> const foreign {
 			{" TK       EUFR   G    "}, // "differing"
-			{"          EU      T   "}, // "iterator"
+			{" T    RA  E R     T   "}, // "iterator"
 			{" T     AO EU  P    S  "}, // "types"
 		};
 		auto i = foreign.begin();
@@ -685,30 +685,94 @@ TEST(StenoStrokeList, SequenceExpressions) {
 	EXPECT_THROW(std::ignore = cv.at(cv.size()), std::out_of_range);
 }
 
+/* ~~ Phrase Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+TEST(StenoPhrase, EmptyConstruction) {
+	steno::Phrase phrase;
+	EXPECT_EQ(phrase, steno::NoPhrase);
+	EXPECT_EQ(steno::Phrase (), steno::NoPhrase);
+	EXPECT_EQ(steno::Phrase {}, steno::NoPhrase);
+	EXPECT_EQ(steno::Phrase {""}, steno::NoPhrase);
+	EXPECT_EQ(steno::Phrase {" "}, steno::NoPhrase);
+	EXPECT_EQ(steno::Phrase {"\t\n"}, steno::NoPhrase);
+	EXPECT_EQ(steno::NoPhrase.string(), "");
+	EXPECT_STREQ(steno::NoPhrase.c_str(), "");
+}
+
+TEST(StenoPhrase, GoodInputString) {
+	EXPECT_NO_ISSUES(steno::Phrase {""});
+	EXPECT_NO_ISSUES(steno::Phrase {"word"});
+	EXPECT_NO_ISSUES(steno::Phrase {"two words"});
+	EXPECT_NO_ISSUES(steno::Phrase {"{prefix^}"});
+	EXPECT_NO_ISSUES(steno::Phrase {"{^suffix}"});
+	EXPECT_NO_ISSUES(steno::Phrase {"escaped \\{"});
+	EXPECT_NO_ISSUES(steno::Phrase {"escaped \\}"});
+	EXPECT_NO_ISSUES(steno::Phrase {"\\{ escaped"});
+	EXPECT_NO_ISSUES(steno::Phrase {"\\} escaped"});
+	EXPECT_NO_ISSUES(steno::Phrase {"{escaped \\}}"});
+}
+
+TEST(StenoPhrase, BadInputString) {
+	EXPECT_ISSUES(steno::Phrase {"mismatched {"});
+	EXPECT_ISSUES(steno::Phrase {"mismatched }"});
+	EXPECT_ISSUES(steno::Phrase {"{ mismatched"});
+	EXPECT_ISSUES(steno::Phrase {"} mismatched"});
+	EXPECT_ISSUES(steno::Phrase {"} {"});
+	EXPECT_ISSUES(steno::Phrase {"{\\}"});
+}
+
+TEST(StenoPhrase, Getters) {
+	steno::Phrase v;
+	steno::Phrase const cv;
+	EXPECT_EXPRESSION(v .string(), std::string&);
+	EXPECT_EXPRESSION(cv.string(), std::string const&);
+	EXPECT_EXPRESSION(v .c_str() , char const*);
+	EXPECT_EXPRESSION(cv.c_str() , char const*);
+}
+
+TEST(StenoPhrase, Tokenize) {/* TODO */}
+
 /* ~~ Context Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-TEST(StenoContext, Construction) {
+TEST(StenoContext, EmptyConstruction) {
+	EXPECT_EQ(steno::Context {steno::NoLanguage}, steno::NoContext);
+	EXPECT_EQ(steno::Context {steno::FromLocale, "C"}, steno::NoContext);
+}
+
+TEST(StenoContext, DefaultConstruction) {
+	steno::Context context;
+	EXPECT_EQ(context, steno::DefaultContext);
+	EXPECT_EQ(steno::Context (), steno::DefaultContext);
+	EXPECT_EQ(steno::Context {}, steno::DefaultContext);
+	EXPECT_EQ(steno::Context {steno::DefaultLanguage}, steno::DefaultContext);
+}
+
+TEST(StenoContext, LanguageConstruction) {
 	steno::Context c {};
 
 	// Default context (determined at compile time)
 	c = steno::Context {};
 	EXPECT_EQ(c.language(), steno::DefaultLanguage);
+	EXPECT_EQ(c.region(), steno::DefaultRegion);
 
 	// No context
 	c = steno::Context {steno::NoLanguage};
-	EXPECT_EQ(c, NoContext);
 	EXPECT_EQ(c.language(), steno::NoContext);
+	EXPECT_EQ(c.region(), steno::NoRegion);
 
 	c = steno::Context {steno::FromLocale, "C"};
 	EXPECT_EQ(c.language(), steno::NoLanguage);
+	EXPECT_EQ(c.region(), steno::NoRegion);
 
 	// English context
 	c = steno::Context {steno::English};
 	EXPECT_EQ(c.language(), steno::English);
+	EXPECT_EQ(c.region(), steno::NoRegion);
 
 	// TODO: Figure out how to handle different regions
 	c = steno::Context {steno::FromLocale, "en-US"};
 	EXPECT_EQ(c.language(), steno::English);
+	EXPECT_EQ(c.region(), "US");
 }
 
 TEST(StenoContext, CodeSwitch) {
@@ -726,14 +790,6 @@ TEST(StenoContext, CodeSwitch) {
 	c.codeSwitch(steno::English);
 	EXPECT_EQ(c.language() == steno::English);
 }
-
-/* ~~ Text Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
-TEST(StenoText, Common) {/* TODO */}
-
-/* ~~ Phrase Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
-TEST(StenoPhrase, Common) {/* TODO */}
 
 /* ~~ Supported Languages ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 

@@ -223,11 +223,11 @@ StrokeList operator|(Stroke, Stroke const&);
 
 /* ~~ Text Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-//   Texts are arbitrarily sized strings which follow orthographic rules.
+//   Texts are output iterators which follow orthographic rules.
 // As such, they depend on some locale. This can be selected at compile time, or
 // at run time.
 
-using Text = std::string; // TODO
+// TODO
 
 /* ~~ Phrase Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -240,7 +240,7 @@ using Phrase = std::string; // TODO
 
 /* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-//   Briefs associate StrokeLists and Phrases, and can be manipulated like either.
+//   Briefs associate StrokeLists and Phrases, and can be modified like either.
 // They are primarily used as Dictionary entries.
 
 class Brief {
