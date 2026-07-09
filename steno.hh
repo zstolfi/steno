@@ -13,12 +13,12 @@
 // require a context to be manipulated, i.e. which languages rules to follow.
 
 //   Language classes contain region-specific rules for orthography. This allows
-// international developrs to add in support for their own languages.
+// international developers to add in support for their own languages.
 
 
 
 // The following diagram can be read like so:
-// -	"Dictionary is a scruct that has a list of Briefs"
+// -	"Dictionary is a struct that has a list of Briefs"
 // -	"Speech is a struct that has a list of Tokens and Context"
 // -	"Token is a union that has either a Word or a Signal"
 
