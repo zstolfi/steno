@@ -1,3 +1,67 @@
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *\
+|* ~  C++ Steno Library                                                     ~ *|
+\* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ https://en.wikipedia.org/wiki/Stenotype ~~ */
+
+//   The C++ Steno Library provides classes for three functionalities: keyboard,
+// text, and language. This header file includes all classes (types) shown in
+// the following diagram, as well as utility classes (Issues, Format, etc.)
+
+//   Keyboard classes concern the English stenotype layout. This is a special
+// 23-key keyboard which is used the same way one would play chords on a piano.
+
+//   Text classes contain the data for sentence fragments and punctuation. They
+// require a context to be manipulated, i.e. which languages rules to follow.
+
+//   Language classes contain region-specific rules for orthography. This allows
+// international developrs to add in support for their own languages.
+
+
+
+// The following diagram can be read like so:
+// -	"Dictionary is a scruct that has a list of Briefs"
+// -	"Speech is a struct that has a list of Tokens and Context"
+// -	"Token is a union that has either a Word or a Signal"
+
+/* ┌─────────────────┬─────────────────────────────────────────┬────────────┐ *\
+|*                                                                            *|
+|*              ┌──────────┐                                   .              *|
+|*              │Dictionary│                                                  *|
+|*              └──────────┘                                   .              *|
+|*                   ▲                                                        *|
+|*                   │                                         .              *|
+|*                   ≡                                                        *|
+|*                   │                                         .              *|
+|*                ┌─────┐                       ┌──────┐                      *|
+|*                │Brief│                       │Speech│       .              *|
+|*                └─────┘                       └──────┘                      *|
+|*                   ▲                             ▲           .              *|
+|*                   │                             │                          *|
+|*       ┌───────────┴───────────┐     ┌───────────┴───────────┐              *|
+|*       │                       │     │                       │              *|
+|*  ┌──────────┐     .        ┌──────┐ │                   ┌───────┐          *|
+|*  │StrokeList│              │Phrase│ │                   │Context│          *|
+|*  └──────────┘     .        └──────┘ │                   └───────┘          *|
+|*       ▲                         ▲   │                       ▲              *|
+|*       │           .             │   │                       │              *|
+|*       ≡                         ≡   ≡               ┌───────┴───────┐      *|
+|*       │           .             │   │               │       .       │      *|
+|*    ┌──────┐                    ┌─────┐           ┌─────┐         ┌──────┐  *|
+|*    │Stroke│       .            │Token│           │State│    .    │Locale│  *|
+|*    └──────┘                    └─────┘           └─────┘         └──────┘  *|
+|*       ▲           .               ▲                         .              *|
+|*       │                           ║                                        *|
+|*       ≡           .       ╓───────╨───────╖                 .              *|
+|*       │                   ║               ║                                *|
+|*     ┌───┐         .     ┌────┐         ┌──────┐             .              *|
+|*     │Key│               │Word│         │Signal│                            *|
+|*     └───┘         .     └────┘         └──────┘             .              *|
+|*                                                                            *|
+|* └────Keyboard─────┴───────────────────Text──────────────────┴──Language──┘ *|
+|*                                                                            *|
+|*  ┌───┐          ▲            ▲           │                                 *|
+|*  │   │ type     │ struct     ║ union     ≡ container                       *|
+\*  └───┘          │            ║           │                                 */
+
 #pragma once
 #include <iostream>
 #include <string>
