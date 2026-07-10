@@ -71,28 +71,37 @@
 #include <vector>
 #include <deque>
 #include <span>
+#include <variant>
 #include <initializer_list>
+#include <algorithm>
+#include <type_traits>
 #include <iterator>
 #include <utility>
-#include <type_traits>
-#include <algorithm>
+#include <typeinfo>
 #include <cstdint>
 #include <cassert>
 
 namespace steno {
 
-/* ~~ Library Settings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
-#ifdef STENO_DEFAULT_LOCALE
-	constexpr char const* DefaultLocale {STENO_DEFAULT_LOCALE};
-#else
-	constexpr char const* DefaultLocale {"en-US"};
-#endif
-
 /* ~~ Utilities ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-constexpr struct FromBits_Arg         {} FromBits         {};
-constexpr struct FromBitsReversed_Arg {} FromBitsReversed {};
+namespace flags {
+	// Stroke construction
+	constexpr struct FromBits_Arg         {} FromBits         {};
+	constexpr struct FromBitsReversed_Arg {} FromBitsReversed {};
+	// Signal construction
+	constexpr struct Cancel_Arg           {} Cancel           {};
+	constexpr struct Undo_Arg             {} Undo             {};
+	constexpr struct Combine_Arg          {} Combine          {};
+	constexpr struct Glue_Arg             {} Glue             {};
+	constexpr struct CodeSwitch_Arg       {} CodeSwitch       {};
+	constexpr struct Punctuate_Arg        {} Punctuate        {};
+	constexpr struct SysEx_Arg            {} SysEx            {};
+	// Phrase construction
+	constexpr struct FromRaw_Arg          {} FromRaw          {};
+}
+
+using namespace flags;
 
 template <class T>
 struct Issues : std::vector<T> {
@@ -163,7 +172,7 @@ public:
 	// Getters and Setters
 	class Reference;
 	class Iterator;
-	uint32_t raw() const;
+	uint32_t raw() const; // TODO: Rename to "bits".
 	bool get(Key) const;
 	Stroke& set(Key, bool = true);
 	Stroke& unset(Key);
@@ -285,22 +294,84 @@ private:
 // Stroke promotion
 StrokeList operator|(Stroke, Stroke const&);
 
-/* ~~ Text Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ Word Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-//   Texts are output iterators which follow orthographic rules.
-// As such, they depend on some locale. This can be selected at compile time, or
-// at run time.
+//   Words (more correctly morphemes) are literal character data.
+// Their constructor ignores escape sequences, parsing those is the job of the
+// Phrase constructor.
 
-// TODO
+using Word = std::string;
+
+/* ~~ Signal Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+//   Signals are instructions to modify the current context.
+// They can describe, for example, how to capitalize the next Word, how to join
+// with adjacent Words, text formatting, or even system exclusive messages.
+
+class Signal {
+	struct Cancel_t     {};
+	struct Undo_t       {};
+	struct Combine_t    {};
+	struct Glue_t       {};
+	struct CodeSwitch_t { std::string localeCode {"C"}; };
+	struct Punctuate_t  { std::string symbol {}; };
+	struct SysEx_t      { std::string channel {}, message {}; };
+
+	std::variant<
+		std::monostate,
+		Cancel_t, Undo_t, Combine_t, Glue_t,
+		CodeSwitch_t, Punctuate_t, SysEx_t
+	> m_value {};
+
+public:
+	// Default construction/assignment
+	Signal() = default;
+	Signal(Signal const&) = default;
+	Signal& operator=(Signal const&) = default;
+
+	// Standalone Signals
+	Signal(Cancel_Arg)  : m_value{Cancel_t  {}} {}
+	Signal(Undo_Arg)    : m_value{Undo_t    {}} {}
+	Signal(Combine_Arg) : m_value{Combine_t {}} {}
+	Signal(Glue_Arg)    : m_value{Glue_t    {}} {}
+
+	// Signals with string data
+	Signal(CodeSwitch_Arg, std::string localeCode);
+	Signal(Punctuate_Arg, std::string symbol);
+	Signal(SysEx_Arg, std::string channel, std::string message);
+
+	// Comparison
+	bool operator== (Signal const&) const = default;
+	auto operator<=>(Signal const&) const = default;
+
+	operator bool() const;
+};
+
+/* ~~ Token Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+//   Tokens are the smallest unit of speech for both humans and computers.
+// Individual prefixes and suffixes count as Words, and Signals appear in series
+// rather than multiple at the same time.
+
+using Token = std::variant<Word, Signal>;
 
 /* ~~ Phrase Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-//   Phrases are strings with embedded formatting information.
-// This information modifies the context of any created Text object, such as
-// instructions to capitalize the next phrase, join to the next or previous
-// phrase without a space (affix), etc.
+//   Phrases are constructed from strings with signals embedded inside them.
+// It is the Phrase's job to parse this information, but not apply any
+// orthography rules. On their own they act independently of context.
 
-using Phrase = std::string; // TODO
+class Phrase: public std::vector<Token> {
+public:
+	// not using std::vector<Token>::vector;
+
+	// Default construction/assignment
+	Phrase() = default;
+	Phrase(Phrase const&) = default;
+	Phrase& operator=(Phrase const&) = default;
+
+	Phrase(std::string_view);
+};
 
 /* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -626,8 +697,8 @@ constexpr Stroke::Stroke(I first, I last) {
 
 static constexpr auto NoStroke = Stroke {};
 static const/**/ auto NoStrokeList = StrokeList {};
-static const/**/ auto NoBrief  = Brief  {};
-static const/**/ auto NoPhrase   = Phrase   {};
+static const/**/ auto NoBrief = Brief {};
+static const/**/ auto NoPhrase = Phrase {};
 // TODO: NoIssues object which acts like std::nullopt
 
 } // namespace steno
@@ -648,14 +719,11 @@ template <std::size_t I> struct std::tuple_element<I, steno::Brief>
 { static_assert(I < 2); };
 
 namespace steno {
-void erase   (StrokeList&     t, auto&& x) { t.erase_impl(x);    }
-void erase_if(StrokeList&     t, auto&& f) { t.erase_if_impl(f); }
+void erase   (StrokeList& t, auto&& x) { t.erase_impl(x);    }
+void erase_if(StrokeList& t, auto&& f) { t.erase_if_impl(f); }
 void erase   (Dictionary& t, auto&& x) { t.erase_impl(x);    }
 void erase_if(Dictionary& t, auto&& f) { t.erase_if_impl(f); }
 template <std::size_t I> auto&& get(Brief&       b) { return b.get_impl<I>(); }
 template <std::size_t I> auto&& get(Brief const& b) { return b.get_impl<I>(); }
 template <std::size_t I> auto&& get(Brief&&      b) { return b.get_impl<I>(); }
 }
-
-//using steno::erase;
-//using steno::erase_if;
