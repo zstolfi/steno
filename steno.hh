@@ -136,7 +136,7 @@ enum class Key : uint32_t {
 	_T = 1u<<12, _S = 1u<<11,
 	_D = 1u<<10, _Z = 1u<< 9,
 	// Flags
-//	Mark = 1<<8, OpenLeft = 1<<7, OpenRight = 1<<6,
+//	Mark = 1<<8,
 //	Fail = 1<<0,
 };
 
@@ -147,7 +147,7 @@ enum class Key : uint32_t {
 
 class Stroke {
 	uint32_t m_bits
-	//  #STKPWHRAO*EUFRPBLGTSDZ !~~      X
+	//  #STKPWHRAO*EUFRPBLGTSDZ !        X
 	= 0b00000000000000000000000'00000000'0;
 	//  └──────────┬──────────┘ └──┬───┘ └─ fail-bit
 	//            keys        flags/resv'd
@@ -239,7 +239,7 @@ public:
 
 private:
 	static constexpr auto
-	//            #STKPWHRAO*EUFRPBLGTSDZ !~~      X
+	//            #STKPWHRAO*EUFRPBLGTSDZ !        X
 	FailBit   = 0b00000000000000000000000'00000000'1,
 	FlagsMask = 0b00000000000000000000000'11111111'1;
 
@@ -638,7 +638,6 @@ constexpr Stroke::Stroke(std::string_view str) {
 		switch (state) {
 			using enum State;
 //			case Mk: if (accept(End,Key::Mark    ,'!')); else
-//			case Ol: if (accept(Ol, Key::OpenLeft,'~')); else
 			case Nm: if (accept(Nm, Key::Num,'#', '#')); else
 			case S_: if (accept(S_, Key::S_, 'S', '1')); else
 			case T_: if (accept(T_, Key::T_, 'T', '2')); else
@@ -664,7 +663,6 @@ constexpr Stroke::Stroke(std::string_view str) {
 			case _S: if (accept(_S, Key::_S, 'S'     )); else
 			case _D: if (accept(_D, Key::_D, 'D'     )); else
 			case _Z: if (accept(_Z, Key::_Z, 'Z'     )); else
-//			case Or: if (accept(Or,Key::OpenRight,'~')); else
 			default: valid = false;
 		}
 		if (!valid) break;
