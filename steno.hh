@@ -309,19 +309,27 @@ using Word = std::string;
 // with adjacent Words, text formatting, or even system exclusive messages.
 
 class Signal {
-	struct Cancel_t     {};
-	struct Undo_t       {};
-	struct Combine_t    {};
-	struct Glue_t       {};
-	struct CodeSwitch_t { std::string localeCode {"C"}; };
+	/*     Name             Comment                              Example      */
+	struct Null_t       {}; // Will be ignored by all systems.   {#}
+	struct Cancel_t     {}; // We are at the start of a word.    {}
+	struct Undo_t       {}; // Forget the previous Stroke.       {*}
+	struct Combine_t    {}; // We are in the middle of a word.   {^}
+	struct Glue_t       {}; // We are typing a digit sequence.   {&}
+
+	// Accepts POSIX locales and Language IDs (Apple)            {@en-US}
+	struct CodeSwitch_t { std::string localeName {}; };
+
+	// Language-specific formatting                              {!}
 	struct Punctuate_t  { std::string symbol {}; };
+
+	// Application-specific instructions. Your own universe!     {#MyApp:Reload}
 	struct SysEx_t      { std::string channel {}, message {}; };
 
 	std::variant<
-		std::monostate,
+		Null_t,
 		Cancel_t, Undo_t, Combine_t, Glue_t,
 		CodeSwitch_t, Punctuate_t, SysEx_t
-	> m_value {};
+	> m_value {Null_t {}};
 
 public:
 	// Default construction/assignment
@@ -329,14 +337,14 @@ public:
 	Signal(Signal const&) = default;
 	Signal& operator=(Signal const&) = default;
 
-	// Standalone Signals
+	// Trivial constructors (standalone Signals)
 	Signal(Cancel_Arg)  : m_value{Cancel_t  {}} {}
 	Signal(Undo_Arg)    : m_value{Undo_t    {}} {}
 	Signal(Combine_Arg) : m_value{Combine_t {}} {}
 	Signal(Glue_Arg)    : m_value{Glue_t    {}} {}
 
 	// Signals with string data
-	Signal(CodeSwitch_Arg, std::string localeCode);
+	Signal(CodeSwitch_Arg, std::string localeName);
 	Signal(Punctuate_Arg, std::string symbol);
 	Signal(SysEx_Arg, std::string channel, std::string message);
 
