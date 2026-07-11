@@ -294,6 +294,7 @@ private:
 // Stroke promotion
 StrokeList operator|(Stroke, Stroke const&);
 
+// TODO: Rename to "Part"
 /* ~~ Word Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 //   Words (more correctly morphemes) are literal character data.
@@ -429,13 +430,13 @@ public:
 private:
 	Brief& normalize();
 
-#	define GET_IMPL(Attr) \
+#define GET_IMPL(Attr) \
 	template <std::size_t I> auto&& get_impl() Attr {                          \
 	    if constexpr (I==0) return m_strokeList;                               \
 	    if constexpr (I==1) return m_phrase;                                   \
 	}
 	GET_IMPL(&) GET_IMPL(const&) GET_IMPL(&&)
-#	undef GET_IMPL
+#undef GET_IMPL
 };
 
 // StrokeList promotion
@@ -485,12 +486,12 @@ public:
 	using size_type = std::size_t;
 
 	// Container methods
-#	define USE(Name) \
+#define USE(Name) \
 	auto    Name()       { return m_entries.   Name(); } \
 	auto    Name() const { return m_entries.   Name(); } \
 	auto c##Name() const { return m_entries.c##Name(); }
 	USE(begin) USE(end) USE(rbegin) USE(rend)
-#	undef USE
+#undef USE
 	void swap(Dictionary& other) { std::swap(*this, other); };
 	std::size_t size    () const { return m_entries.size    (); }
 	std::size_t max_size() const { return m_entries.max_size(); }
@@ -544,6 +545,68 @@ private:
 	{ erase_if_impl([&] (auto y) { return value == y; }); }
 };
 
+/* ~~ Locale Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+} // namespace steno
+#include "steno_languages.hh"
+namespace steno {
+
+class Locale {
+#ifdef STENO_DEFAULT_LANGUAGE
+	std::string_view m_language {(STENO_DEFAULT_LANGUAGE)::Code};
+	std::string_view m_script {(STENO_DEFAULT_LANGUAGE)::Script};
+#else
+	std::string_view m_language {NoLanguage::Code};
+	std::string_view m_script {NoLanguage::Script};
+#endif
+
+	std::string_view m_region {NoRegion};
+
+public:
+	// Default construction/assignment
+	Locale() = default;
+	Locale(Locale const&) = default;
+	Locale& operator=(Locale const&) = default;
+
+	// Class constructors
+	Locale(auto Language): m_language{T::Code}, m_script{T::Script} {}
+	Locale(auto Language, std::string_view region)
+	:	m_language{T::Code}, m_region{check(region)} {}
+
+	// Getters
+	std::string_view language() const;
+	std::string_view script() const;
+	std::string_view region() const;
+
+private:
+	std::string_view check(string_view);
+};
+
+/* Context Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+class Context {
+	Locale m_locale {};
+	std::any m_state {};
+
+public:
+	// Default construction/assignment
+	Locale() = default;
+	Locale(Locale const&) = default;
+	Locale& operator=(Locale const&) = default;
+
+	// Getters
+	Locale /* */& locale();
+	Locale const& locale() const;
+	template <Language L>
+	State<L>& state() { return std::any_cast<State<L>>() }
+};
+
+//// Possible API designs:
+//context.state<English>().capitalize
+//speech.context().state<English>.isBold() = true;
+//context.get<English>().capitalize
+//speech.context<English>().isBold() = true;
+
 /* ~~ String Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 // Formats can be used inside a std::ostream or passed as function arguments.
@@ -587,12 +650,10 @@ std::ostream& operator<<(std::ostream&, Format);
 constexpr Stroke::Stroke(std::string_view str) {
 	enum State {
 //		Mk, /*!*/
-//		Ol, /*~*/
 		Nm, /*#*/
 		S_, T_, K_, P_, W_, H_, R_,
 		A , O , x , E , U ,
 		_F, _R, _P, _B, _L, _G, _T, _S, _D, _Z,
-//		Or, /*~*/
 		Begin = Nm, End = _Z+1
 	};
 
