@@ -40,7 +40,7 @@ struct English {
 
 /*
 struct EnglishBraille {
-	// ⠠⠢⠛⠇⠊⠩ ⠠⠃⠗⠇
+	// ⠠⠢⠛⠇⠊⠩⠀⠠⠃⠗⠇
 	static constexpr std::string_view Code {"eng"};
 	static constexpr std::string_view Script {"Brai"};
 };
