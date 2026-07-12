@@ -553,59 +553,48 @@ namespace steno {
 
 class Locale {
 #ifdef STENO_DEFAULT_LANGUAGE
-	std::string_view m_language {(STENO_DEFAULT_LANGUAGE)::Code};
-	std::string_view m_script {(STENO_DEFAULT_LANGUAGE)::Script};
+	LanguageCode m_language {(STENO_DEFAULT_LANGUAGE)::Code};
 #else
-	std::string_view m_language {NoLanguage::Code};
-	std::string_view m_script {NoLanguage::Script};
+	LanguageCode m_language {English::Code};
 #endif
 
-	std::string_view m_region {NoRegion};
+	std::optional<RegionCode> m_region {NoRegion};
 
 public:
-	// Default construction/assignment
-	Locale() = default;
-	Locale(Locale const&) = default;
-	Locale& operator=(Locale const&) = default;
-
-	// Class constructors
-	Locale(auto Language): m_language{T::Code}, m_script{T::Script} {}
-	Locale(auto Language, std::string_view region)
-	:	m_language{T::Code}, m_region{check(region)} {}
+	Locale(auto Language, RegionCode region={})
+	:	m_language{Language::Code}, m_region{region} {}
 
 	// Getters
 	std::string_view language() const;
 	std::string_view script() const;
 	std::string_view region() const;
-
-private:
-	std::string_view check(string_view);
 };
 
 /* Context Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 class Context {
 	Locale m_locale {};
-	std::any m_state {};
+	struct State {
+		bool startOfWord {true};
+		bool startOfSentence {false};
+		bool startOfPhrase {false};
+		bool inDigitSequence {false};
+		// ...
+	} m_state {};
 
 public:
-	// Default construction/assignment
-	Locale() = default;
-	Locale(Locale const&) = default;
-	Locale& operator=(Locale const&) = default;
+	Context(auto Language, RegionCode region={})
+	:	m_locale{Language {}, region}, m_state{Language::State {}};
 
 	// Getters
 	Locale /* */& locale();
 	Locale const& locale() const;
+
 	template <Language L>
-	State<L>& state() { return std::any_cast<State<L>>() }
+	L::State& state() { return std::any_cast<typename L::State>(); }
 };
 
-//// Possible API designs:
-//context.state<English>().capitalize
-//speech.context().state<English>.isBold() = true;
-//context.get<English>().capitalize
-//speech.context<English>().isBold() = true;
+context.state
 
 /* ~~ String Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 

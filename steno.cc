@@ -471,6 +471,21 @@ void Dictionary::normalize() {
 	std::sort(begin(), end(), EntryCompare);
 }
 
+/* Locale Codes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+LanguageCode::operator std::string_view() const {
+	return std::string_view {value.begin(), value.end()};
+}
+
+std::array<std::string_view, 2> LanguageCode::split() const {
+	std::string_view str = std::string_view {*this};
+	return std::pair {str.substr(0, 3), str.substr(3, 4)};
+}
+
+RegionCode::operator std::string_view() const {
+	return std::string_view {value.begin(), value.end()};
+}
+
 /* ~~ String Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 Format operator|(Format f, Format g) {
