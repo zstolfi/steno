@@ -13,6 +13,7 @@ class LanguageCode {
 	char value[3 + 4]; // ISO 639-2/T  +  ISO 15924
 
 public:
+	constexpr LanguageCode(): LanguageCode{"qaa", "Qaaa"} {} // Reserved values
 	constexpr LanguageCode(std::string_view lang, std::string_view script) {
 		assert(lang.size() == 3);
 		assert('a' <= lang[0] && lang[0] <= 'z'), value[0] = lang[0];
@@ -41,6 +42,7 @@ class RegionCode {
 	char value[2]; // ISO 3166-1 alpha-2
 
 public:
+	RegionCode(): RegionCode{"AA"} {} // Reserved value
 	RegionCode(std::string_view str) {
 		assert(str.size() == 2);
 		assert ('A' <= str[0] && str[0] <= 'Z'), value[0] = str[0];
@@ -54,44 +56,30 @@ public:
 	operator std::string_view() const;
 };
 
+static constexpr auto NoRegionCode = RegionCode {};
+
 /* ~~ Language Classes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-template <class T>
-concept Language = requires(T) {
-	{ T::Code } -> std::convertible_to<LanguageCode>;
+enum Language {
+	NoLanguage,
+	English/*, Russian, Chinese,*/
 };
 
-struct NoLanguage {
-	// We use reserved values to denote "no code" and "no script".
-	static constexpr LanguageCode Code {"qaa", "Qaaa"};
-};
+//   Orthographies define the most common pattern in a language's spelling.
+// As an English example: take + -ing = taking, and tap + -ing = tapping.
+// We know to remove the 'e' and double the 'p' solely because we are writing in
+// the English language, and normal rules apply. Irregular rules are handled by
+// user-defined dictionaries.
 
-struct English {
-	static constexpr LanguageCode Code {"eng", "Latn"};
-};
+template <Language L>
+struct Orthography {
+	static constexpr LanguageCode Code {};
+	RegionCode region {};
 
-// Further examples:
+	// Used just in case dialects vary greatly.
+	bool operator==(Orthography const&) const { return true; }
 
-/*
-struct EnglishBraille {
-	// ⠠⠢⠛⠇⠊⠩⠀⠠⠃⠗⠇
-	static constexpr std::string_view Code {"eng", "Brai"};
+	static std::string Combine(std::string_view, std::string_view);
 };
-
-struct JapaneseBraille {
-	// ⠇⠮⠴⠐⠪⠎⠀⠟⠴⠐⠳
-	static constexpr std::string_view Code {"jpn", "Brai"};
-};
-
-struct Mongolian {
-	// Монгол хэл
-	static constexpr std::string_view Code {"mon", "Cyrl"};
-};
-
-struct MongolianTraditional {
-	// ᠮᠣᠩᠭᠣᠯ ᠬᠡᠯᠡ
-	static constexpr std::string_view Code {"mon", "Mong"};
-};
-*/
 
 } // namespace steno

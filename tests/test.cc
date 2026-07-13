@@ -6,7 +6,7 @@
 
 // Double parentheses required so our '<' isn't parsed as a less-than.
 #define EXPECT_SAME_TYPE(T, U) EXPECT_TRUE((std::same_as<T, U>))
-#define EXPECT_CONCEPT(C, ...) EXPECT_TRUE((C<__VA_ARGS__>))
+#define EXPECT_CONCEPT(C, ... ) EXPECT_TRUE((C<__VA_ARGS__>))
 #define EXPECT_EXPRESSION(Expression, Type, ... ) {                            \
     if (std::string_view {#Type} != "void") {                                  \
         EXPECT_SAME_TYPE(Type, decltype(Expression));                          \

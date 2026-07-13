@@ -547,6 +547,10 @@ private:
 
 /* ~~ Locale Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+//   Locales store information about what language(s) we are writing in, as well
+// as optional region data, in case the language's orthography changes depending
+// on where it's being spoken.
+
 } // namespace steno
 #include "steno_languages.hh"
 namespace steno {
@@ -555,14 +559,14 @@ class Locale {
 #ifdef STENO_DEFAULT_LANGUAGE
 	LanguageCode m_language {(STENO_DEFAULT_LANGUAGE)::Code};
 #else
+	// English by default is opt-out.
 	LanguageCode m_language {English::Code};
 #endif
 
 	std::optional<RegionCode> m_region {NoRegion};
 
 public:
-	Locale(auto Language, RegionCode region={})
-	:	m_language{Language::Code}, m_region{region} {}
+	Locale(Language);
 
 	// Getters
 	std::string_view language() const;
@@ -571,6 +575,10 @@ public:
 };
 
 /* Context Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+//   Contexts store everything implied about what is being written.
+// For example, before a stenographer starts writing, we know we are in English,
+// and the first word will be treated as the start of the sentence.
 
 class Context {
 	Locale m_locale {};
@@ -583,22 +591,40 @@ class Context {
 	} m_state {};
 
 public:
-	Context(auto Language, RegionCode region={})
-	:	m_locale{Language {}, region}, m_state{Language::State {}};
+	Context(Language);
 
 	// Getters
 	Locale /* */& locale();
 	Locale const& locale() const;
-
-	template <Language L>
-	L::State& state() { return std::any_cast<typename L::State>(); }
+	State /* */& state();
+	State const& state() const;
 };
 
-context.state
+/* ~~ Speech Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+//   Speeches listen for Tokens, apply orthography, and output to std::ostream.
+// Information received will always be sent out as fast as possible. There is
+// however, no ability to undo nor reinterpret Tokens.
+
+class Speech {
+	Context m_context {};
+	std::ostream* m_output {};
+
+public:
+	Speech(std::ostream&, Language);
+
+	// Disable copying
+	Brief(Brief const&) = delete;
+	Brief& operator=(Brief const&) = delete;
+};
+
+Speech& operator<<(Speech&, Token const&);
+Speech& operator<<(Speech&, Phrase const&);
 
 /* ~~ String Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-// Formats can be used inside a std::ostream or passed as function arguments.
+//   Formats can be used with std::ostream or passed as function arguments.
+// Right now they only specify the output of Strokes.
 
 // We use 'long' for ios_base::iword compatibility.
 enum class Format : long {
