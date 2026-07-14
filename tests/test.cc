@@ -784,7 +784,7 @@ TEST(StenoContext, CodeSwitch) {
 
 /* ~~ Supported Languages ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-#include "language_en.cc"
+#include "English.cc"
 
 /* ~~ Brief Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
