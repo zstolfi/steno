@@ -17,6 +17,9 @@
 #define EXPECT_ISSUES(E) EXPECT_TRUE((E).issues())
 #define EXPECT_NO_ISSUES(E) EXPECT_FALSE((E).issues())
 
+static std::istringstream g_iss {};
+static std::ostringstream g_oss {};
+
 /* ~~ Key Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 TEST(StenoKey, Addition) {
@@ -695,8 +698,7 @@ TEST(StenoPhrase, EmptyConstruction) {
 	EXPECT_EQ(steno::Phrase {""}, steno::NoPhrase);
 	EXPECT_EQ(steno::Phrase {" "}, steno::NoPhrase);
 	EXPECT_EQ(steno::Phrase {"\t\n"}, steno::NoPhrase);
-	EXPECT_EQ(steno::NoPhrase.string(), "");
-	EXPECT_STREQ(steno::NoPhrase.c_str(), "");
+	EXPECT_EQ(steno::NoPhrase, std::vector<steno::Token> {});
 }
 
 TEST(StenoPhrase, GoodInputString) {
@@ -721,30 +723,18 @@ TEST(StenoPhrase, BadInputString) {
 	EXPECT_ISSUES(steno::Phrase {"{\\}"});
 }
 
-TEST(StenoPhrase, Getters) {
-	steno::Phrase v;
-	steno::Phrase const cv;
-	EXPECT_EXPRESSION(v .string(), std::string&);
-	EXPECT_EXPRESSION(cv.string(), std::string const&);
-	EXPECT_EXPRESSION(v .c_str() , char const*);
-	EXPECT_EXPRESSION(cv.c_str() , char const*);
-}
-
-TEST(StenoPhrase, Tokenize) {/* TODO */}
-
 /* ~~ Context Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 TEST(StenoContext, EmptyConstruction) {
-	EXPECT_EQ(steno::Context {steno::NoLanguage}, steno::NoContext);
-	EXPECT_EQ(steno::Context {steno::FromLocale, "C"}, steno::NoContext);
+	EXPECT_EQ(steno::Context {"C"}, steno::Context {steno::NoLanguage});
 }
 
 TEST(StenoContext, DefaultConstruction) {
 	steno::Context context;
-	EXPECT_EQ(context, steno::DefaultContext);
-	EXPECT_EQ(steno::Context (), steno::DefaultContext);
-	EXPECT_EQ(steno::Context {}, steno::DefaultContext);
-	EXPECT_EQ(steno::Context {steno::DefaultLanguage}, steno::DefaultContext);
+	EXPECT_EQ(context, steno::NoContext);
+	EXPECT_EQ(steno::Context (), steno::NoContext);
+	EXPECT_EQ(steno::Context {}, steno::NoContext);
+	EXPECT_EQ(steno::Context {steno::DefaultLanguage}, steno::NoContext);
 }
 
 TEST(StenoContext, LanguageConstruction) {
@@ -753,26 +743,27 @@ TEST(StenoContext, LanguageConstruction) {
 	// Default context (determined at compile time)
 	c = steno::Context {};
 	EXPECT_EQ(c.language(), steno::DefaultLanguage);
-	EXPECT_EQ(c.region(), steno::DefaultRegion);
+	EXPECT_EQ(c.languageCode(), steno::LanguageCode {steno::DefaultLanguage});
 
-	// No context
+	// Empty context
 	c = steno::Context {steno::NoLanguage};
-	EXPECT_EQ(c.language(), steno::NoContext);
-	EXPECT_EQ(c.region(), steno::NoRegion);
-
-	c = steno::Context {steno::FromLocale, "C"};
 	EXPECT_EQ(c.language(), steno::NoLanguage);
-	EXPECT_EQ(c.region(), steno::NoRegion);
+	EXPECT_EQ(c.languageCode().name(), "");
+	EXPECT_EQ(c.languageCode().script(), "");
+	EXPECT_EQ(c.languageCode().region(), "");
+
+	c = steno::Context {"C"};
+	EXPECT_EQ(c.language(), steno::NoLanguage);
+	EXPECT_EQ(c.languageCode().name(), "");
+	EXPECT_EQ(c.languageCode().script(), "");
+	EXPECT_EQ(c.languageCode().region(), "");
 
 	// English context
 	c = steno::Context {steno::English};
 	EXPECT_EQ(c.language(), steno::English);
-	EXPECT_EQ(c.region(), steno::NoRegion);
-
-	// TODO: Figure out how to handle different regions
-	c = steno::Context {steno::FromLocale, "en-US"};
-	EXPECT_EQ(c.language(), steno::English);
-	EXPECT_EQ(c.region(), "US");
+	EXPECT_EQ(c.languageCode().name(), "eng");
+	EXPECT_EQ(c.languageCode().script(), "Latn");
+	EXPECT_EQ(c.languageCode().region(), "");
 }
 
 TEST(StenoContext, CodeSwitch) {
@@ -780,15 +771,15 @@ TEST(StenoContext, CodeSwitch) {
 
 	c = steno::Context {steno::NoLanguage};
 	c.codeSwitch(steno::English);
-	EXPECT_EQ(c.language() == steno::English)
+	EXPECT_EQ(c.language(), steno::English);
 
 	c = steno::Context {steno::English};
 	c.codeSwitch(steno::NoLanguage);
-	EXPECT_EQ(c.language() == steno::NoLanguage)
+	EXPECT_EQ(c.language(), steno::NoLanguage);
 
 	c = steno::Context {steno::English};
 	c.codeSwitch(steno::English);
-	EXPECT_EQ(c.language() == steno::English);
+	EXPECT_EQ(c.language(), steno::English);
 }
 
 /* ~~ Supported Languages ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -1064,13 +1055,11 @@ TEST(StenoDictionary, AssociativeExpressions) {
 
 /* ~~ Plain-Text Dictionary Parser ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-static std::istringstream iss {};
-
 steno::EntryIterator<steno::Plain> const plainEnd {};
 steno::EntryIterator<steno::Plain> plainIter {};
 steno::EntryIterator<steno::Plain>& parsePlain(std::string str) {
-	iss = std::istringstream {str};
-	return plainIter = steno::EntryIterator<steno::Plain> {iss};
+	g_iss = std::istringstream {str};
+	return plainIter = steno::EntryIterator<steno::Plain> {g_iss};
 }
 
 TEST(StenoParsePlain, EmptyInput) {
@@ -1118,8 +1107,8 @@ TEST(StenoParsePlain, SingleEntry) {
 steno::EntryIterator<steno::Json> const jsonEnd {};
 steno::EntryIterator<steno::Json> jsonIter {};
 steno::EntryIterator<steno::Json>& parseJson(std::string str) {
-	iss = std::istringstream {str};
-	return jsonIter = steno::EntryIterator<steno::Json> {iss};
+	g_iss = std::istringstream {str};
+	return jsonIter = steno::EntryIterator<steno::Json> {g_iss};
 }
 
 TEST(StenoParseJson, EmptyInput) {
@@ -1172,8 +1161,8 @@ TEST(StenoParseJson, SingleEntry) {
 steno::EntryIterator<steno::Rtf> const rtfEnd {};
 steno::EntryIterator<steno::Rtf> rtfIter {};
 steno::EntryIterator<steno::Rtf>& parseRtf(std::string str) {
-	iss = std::istringstream {str};
-	return rtfIter = steno::EntryIterator<steno::Rtf> {iss};
+	g_iss = std::istringstream {str};
+	return rtfIter = steno::EntryIterator<steno::Rtf> {g_iss};
 }
 
 TEST(StenoParseRtf, EmptyInput) {

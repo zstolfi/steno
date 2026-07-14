@@ -98,7 +98,7 @@ namespace flags {
 	constexpr struct Punctuate_Arg        {} Punctuate        {};
 	constexpr struct SysEx_Arg            {} SysEx            {};
 	// Phrase construction
-	constexpr struct FromRaw_Arg          {} FromRaw          {};
+	constexpr struct FromEscaped_Arg      {} FromEscaped      {};
 }
 
 using namespace flags;
@@ -109,8 +109,7 @@ struct Issues : std::vector<T> {
 	operator bool() const { return !this->empty(); }
 };
 
-template <class T>
-class Expected {/* TODO */};
+// TODO: NoIssues object which acts like std::nullopt
 
 /* ~~ Key ID's ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -247,6 +246,8 @@ private:
 	void setFlags(uint32_t);
 };
 
+static constexpr auto NoStroke = Stroke {};
+
 // Key promotion
 Stroke operator~(Key);
 Stroke operator+(Key, Key);
@@ -291,6 +292,8 @@ private:
 	{ erase(std::remove_if(begin(), end(), pred), end()); }
 };
 
+static auto const NoStrokeList = StrokeList {};
+
 // Stroke promotion
 StrokeList operator|(Stroke, Stroke const&);
 
@@ -303,6 +306,8 @@ StrokeList operator|(Stroke, Stroke const&);
 
 using Word = std::string;
 
+static auto const NoWord = Word {};
+
 /* ~~ Signal Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 //   Signals are instructions to modify the current context.
@@ -310,25 +315,28 @@ using Word = std::string;
 // with adjacent Words, text formatting, or even system exclusive messages.
 
 class Signal {
-	/*     Name             Comment                              Example      */
-	struct Null_t       {}; // Will be ignored by all systems.   {#}
-	struct Cancel_t     {}; // We are at the start of a word.    {}
-	struct Undo_t       {}; // Forget the previous Stroke.       {*}
-	struct Combine_t    {}; // We are in the middle of a word.   {^}
-	struct Glue_t       {}; // We are typing a digit sequence.   {&}
+#define SIGNAL_DEF(T, ... ) \
+	struct T { auto operator<=>(T const&) const = default; __VA_ARGS__ }
+	/*                                                          Example       */
+	SIGNAL_DEF(Null_t   ); // Will be ignored by all systems.   {#}
+	SIGNAL_DEF(Undo_t   ); // Forget the previous Stroke.       {*}
+	SIGNAL_DEF(Cancel_t ); // We are at the start of a word.    {}
+	SIGNAL_DEF(Combine_t); // We are in the middle of a word.   {^}
+	SIGNAL_DEF(Glue_t   ); // We are typing a digit sequence.   {&}
 
-	// Accepts POSIX locales and Language IDs (Apple)            {@en-US}
-	struct CodeSwitch_t { std::string localeName {}; };
+	// Accepts POSIX locales and Language IDs (Apple)           {@en-US}
+	SIGNAL_DEF(CodeSwitch_t, std::string localeName {}; );
 
-	// Language-specific formatting                              {!}
-	struct Punctuate_t  { std::string symbol {}; };
+	// Language-specific formatting                             {!}
+	SIGNAL_DEF(Punctuate_t, std::string symbol {}; );
 
-	// Application-specific instructions. Your own universe!     {#MyApp:Reload}
-	struct SysEx_t      { std::string channel {}, message {}; };
+	// Application-specific instructions. Your own universe!    {#MyApp:Reload}
+	SIGNAL_DEF(SysEx_t, std::string channel {}, message {}; );
+#undef SIGNAL_DEF
 
 	std::variant<
-		Null_t,
-		Cancel_t, Undo_t, Combine_t, Glue_t,
+		Null_t, Undo_t,
+		Cancel_t, Combine_t, Glue_t,
 		CodeSwitch_t, Punctuate_t, SysEx_t
 	> m_value {Null_t {}};
 
@@ -339,8 +347,8 @@ public:
 	Signal& operator=(Signal const&) = default;
 
 	// Trivial constructors (standalone Signals)
-	Signal(Cancel_Arg)  : m_value{Cancel_t  {}} {}
 	Signal(Undo_Arg)    : m_value{Undo_t    {}} {}
+	Signal(Cancel_Arg)  : m_value{Cancel_t  {}} {}
 	Signal(Combine_Arg) : m_value{Combine_t {}} {}
 	Signal(Glue_Arg)    : m_value{Glue_t    {}} {}
 
@@ -356,13 +364,21 @@ public:
 	operator bool() const;
 };
 
+static auto const NoSignal = Signal {};
+
 /* ~~ Token Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 //   Tokens are the smallest unit of speech for both humans and computers.
 // Individual prefixes and suffixes count as Words, and Signals appear in series
 // rather than multiple at the same time.
 
-using Token = std::variant<Word, Signal>;
+class Token : public std::variant<Signal, Word> {
+public:
+	using std::variant<Signal, Word>::variant;
+	Token(std::string_view);
+};
+
+static auto const NoToken = Token {};
 
 /* ~~ Phrase Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -372,15 +388,31 @@ using Token = std::variant<Word, Signal>;
 
 class Phrase: public std::vector<Token> {
 public:
-	// not using std::vector<Token>::vector;
-
-	// Default construction/assignment
-	Phrase() = default;
-	Phrase(Phrase const&) = default;
-	Phrase& operator=(Phrase const&) = default;
-
+	// Construction
+	using std::vector<Token>::vector;
 	Phrase(std::string_view);
+	Phrase(FromEscaped_Arg, std::string_view);
+	// Allow construction form a string literal.
+	template <std::size_t N> Phrase(char const (& str)[N])
+	:	Phrase{std::string_view {str}} {}
+
+	// Comparison
+	bool operator== (Phrase const&) const = default;
+	auto operator<=>(Phrase const&) const = default;
+
+	// Concatenation
+	Phrase& operator+=(Phrase);
+	friend Phrase operator+(Phrase, Token);
+	friend Phrase operator+(Token, Phrase);
+
+	Issues<Token*> issues() const;
 };
+
+static const/**/ auto NoPhrase = Phrase {};
+
+// Token promotion
+Phrase operator+(Token, Phrase);
+Phrase operator+(Phrase, Token);
 
 /* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -439,9 +471,11 @@ private:
 #undef GET_IMPL
 };
 
-// StrokeList promotion
-Brief operator+(StrokeList, Phrase);
-Brief operator+(Phrase, StrokeList);
+static const/**/ auto NoBrief = Brief {};
+
+//// StrokeList promotion
+//Brief operator+(StrokeList, Phrase);
+//Brief operator+(Phrase, StrokeList);
 
 /* ~~ Dictionary Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -545,6 +579,8 @@ private:
 	{ erase_if_impl([&] (auto y) { return value == y; }); }
 };
 
+static auto const NoDictionary = Dictionary {};
+
 /* ~~ Locale Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 //   Locales store information about what language(s) we are writing in, as well
@@ -557,22 +593,26 @@ namespace steno {
 
 class Locale {
 #ifdef STENO_DEFAULT_LANGUAGE
-	LanguageCode m_language {(STENO_DEFAULT_LANGUAGE)::Code};
+	Language m_language {STENO_DEFAULT_LANGUAGE};
 #else
-	// English by default is opt-out.
-	LanguageCode m_language {English::Code};
+	Language m_language {English}; // English by default is opt-out.
 #endif
 
-	std::optional<RegionCode> m_region {NoRegion};
-
 public:
-	Locale(Language);
+	Locale() = default;
+	Locale(Language l): m_language{l} {}
+	Locale(std::string_view);
 
 	// Getters
-	std::string_view language() const;
-	std::string_view script() const;
-	std::string_view region() const;
+	Language language() const;
+	LanguageCode languageCode() const;
+
+	// Comparison
+	bool operator== (Locale const&) const = default;
+	auto operator<=>(Locale const&) const = default;
 };
+
+static auto const NoLocale = Locale {};
 
 /* Context Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -580,25 +620,31 @@ public:
 // For example, before a stenographer starts writing, we know we are in English,
 // and the first word will be treated as the start of the sentence.
 
-class Context {
+class Context : public Locale {
 	Locale m_locale {};
-	struct State {
-		bool startOfWord {true};
-		bool startOfSentence {false};
-		bool startOfPhrase {false};
-		bool inDigitSequence {false};
+	enum State {
+		startOfWord,
+		startOfSentence,
+		startOfParagraph,
+		inDigitSequence,
 		// ...
-	} m_state {};
+	} m_state {startOfWord};
 
 public:
-	Context(Language);
+	// Constructors
+	using Locale::Locale;
 
-	// Getters
-	Locale /* */& locale();
-	Locale const& locale() const;
+	// Getters and Setters
+	void codeSwitch(Language);
 	State /* */& state();
 	State const& state() const;
+
+	// Comparison
+	bool operator== (Context const&) const = default;
+	auto operator<=>(Context const&) const = default;
 };
+
+static auto const NoContext = Context {};
 
 /* ~~ Speech Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -613,9 +659,9 @@ class Speech {
 public:
 	Speech(std::ostream&, Language);
 
-	// Disable copying
-	Brief(Brief const&) = delete;
-	Brief& operator=(Brief const&) = delete;
+//	// Disable copying
+//	Brief(Brief const&) = delete;
+//	Brief& operator=(Brief const&) = delete;
 };
 
 Speech& operator<<(Speech&, Token const&);
@@ -660,7 +706,7 @@ std::ostream& operator<<(std::ostream&, Brief const&);
 // Format as manipulator
 std::ostream& operator<<(std::ostream&, Format);
 
-/* ~~ Constexpr Declarations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ Constexpr Definitions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 constexpr Stroke::Stroke(std::string_view str) {
 	enum State {
@@ -777,12 +823,6 @@ constexpr Stroke::Stroke(I first, I last) {
 	}
 }
 
-static constexpr auto NoStroke = Stroke {};
-static const/**/ auto NoStrokeList = StrokeList {};
-static const/**/ auto NoBrief = Brief {};
-static const/**/ auto NoPhrase = Phrase {};
-// TODO: NoIssues object which acts like std::nullopt
-
 } // namespace steno
 
 /* ~~ Misc. STL Functionality ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -797,7 +837,7 @@ template <> struct std::tuple_size<steno::Brief>
 : std::integral_constant<size_t, 2> {};
 
 template <std::size_t I> struct std::tuple_element<I, steno::Brief>
-: std::conditional<I == 0, steno::StrokeList, std::string>
+: std::conditional<I == 0, steno::StrokeList, steno::Phrase>
 { static_assert(I < 2); };
 
 namespace steno {

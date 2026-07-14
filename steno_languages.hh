@@ -4,66 +4,81 @@
 
 namespace steno {
 
-/* ~~ Locale Codes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+enum Language {
+	NoLanguage,
+	English,
+};
 
-//   Scripts will be a part of a language's definition. This is okay because
-// this library only concerns writing, and not language semantics.
+static constexpr auto DefaultLanguage = Language {
+#ifdef STENO_DEFAULT_LANGUAGE
+	STENO_DEFAULT_LANGUAGE
+#else
+	English // English by default is opt-out.
+#endif
+};
+
+/* ~~ Language Identifier ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+//   Scripts are a mandatory part of language identification. This is okay
+// because this library only handles the written word, and never any semantic
+// meaning. Region, however, is only to be used when two cultures' use of a
+// language differ so much that their combining rules differ. Most languages
+// used across multiple regions have identical rules, so this is rarely needed.
 
 class LanguageCode {
-	char value[3 + 4]; // ISO 639-2/T  +  ISO 15924
+	char m_name[3]; // ISO 639-2/T
+	char m_script[4]; // ISO 15924
+	char m_region[2]; // ISO 3166-1 alpha-2
 
-public:
-	constexpr LanguageCode(): LanguageCode{"qaa", "Qaaa"} {} // Reserved values
-	constexpr LanguageCode(std::string_view lang, std::string_view script) {
-		assert(lang.size() == 3);
-		assert('a' <= lang[0] && lang[0] <= 'z'), value[0] = lang[0];
-		assert('a' <= lang[1] && lang[1] <= 'z'), value[1] = lang[1];
-		assert('a' <= lang[2] && lang[2] <= 'z'), value[2] = lang[2];
-		assert(script.size() == 4);
-		assert('A' <= script[0] && script[0] <= 'Z'), value[3] = script[0];
-		assert('a' <= script[1] && script[1] <= 'z'), value[4] = script[1];
-		assert('a' <= script[2] && script[2] <= 'z'), value[5] = script[2];
-		assert('a' <= script[3] && script[3] <= 'z'), value[6] = script[3];
+	constexpr LanguageCode(
+		std::string_view name,
+		std::string_view script,
+		std::string_view region={"AA"}
+	) {
+		for (int i=0; i<3; i++) m_name[i] = name[i];
+		for (int i=0; i<4; i++) m_script[i] = script[i];
+		for (int i=0; i<2; i++) m_region[i] = region[i];
 	}
 
+public:
+	// Constructor
+	constexpr LanguageCode(Language language=NoLanguage) {
+		switch (language) {
+		case English:
+			*this = LanguageCode {"eng", "Latn"}; break;
+/*
+		// Further examples:
+		case EnglishBraille: // ⠠⠢⠛⠇⠊⠩⠀⠠⠃⠗⠇
+			*this = Combine {"eng", "Brai"}; break;
+
+		case JapaneseBraille: // ⠇⠮⠴⠐⠪⠎⠀⠟⠴⠐⠳
+			*this = Combine {"jpn", "Brai"}; break;
+
+		case Mongolian: // Монгол хэл
+			*this = Combine {"mon", "Cyrl"}; break;
+
+		case MongolianTraditional: // ᠮᠣᠩᠭᠣᠯ ᠬᠡᠯᠡ
+			*this = Combine {"mon", "Mong"}; break;
+*/
+		default: assert(language == NoLanguage);
+			// We use reserved values to denote unspecified code/script/region.
+			*this = LanguageCode {"qaa", "Qaaa", "AA"}; break;
+		}
+	}
+
+	// Comparison
 	bool operator== (LanguageCode const&) const = default;
 	auto operator<=>(LanguageCode const&) const = default;
 
 	// Getters
-	operator std::string_view() const;
-	std::array<std::string_view, 2> split() const;
+	std::string name  () const { return m_name;   }
+	std::string script() const { return m_script; }
+	std::string region() const { return m_region; }
 };
 
-//   Languages are not specific to any one region. However, they are allowed to
-// have their orthographic rules depend on region. (For example, Portuguese
-// pre-1990.)
+static constexpr auto NoLanguageCode = LanguageCode {};
 
-class RegionCode {
-	char value[2]; // ISO 3166-1 alpha-2
-
-public:
-	RegionCode(): RegionCode{"AA"} {} // Reserved value
-	RegionCode(std::string_view str) {
-		assert(str.size() == 2);
-		assert ('A' <= str[0] && str[0] <= 'Z'), value[0] = str[0];
-		assert ('A' <= str[1] && str[1] <= 'Z'), value[1] = str[1];
-	}
-
-	bool operator== (RegionCode const&) const = default;
-	auto operator<=>(RegionCode const&) const = default;
-
-	// Getters
-	operator std::string_view() const;
-};
-
-static constexpr auto NoRegionCode = RegionCode {};
-
-/* ~~ Language Classes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
-enum Language {
-	NoLanguage,
-	English/*, Russian, Chinese,*/
-};
+/* ~~ Orthography ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 //   Orthographies define the most common pattern in a language's spelling.
 // As an English example: take + -ing = taking, and tap + -ing = tapping.
@@ -71,15 +86,6 @@ enum Language {
 // the English language, and normal rules apply. Irregular rules are handled by
 // user-defined dictionaries.
 
-template <Language L>
-struct Orthography {
-	static constexpr LanguageCode Code {};
-	RegionCode region {};
-
-	// Used just in case dialects vary greatly.
-	bool operator==(Orthography const&) const { return true; }
-
-	static std::string Combine(std::string_view, std::string_view);
-};
+std::string combine(Language, std::string_view, std::string_view);
 
 } // namespace steno

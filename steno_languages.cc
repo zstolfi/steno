@@ -3,6 +3,9 @@
 namespace steno {
 
 template <>
+constexpr LanguageCode<English> = {"eng", "Latn"};
+
+template <>
 struct Orthography<English> {
 	static constexpr LanguageCode Code {"eng", "Latn"};
 
@@ -18,23 +21,27 @@ struct Orthography<English> {
 
 /*
 struct Orthography<EnglishBraille> {
+	EnglishBraille
 	// ⠠⠢⠛⠇⠊⠩⠀⠠⠃⠗⠇
-	static constexpr LanguageCode Code {"eng", "Brai"};
+	{"eng", "Brai"}
 };
 
 struct Orthography<JapaneseBraille> {
+	JapaneseBraille
 	// ⠇⠮⠴⠐⠪⠎⠀⠟⠴⠐⠳
-	static constexpr LanguageCode Code {"jpn", "Brai"};
+	{"jpn", "Brai"}
 };
 
 struct Orthography<Mongolian> {
+	Mongolian
 	// Монгол хэл
-	static constexpr LanguageCode Code {"mon", "Cyrl"};
+	{"mon", "Cyrl"}
 };
 
 struct Orthography<MongolianTraditional> {
+	MongolianTraditional
 	// ᠮᠣᠩᠭᠣᠯ ᠬᠡᠯᠡ
-	static constexpr LanguageCode Code {"mon", "Mong"};
+	{"mon", "Mong"}
 };
 */
 
