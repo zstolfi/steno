@@ -49,16 +49,16 @@ public:
 /*
 		// Further examples:
 		case EnglishBraille: // ⠠⠢⠛⠇⠊⠩⠀⠠⠃⠗⠇
-			*this = Combine {"eng", "Brai"}; break;
+			*this = LanguageCode {"eng", "Brai"}; break;
 
 		case JapaneseBraille: // ⠇⠮⠴⠐⠪⠎⠀⠟⠴⠐⠳
-			*this = Combine {"jpn", "Brai"}; break;
+			*this = LanguageCode {"jpn", "Brai"}; break;
 
 		case Mongolian: // Монгол хэл
-			*this = Combine {"mon", "Cyrl"}; break;
+			*this = LanguageCode {"mon", "Cyrl"}; break;
 
 		case MongolianTraditional: // ᠮᠣᠩᠭᠣᠯ ᠬᠡᠯᠡ
-			*this = Combine {"mon", "Mong"}; break;
+			*this = LanguageCode {"mon", "Mong"}; break;
 */
 		default: assert(language == NoLanguage);
 			// We use reserved values to denote unspecified code/script/region.

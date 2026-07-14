@@ -308,11 +308,7 @@ Brief& Brief::normalize() {
 		std::remove(m_strokeList.begin(), m_strokeList.end(), NoStroke),
 		m_strokeList.end()
 	);
-	// Remove leading or trailing whitespace.
-	constexpr std::string_view Whitespace {" \t\n\r"};
-	auto i = m_phrase.find_first_not_of(Whitespace);
-	auto j = m_phrase.find_last_not_of(Whitespace);
-	m_phrase = (i != m_phrase.npos)? m_phrase.substr(i, j-i + 1): "";
+	// Any extra whitespace is already removed thanks to the Word constructor.
 	return *this;
 }
 
@@ -471,21 +467,6 @@ void Dictionary::normalize() {
 	std::sort(begin(), end(), EntryCompare);
 }
 
-/* Locale Codes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
-LanguageCode::operator std::string_view() const {
-	return std::string_view {value.begin(), value.end()};
-}
-
-std::array<std::string_view, 2> LanguageCode::split() const {
-	std::string_view str = std::string_view {*this};
-	return std::pair {str.substr(0, 3), str.substr(3, 4)};
-}
-
-RegionCode::operator std::string_view() const {
-	return std::string_view {value.begin(), value.end()};
-}
-
 /* ~~ String Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 Format operator|(Format f, Format g) {
@@ -572,8 +553,10 @@ std::string toString(StrokeList const& p, Format format) {
 	return result;
 }
 
+//std::string toString(Phrase const& p) {}
+
 std::string toString(Brief const& b, Format format) {
-	return toString(b.strokes(), format) + ", " + b.phrase();
+	return toString(b.strokes(), format) + ", " + toString(b.phrase());
 }
 
 std::ostream& operator<<(std::ostream& os, Stroke s) {

@@ -97,7 +97,7 @@ namespace flags {
 	constexpr struct CodeSwitch_Arg       {} CodeSwitch       {};
 	constexpr struct Punctuate_Arg        {} Punctuate        {};
 	constexpr struct SysEx_Arg            {} SysEx            {};
-	// Phrase construction
+	// Word construction
 	constexpr struct FromEscaped_Arg      {} FromEscaped      {};
 }
 
@@ -304,6 +304,7 @@ StrokeList operator|(Stroke, Stroke const&);
 // Their constructor ignores escape sequences, parsing those is the job of the
 // Phrase constructor.
 
+// "FromEscaped" constructor will go in here.
 using Word = std::string;
 
 static auto const NoWord = Word {};
@@ -376,6 +377,10 @@ class Token : public std::variant<Signal, Word> {
 public:
 	using std::variant<Signal, Word>::variant;
 	Token(std::string_view);
+
+	// Comparison
+	bool operator== (Token const&) const = default;
+	auto operator<=>(Token const&) const = default;
 };
 
 static auto const NoToken = Token {};
@@ -391,7 +396,6 @@ public:
 	// Construction
 	using std::vector<Token>::vector;
 	Phrase(std::string_view);
-	Phrase(FromEscaped_Arg, std::string_view);
 	// Allow construction form a string literal.
 	template <std::size_t N> Phrase(char const (& str)[N])
 	:	Phrase{std::string_view {str}} {}
@@ -695,6 +699,7 @@ char toCharShift(Key);
 std::string toString(Key, Format = KeyDefault);
 std::string toString(Stroke, Format = StrokeDefault);
 std::string toString(StrokeList const&, Format = StrokeDefault);
+std::string toString(Phrase const&);
 std::string toString(Brief const&, Format = StrokeDefault);
 std::ostream& operator<<(std::ostream&, Key);
 std::ostream& operator<<(std::ostream&, Stroke);

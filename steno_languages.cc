@@ -1,49 +1,30 @@
 #include "steno_languages.hh"
 
-namespace steno {
+namespace /*details*/ {
 
-template <>
-constexpr LanguageCode<English> = {"eng", "Latn"};
-
-template <>
-struct Orthography<English> {
-	static constexpr LanguageCode Code {"eng", "Latn"};
-
-	static std::string Combine(std::string_view lhs, std::string_view rhs) {
-		std::string result {};
-		result.reserve(lhs.size() + rhs.size());
-		result = lhs + rhs;
-		return result;
-	}
+std::string combineEnglish(std::string_view lhs, std::string_view rhs) {
+#if 0
+	/* Comples rules go here ... */
+#else
+	return lhs + rhs;
+#endif
 }
 
-// Further examples:
+}; // namespace /*details*/
 
-/*
-struct Orthography<EnglishBraille> {
-	EnglishBraille
-	// ⠠⠢⠛⠇⠊⠩⠀⠠⠃⠗⠇
-	{"eng", "Brai"}
-};
+namespace steno {
 
-struct Orthography<JapaneseBraille> {
-	JapaneseBraille
-	// ⠇⠮⠴⠐⠪⠎⠀⠟⠴⠐⠳
-	{"jpn", "Brai"}
-};
-
-struct Orthography<Mongolian> {
-	Mongolian
-	// Монгол хэл
-	{"mon", "Cyrl"}
-};
-
-struct Orthography<MongolianTraditional> {
-	MongolianTraditional
-	// ᠮᠣᠩᠭᠣᠯ ᠬᠡᠯᠡ
-	{"mon", "Mong"}
-};
-*/
-
+std::string combine(
+	Language language,
+	std::string_view lhs,
+	std::string_view rhs
+) {
+	switch (language) {
+	case English:
+		return combineEnglish(lhs, rhs);
+	default: assert(language == NoLanguage);
+		return lhs + rhs;
+	}
+}
 
 }

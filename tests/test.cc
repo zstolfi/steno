@@ -702,16 +702,58 @@ TEST(StenoPhrase, EmptyConstruction) {
 }
 
 TEST(StenoPhrase, GoodInputString) {
-	EXPECT_NO_ISSUES(steno::Phrase {""});
-	EXPECT_NO_ISSUES(steno::Phrase {"word"});
-	EXPECT_NO_ISSUES(steno::Phrase {"two words"});
-	EXPECT_NO_ISSUES(steno::Phrase {"{prefix^}"});
-	EXPECT_NO_ISSUES(steno::Phrase {"{^suffix}"});
-	EXPECT_NO_ISSUES(steno::Phrase {"escaped \\{"});
-	EXPECT_NO_ISSUES(steno::Phrase {"escaped \\}"});
-	EXPECT_NO_ISSUES(steno::Phrase {"\\{ escaped"});
-	EXPECT_NO_ISSUES(steno::Phrase {"\\} escaped"});
-	EXPECT_NO_ISSUES(steno::Phrase {"{escaped \\}}"});
+	steno::Phrase p {};
+
+	EXPECT_NO_ISSUES(p = steno::Phrase {""});
+	EXPECT_EQ(p.size(), 0);
+
+	EXPECT_NO_ISSUES(p = steno::Phrase {"word"});
+	EXPECT_EQ(p.size(), 1);
+	EXPECT_EQ(p[0], steno::Word {"word"});
+
+	EXPECT_NO_ISSUES(p = steno::Phrase {"two words"});
+	EXPECT_EQ(p.size(), 2);
+	EXPECT_EQ(p[0], steno::Word {"word"});
+
+	EXPECT_NO_ISSUES(p = steno::Phrase {"{prefix^}"});
+	EXPECT_EQ(p.size(), 2);
+	EXPECT_EQ(p[0], steno::Word {"prefix"});
+	EXPECT_EQ(p[1], steno::Signal {steno::Combine});
+
+	EXPECT_NO_ISSUES(p = steno::Phrase {"{^suffix}"});
+	EXPECT_EQ(p.size(), 2);
+	EXPECT_EQ(p[0], steno::Signal {steno::Combine});
+	EXPECT_EQ(p[1], steno::Word {"suffix"});
+
+	EXPECT_NO_ISSUES(p = steno::Phrase {"escaped \\{"});
+	EXPECT_EQ(p.size(), 2);
+	EXPECT_EQ(p[0], steno::Word {"escaped"});
+	EXPECT_EQ(p[1], steno::Word {"{"});
+
+	EXPECT_NO_ISSUES(p = steno::Phrase {"escaped \\}"});
+	EXPECT_EQ(p.size(), 2);
+	EXPECT_EQ(p[0], steno::Word {"escaped"});
+	EXPECT_EQ(p[1], steno::Word {"}"});
+
+	EXPECT_NO_ISSUES(p = steno::Phrase {"\\{ escaped"});
+	EXPECT_EQ(p.size(), 2);
+	EXPECT_EQ(p[0], steno::Word {"{"});
+	EXPECT_EQ(p[1], steno::Word {"escaped"});
+
+	EXPECT_NO_ISSUES(p = steno::Phrase {"\\} escaped"});
+	EXPECT_EQ(p.size(), 2);
+	EXPECT_EQ(p[0], steno::Word {"}"});
+	EXPECT_EQ(p[1], steno::Word {"escaped"});
+
+	EXPECT_NO_ISSUES(p = steno::Phrase {"{escaped \\}}"});
+	EXPECT_EQ(p.size(), 2);
+	EXPECT_EQ(p[0], steno::Word {"escaped"});
+	EXPECT_EQ(p[1], steno::Word {"}"});
+
+	EXPECT_NO_ISSUES(p = steno::Phrase {"in\\{side"});
+	EXPECT_EQ(p.size(), 1);
+	EXPECT_EQ(p[0], steno::Word {"in{side"});
+
 }
 
 TEST(StenoPhrase, BadInputString) {
