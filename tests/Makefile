@@ -20,7 +20,7 @@ all : test
 test : test.o steno.o steno_parsers.o gtest_main.a
 	$(CXX) $(LDFLAGS) $^ -o $@
 
-test.o : test.cc $(STENO)/steno.cc $(STENO)/steno.hh $(GTEST_INC)
+test.o : test.cc $(STENO)/steno.cc $(STENO)/steno.hh language_en.cc $(GTEST_INC)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 steno.o : $(STENO)/steno.cc $(STENO)/steno.hh

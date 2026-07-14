@@ -592,11 +592,7 @@ static auto const NoDictionary = Dictionary {};
 namespace steno {
 
 class Locale {
-#ifdef STENO_DEFAULT_LANGUAGE
-	Language m_language {STENO_DEFAULT_LANGUAGE};
-#else
-	Language m_language {English}; // English by default is opt-out.
-#endif
+	Language m_language {DefaultLanguage};
 
 public:
 	Locale() = default;
@@ -657,15 +653,17 @@ class Speech {
 	std::ostream* m_output {};
 
 public:
-	Speech(std::ostream&, Language);
-
-//	// Disable copying
-//	Brief(Brief const&) = delete;
-//	Brief& operator=(Brief const&) = delete;
+	Speech(std::ostream&, Language=DefaultLanguage);
 };
 
 Speech& operator<<(Speech&, Token const&);
 Speech& operator<<(Speech&, Phrase const&);
+
+// Disambiguate string literals, prefer Phrases
+template <std::size_t N>
+Speech& operator<<(Speech& s, char const (& str)[N]) {
+	return s << Phrase {str};
+}
 
 /* ~~ String Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
