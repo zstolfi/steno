@@ -5,7 +5,7 @@ namespace steno {
 /* ~~ Stroke Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 // Getters and Setters
-uint32_t Stroke::raw() const {
+uint32_t Stroke::bits() const {
 	return m_bits;
 }
 
@@ -233,6 +233,56 @@ StrokeList::operator bool() const {
 		if (s == NoStroke || s.issues()) return false;
 	}
 	return true;
+}
+
+/* ~~ Signal Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+Signal::operator bool() const {
+	return *this != NoSignal;
+}
+
+/* ~~ Phrase Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+// Construction
+Phrase::Phrase(std::string_view) {
+	return /* TODO */;
+}
+
+// Getters
+Phrase::operator std::string() const {
+	return {/* TODO */};
+};
+
+// Concatenation
+Phrase& Phrase::operator+=(Phrase p) {
+	for (auto token : p) {
+		this->push_back(p);
+	}
+	return *this;
+}
+
+Phrase& Phrase::operator+=(Token t) {
+	this->push_back(t);
+	return *this;
+}
+
+Phrase operator+(Phrase p, Token t) {
+	p += t;
+	return p;
+}
+
+Phrase operator+(Token t, Phrase p) {
+	p.insert(p.begin(), t);
+	return p;
+}
+
+// Fail-state query
+Issues<Token*> Phrase::issues() const {
+	return {/* TODO */};
+}
+
+Phrase::operator bool() const {
+	return {/* TODO */};
 }
 
 /* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -467,6 +517,46 @@ void Dictionary::normalize() {
 	std::sort(begin(), end(), EntryCompare);
 }
 
+/* ~~ Context Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+// Getters and Setters
+Language& Context::language() {
+	return m_language;
+}
+
+Language Context::language() const {
+	return m_language;
+}
+
+LanguageCode Context::languageCode() const {
+	return LanguageCode {m_language};
+}
+
+Context::State& Context::state() {
+	return m_state;
+}
+
+Context::State Context::state() const {
+	return m_state;
+}
+
+/* ~~ Speech Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+//   Speeches listen for Tokens, apply orthography, and output to std::ostream.
+// Information received will always be sent out as fast as possible. There is
+// however, no ability to undo nor reinterpret Tokens.
+
+Speech& operator<<(Speech& s, Token const& t) {
+	const std::ostream& os = *s.m_output;
+	/* TODO */;
+	return s;
+}
+
+Speech& operator<<(Speech& s, Phrase const& p) {
+	for (auto token : p) s << token;
+	return s;
+}
+
 /* ~~ String Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 Format operator|(Format f, Format g) {
@@ -553,7 +643,9 @@ std::string toString(StrokeList const& p, Format format) {
 	return result;
 }
 
-//std::string toString(Phrase const& p) {}
+std::string toString(Phrase const& p) {
+	return {/* TODO */};
+}
 
 std::string toString(Brief const& b, Format format) {
 	return toString(b.strokes(), format) + ", " + toString(b.phrase());

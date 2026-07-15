@@ -181,7 +181,7 @@ TEST(StenoStroke, BadInputString) {
 
 TEST(StenoStroke, Getters) {
 	steno::Stroke stroke {"SPROUTS"};
-	EXPECT_EQ(stroke.raw(), 0b01001001010010000001100'000000000);
+	EXPECT_EQ(stroke.bits(), 0b01001001010010000001100'000000000);
 }
 
 TEST(StenoStroke, RangeFor) {
@@ -274,8 +274,8 @@ TEST(StenoStroke, SubscriptModify) {
 
 TEST(StenoStroke, UnaryNegate) {
 	steno::Stroke leftHand {"STKPWHRAO"};
-	EXPECT_EQ(  leftHand .raw(), 0b01111111110000000000000'000000000);
-	EXPECT_EQ((~leftHand).raw(), 0b10000000001111111111111'000000000);
+	EXPECT_EQ(  leftHand .bits(), 0b01111111110000000000000'000000000);
+	EXPECT_EQ((~leftHand).bits(), 0b10000000001111111111111'000000000);
 }
 
 TEST(StenoStroke, Addition) {
@@ -768,7 +768,8 @@ TEST(StenoPhrase, BadInputString) {
 /* ~~ Context Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 TEST(StenoContext, EmptyConstruction) {
-	EXPECT_EQ(steno::Context {"C"}, steno::Context {steno::NoLanguage});
+	steno::Context context {steno::NoLanguage};
+	EXPECT_EQ(context.language(), steno::NoLanguage);
 }
 
 TEST(StenoContext, DefaultConstruction) {
@@ -794,12 +795,6 @@ TEST(StenoContext, LanguageConstruction) {
 	EXPECT_EQ(c.languageCode().script(), "");
 	EXPECT_EQ(c.languageCode().region(), "");
 
-	c = steno::Context {"C"};
-	EXPECT_EQ(c.language(), steno::NoLanguage);
-	EXPECT_EQ(c.languageCode().name(), "");
-	EXPECT_EQ(c.languageCode().script(), "");
-	EXPECT_EQ(c.languageCode().region(), "");
-
 	// English context
 	c = steno::Context {steno::English};
 	EXPECT_EQ(c.language(), steno::English);
@@ -812,15 +807,15 @@ TEST(StenoContext, CodeSwitch) {
 	steno::Context c {};
 
 	c = steno::Context {steno::NoLanguage};
-	c.codeSwitch(steno::English);
+	c.language() = steno::English;
 	EXPECT_EQ(c.language(), steno::English);
 
 	c = steno::Context {steno::English};
-	c.codeSwitch(steno::NoLanguage);
+	c.language() = steno::NoLanguage;
 	EXPECT_EQ(c.language(), steno::NoLanguage);
 
 	c = steno::Context {steno::English};
-	c.codeSwitch(steno::English);
+	c.language() = steno::English;
 	EXPECT_EQ(c.language(), steno::English);
 }
 

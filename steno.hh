@@ -97,8 +97,6 @@ namespace flags {
 	constexpr struct CodeSwitch_Arg       {} CodeSwitch       {};
 	constexpr struct Punctuate_Arg        {} Punctuate        {};
 	constexpr struct SysEx_Arg            {} SysEx            {};
-	// Word construction
-	constexpr struct FromEscaped_Arg      {} FromEscaped      {};
 }
 
 using namespace flags;
@@ -171,7 +169,7 @@ public:
 	// Getters and Setters
 	class Reference;
 	class Iterator;
-	uint32_t raw() const; // TODO: Rename to "bits".
+	uint32_t bits() const;
 	bool get(Key) const;
 	Stroke& set(Key, bool = true);
 	Stroke& unset(Key);
@@ -297,14 +295,12 @@ static auto const NoStrokeList = StrokeList {};
 // Stroke promotion
 StrokeList operator|(Stroke, Stroke const&);
 
-// TODO: Rename to "Part"
 /* ~~ Word Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 //   Words (more correctly morphemes) are literal character data.
 // Their constructor ignores escape sequences, parsing those is the job of the
 // Phrase constructor.
 
-// "FromEscaped" constructor will go in here.
 using Word = std::string;
 
 static auto const NoWord = Word {};
@@ -316,30 +312,37 @@ static auto const NoWord = Word {};
 // with adjacent Words, text formatting, or even system exclusive messages.
 
 class Signal {
-#define SIGNAL_DEF(T, ... ) \
-	struct T { auto operator<=>(T const&) const = default; __VA_ARGS__ }
-	/*                                                          Example       */
-	SIGNAL_DEF(Null_t   ); // Will be ignored by all systems.   {#}
-	SIGNAL_DEF(Undo_t   ); // Forget the previous Stroke.       {*}
-	SIGNAL_DEF(Cancel_t ); // We are at the start of a word.    {}
-	SIGNAL_DEF(Combine_t); // We are in the middle of a word.   {^}
-	SIGNAL_DEF(Glue_t   ); // We are typing a digit sequence.   {&}
+#define SIGNAL_DEF(Name, ... )                                                 \
+    struct Name##_t {                                                          \
+        __VA_ARGS__                                                            \
+        bool operator== (Name##_t const&) const = default;                     \
+        auto operator<=>(Name##_t const&) const = default;                     \
+    }
+#define SIGNAL_CONSTRUCTOR(Name)                                               \
+    Signal(Name##_Arg, auto&& ... args): m_value{Name##_t {args ... }} {}
+
+	/*         Name      Comment                                Example       */
+	/* (default init) */ // Will be ignored by all systems.     {#}
+	SIGNAL_DEF(Undo   ); // Forget the previous Stroke.         {*}
+	SIGNAL_DEF(Cancel ); // We are at the start of a word.      {}
+	SIGNAL_DEF(Combine); // We are in the middle of a word.     {^}
+	SIGNAL_DEF(Glue   ); // We are typing a digit sequence.     {&}
 
 	// Accepts POSIX locales and Language IDs (Apple)           {@en-US}
-	SIGNAL_DEF(CodeSwitch_t, std::string localeName {}; );
+	SIGNAL_DEF(CodeSwitch, std::string localeName {}; );
 
 	// Language-specific formatting                             {!}
-	SIGNAL_DEF(Punctuate_t, std::string symbol {}; );
+	SIGNAL_DEF(Punctuate, std::string symbol {}; );
 
 	// Application-specific instructions. Your own universe!    {#MyApp:Reload}
-	SIGNAL_DEF(SysEx_t, std::string channel {}, message {}; );
+	SIGNAL_DEF(SysEx, std::string channel {}, message {}; );
 #undef SIGNAL_DEF
 
 	std::variant<
-		Null_t, Undo_t,
+		std::monostate, Undo_t,
 		Cancel_t, Combine_t, Glue_t,
 		CodeSwitch_t, Punctuate_t, SysEx_t
-	> m_value {Null_t {}};
+	> m_value {};
 
 public:
 	// Default construction/assignment
@@ -347,22 +350,22 @@ public:
 	Signal(Signal const&) = default;
 	Signal& operator=(Signal const&) = default;
 
-	// Trivial constructors (standalone Signals)
-	Signal(Undo_Arg)    : m_value{Undo_t    {}} {}
-	Signal(Cancel_Arg)  : m_value{Cancel_t  {}} {}
-	Signal(Combine_Arg) : m_value{Combine_t {}} {}
-	Signal(Glue_Arg)    : m_value{Glue_t    {}} {}
-
-	// Signals with string data
-	Signal(CodeSwitch_Arg, std::string localeName);
-	Signal(Punctuate_Arg, std::string symbol);
-	Signal(SysEx_Arg, std::string channel, std::string message);
+	// Tagged constructors          Example
+	SIGNAL_CONSTRUCTOR(Undo);       // Signal {Undo}
+	SIGNAL_CONSTRUCTOR(Cancel);     // Signal {Cancel}
+	SIGNAL_CONSTRUCTOR(Combine);    // Signal {Combine}
+	SIGNAL_CONSTRUCTOR(Glue);       // Signal {Glue}
+	SIGNAL_CONSTRUCTOR(CodeSwitch); // Signal {CodeSwitch, "en-US"}
+	SIGNAL_CONSTRUCTOR(Punctuate);  // Signal {Punctuate, "!"}
+	SIGNAL_CONSTRUCTOR(SysEx);      // Signal {SysEx, "MyApp", "Reload"}
 
 	// Comparison
 	bool operator== (Signal const&) const = default;
 	auto operator<=>(Signal const&) const = default;
 
 	operator bool() const;
+#undef SIGNAL_DEF
+#undef SIGNAL_CONSTRUCTOR
 };
 
 static auto const NoSignal = Signal {};
@@ -375,8 +378,8 @@ static auto const NoSignal = Signal {};
 
 class Token : public std::variant<Signal, Word> {
 public:
+	// Constructors
 	using std::variant<Signal, Word>::variant;
-	Token(std::string_view);
 
 	// Comparison
 	bool operator== (Token const&) const = default;
@@ -400,23 +403,28 @@ public:
 	template <std::size_t N> Phrase(char const (& str)[N])
 	:	Phrase{std::string_view {str}} {}
 
+	// Getters
+	operator std::string() const;
+
 	// Comparison
 	bool operator== (Phrase const&) const = default;
 	auto operator<=>(Phrase const&) const = default;
 
 	// Concatenation
 	Phrase& operator+=(Phrase);
+	Phrase& operator+=(Token);
 	friend Phrase operator+(Phrase, Token);
 	friend Phrase operator+(Token, Phrase);
+	// Disambiguate string literals, prefer Phrases
+	template <std::size_t N>
+	Phrase& operator+=(char const (& str)[N]) { return *this += Phrase {str}; }
 
+	// Fail-state query
 	Issues<Token*> issues() const;
+	operator bool() const;
 };
 
-static const/**/ auto NoPhrase = Phrase {};
-
-// Token promotion
-Phrase operator+(Token, Phrase);
-Phrase operator+(Phrase, Token);
+static auto const NoPhrase = Phrase {};
 
 /* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -475,7 +483,7 @@ private:
 #undef GET_IMPL
 };
 
-static const/**/ auto NoBrief = Brief {};
+static auto const NoBrief = Brief {};
 
 //// StrokeList promotion
 //Brief operator+(StrokeList, Phrase);
@@ -585,43 +593,20 @@ private:
 
 static auto const NoDictionary = Dictionary {};
 
-/* ~~ Locale Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
-//   Locales store information about what language(s) we are writing in, as well
-// as optional region data, in case the language's orthography changes depending
-// on where it's being spoken.
+/* ~~ Supported Languages ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 } // namespace steno
 #include "steno_languages.hh"
 namespace steno {
 
-class Locale {
-	Language m_language {DefaultLanguage};
-
-public:
-	Locale() = default;
-	Locale(Language l): m_language{l} {}
-	Locale(std::string_view);
-
-	// Getters
-	Language language() const;
-	LanguageCode languageCode() const;
-
-	// Comparison
-	bool operator== (Locale const&) const = default;
-	auto operator<=>(Locale const&) const = default;
-};
-
-static auto const NoLocale = Locale {};
-
-/* Context Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ Context Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 //   Contexts store everything implied about what is being written.
 // For example, before a stenographer starts writing, we know we are in English,
-// and the first word will be treated as the start of the sentence.
+// and the first word will be treated as the start of the sentence/paragraph.
 
-class Context : public Locale {
-	Locale m_locale {};
+class Context {
+	Language m_language {DefaultLanguage};
 	enum State {
 		startOfWord,
 		startOfSentence,
@@ -632,12 +617,14 @@ class Context : public Locale {
 
 public:
 	// Constructors
-	using Locale::Locale;
+	Context(Language language=DefaultLanguage): m_language{language} {}
 
 	// Getters and Setters
-	void codeSwitch(Language);
-	State /* */& state();
-	State const& state() const;
+	Language& language();
+	Language  language() const;
+	LanguageCode languageCode() const;
+	State& state();
+	State  state() const;
 
 	// Comparison
 	bool operator== (Context const&) const = default;
@@ -653,15 +640,16 @@ static auto const NoContext = Context {};
 // however, no ability to undo nor reinterpret Tokens.
 
 class Speech {
-	Context m_context {};
 	std::ostream* m_output {};
+	Context m_context {};
 
 public:
-	Speech(std::ostream&, Language=DefaultLanguage);
-};
+	Speech(std::ostream& os, Language language=DefaultLanguage)
+	:	m_output{&os}, m_context{language} {}
 
-Speech& operator<<(Speech&, Token const&);
-Speech& operator<<(Speech&, Phrase const&);
+	friend Speech& operator<<(Speech&, Token const&);
+	friend Speech& operator<<(Speech&, Phrase const&);
+};
 
 // Disambiguate string literals, prefer Phrases
 template <std::size_t N>
