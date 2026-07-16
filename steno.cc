@@ -1,5 +1,35 @@
 #include "steno.hh"
 
+namespace /* detail */ {
+
+static constexpr bool isWhitespace(char c) {
+	return c == ' ' || c == '\t' || c == '\r' || c == '\n';
+}
+
+std::string_view trimWhitespace(std::string_view str) {
+	while (!str.empty() && isWhitespace(str.front())) str.remove_prefix(1);
+	while (!str.empty() && isWhitespace(str.back())) str.remove_suffix(1);
+	return str;
+}
+
+std::vector<std::string_view> split(std::string_view str, char delim) {
+	std::vector<std::string_view> result {};
+	auto push = [&](auto i, auto j) { result.push_back(str.substr(i, j-i)); };
+	int i=0, j=0;
+	while (j=str.find(delim, i), j!=str.npos) {
+		push(i, j);
+		i = j+1;
+	}
+	push(i, str.size());
+	return result;
+}
+
+steno::Language parseLocaleName(std::string_view str) {
+	return {/* TODO */};
+}
+
+} // namespace /* detail */
+
 namespace steno {
 
 /* ~~ Stroke Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -178,17 +208,10 @@ Stroke operator^(Key lhs, Key rhs) {
 // Class constructors
 StrokeList::StrokeList(std::string_view str) {
 	// How to spell the empty stroke list (\s*-\s*)
-	if (auto i = str.find_first_not_of(" \t"); i != str.npos)
-	if (auto j = str.find_last_not_of(" \t"); j != str.npos)
-	if (i == j && str.find('-') != str.npos) return;
+	trimWhitespace(str);
+	if (str == "-") return;
 	// Split up strokes by "/" otherwise
-	auto push = [&](auto i, auto j) { emplace_back(str.substr(i, j-i)); };
-	int i=0, j=0;
-	while (j=str.find('/', i), j!=str.npos) {
-		push(i, j);
-		i = j+1;
-	}
-	push(i, str.size());
+	for (auto substr : split(str, '/')) emplace_back(substr);
 }
 
 StrokeList::StrokeList(Stroke x) {
@@ -243,9 +266,96 @@ Signal::operator bool() const {
 
 /* ~~ Phrase Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+namespace /* detail */ {
+
+void warn( ... ) {/* TODO */}
+
+} // namespace /* detail */
+
 // Construction
-Phrase::Phrase(std::string_view) {
-	return /* TODO */;
+Phrase::Phrase(std::string_view str) {
+	std::string buffer {""};
+	bool isSignal {false}, isEscaped {false};
+
+	auto processBuffer = [&] {
+		/**/ if (!isSignal && buffer.empty()) /**/;
+		else if (!isSignal) push_back(Word {buffer});
+		// Signals
+		else if (buffer == "#") push_back(Signal {});
+		else if (buffer == "*") push_back(Signal {Undo});
+		else if (buffer == "")  push_back(Signal {Cancel});
+		else if (buffer == "^") push_back(Signal {Combine});
+		else if (buffer == "&") push_back(Signal {Glue});
+		// Complex Signals
+		else if (buffer.starts_with("@")) {
+			push_back(Signal {CodeSwitch, buffer.substr(1)});
+		}
+		else if (buffer.starts_with("#")) {
+			if (auto split = buffer.find(':', 1); split != buffer.npos) {
+				push_back(Signal {SysEx,
+					/*.channel*/ buffer.substr(1, split-1),
+					/*.message*/ buffer.substr(split+1),
+				});
+			}
+			else push_back(Signal {SysEx,
+				/*.channel*/ buffer.substr(1),
+			});
+		}
+		else if (!recognizedPunctuation(buffer).empty()) {
+			push_back(Signal {Punctuate, buffer});
+		}
+		// Alternate syntax
+		else {
+			std::string_view prefix {}, suffix {};
+			if (buffer.starts_with("^")) prefix = "^";
+			if (buffer.ends_with("^")) suffix = "^";
+			if (buffer.starts_with("&")) prefix = "&";
+
+			std::string_view inside {
+				buffer.begin()+prefix.size(),
+				buffer.end()-suffix.size(),
+			};
+
+			if (prefix == "^") push_back(Signal {Combine});
+			if (prefix == "&") push_back(Signal {Glue});
+			for (auto word : split(inside, ' ')) push_back(Word {word});
+			if (suffix == "^") push_back(Signal {Combine});
+		}
+		buffer.clear();
+	};
+
+	auto it = str.begin();
+	do {
+		char const c {it != str.end()? *it: '\0'};
+
+		/**/ if (c == '\0') processBuffer();
+		else if (isEscaped) buffer += c, isEscaped = false;
+		else if (c == '\\') isEscaped = true;
+
+		else if (c == '{') {
+			if (isSignal) warn("unexpected '{");
+			processBuffer();
+			isSignal = true;
+		}
+
+		else if (c == '}') {
+			if (!isSignal) warn("unexpected '}");
+			processBuffer();
+			isSignal = false;
+		}
+
+		else if (!isSignal && isWhitespace(c)) {
+			if (!buffer.empty())
+			push_back(Word {buffer});
+			buffer.clear();
+		}
+
+		else buffer += c;
+	}
+	while (it++ != str.end());
+
+	/**/ if (isSignal) warn("expected '}'");
+	else if (isEscaped) warn("expected character after '\\'");
 }
 
 // Getters

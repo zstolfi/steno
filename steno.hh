@@ -396,12 +396,14 @@ static auto const NoToken = Token {};
 
 class Phrase: public std::vector<Token> {
 public:
-	// Construction
-	using std::vector<Token>::vector;
-	Phrase(std::string_view);
-	// Allow construction form a string literal.
+	// Parse steno string
+	Phrase(std::string_view="");
 	template <std::size_t N> Phrase(char const (& str)[N])
 	:	Phrase{std::string_view {str}} {}
+
+	// Construct from Token sequence
+	template <std::input_iterator I> Phrase(I first, I last)
+	:	std::vector<Token>{first, last} {}
 
 	// Getters
 	operator std::string() const;

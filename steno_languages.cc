@@ -3,11 +3,8 @@
 namespace /*details*/ {
 
 std::string combineEnglish(std::string_view lhs, std::string_view rhs) {
-#if 0
-	/* Comples rules go here ... */
-#else
-	return lhs + rhs;
-#endif
+	/* TODO */;
+	return std::string {lhs} + std::string {rhs};
 }
 
 }; // namespace /*details*/
@@ -23,8 +20,16 @@ std::string combine(
 	case English:
 		return combineEnglish(lhs, rhs);
 	default: assert(language == NoLanguage);
-		return lhs + rhs;
+		return std::string {lhs} + std::string {rhs};
 	}
+}
+
+std::vector<Language> recognizedPunctuation(std::string_view str) {
+	if (str == "," || str == "."
+	||  str == "?" || str == "!"
+	||  str == ";" || str == ":") return {English};
+
+	return {};
 }
 
 }

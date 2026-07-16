@@ -1,6 +1,9 @@
 #pragma once
-#include <concepts>
+#include <vector>
+#include <string>
 #include <string_view>
+#include <concepts>
+#include <cassert>
 
 namespace steno {
 
@@ -87,5 +90,7 @@ static constexpr auto NoLanguageCode = LanguageCode {};
 // user-defined dictionaries.
 
 std::string combine(Language, std::string_view, std::string_view);
+
+std::vector<Language> recognizedPunctuation(std::string_view);
 
 } // namespace steno
