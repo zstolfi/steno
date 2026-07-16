@@ -6,6 +6,13 @@ static constexpr bool isWhitespace(char c) {
 	return c == ' ' || c == '\t' || c == '\r' || c == '\n';
 }
 
+static constexpr std::string_view asEscaped(char& c) {
+	if (c == '\\') return "\\\\";
+	if (c == '{') return "\\{";
+	if (c == '}') return "\\}";
+	return {&c, 1};
+}
+
 std::string_view trimWhitespace(std::string_view str) {
 	while (!str.empty() && isWhitespace(str.front())) str.remove_prefix(1);
 	while (!str.empty() && isWhitespace(str.back())) str.remove_suffix(1);
@@ -264,6 +271,24 @@ Signal::operator bool() const {
 	return *this != NoSignal;
 }
 
+/* ~~ Token Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+Word* Token::word() {
+	return std::get_if<Word>(this);
+}
+
+Word const* Token::word() const {
+	return std::get_if<Word>(this);
+}
+
+Signal* Token::signal() {
+	return std::get_if<Signal>(this);
+}
+
+Signal const* Token::signal() const {
+	return std::get_if<Signal>(this);
+}
+
 /* ~~ Phrase Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 namespace /* detail */ {
@@ -329,6 +354,7 @@ Phrase::Phrase(std::string_view str) {
 		char const c {it != str.end()? *it: '\0'};
 
 		/**/ if (c == '\0') processBuffer();
+		// TODO: Account for "\n", "\t", etc.
 		else if (isEscaped) buffer += c, isEscaped = false;
 		else if (c == '\\') isEscaped = true;
 
@@ -358,15 +384,10 @@ Phrase::Phrase(std::string_view str) {
 	else if (isEscaped) warn("expected character after '\\'");
 }
 
-// Getters
-Phrase::operator std::string() const {
-	return {/* TODO */};
-};
-
 // Concatenation
 Phrase& Phrase::operator+=(Phrase p) {
 	for (auto token : p) {
-		this->push_back(p);
+		this->push_back(token);
 	}
 	return *this;
 }
@@ -468,7 +489,7 @@ Brief& Brief::normalize() {
 		std::remove(m_strokeList.begin(), m_strokeList.end(), NoStroke),
 		m_strokeList.end()
 	);
-	// Any extra whitespace is already removed thanks to the Word constructor.
+	// Any extra whitespace is already removed thanks to the Phrase constructor.
 	return *this;
 }
 
@@ -753,8 +774,36 @@ std::string toString(StrokeList const& p, Format format) {
 	return result;
 }
 
+std::string toString(Token const& t) {
+	std::string result {};
+	if (auto const* word = t.word()) {
+		for (char c : *word) result += asEscaped(c);
+	}
+	if (auto const* signal = t.signal()) {
+		/**/ if (*signal == NoSignal) result += "{#}";
+		else if (signal->as(Undo))    result += "{*}";
+		else if (signal->as(Cancel))  result += "{}";
+		else if (signal->as(Combine)) result += "{^}";
+		else if (signal->as(Glue))    result += "{&}";
+		else if (auto* data = signal->as(CodeSwitch)) {
+			result += "{@" + data->localeName + "}";
+		}
+		else if (auto* data = signal->as(Punctuate)) {
+			result += "{" + data->symbol + "}";
+		}
+		else if (auto* data = signal->as(SysEx)) {
+			result += "{#" + data->channel + ":" + data->message + "}";
+		}
+	}
+	return result;
+}
+
 std::string toString(Phrase const& p) {
-	return {/* TODO */};
+	std::string result {};
+	for (int i=0; auto const& token : p) {
+		result += (i++? " ": "") + toString(token);
+	}
+	return result;
 }
 
 std::string toString(Brief const& b, Format format) {
@@ -771,6 +820,14 @@ std::ostream& operator<<(std::ostream& os, StrokeList const& p) {
 	auto format = Format(os.iword(Format_xalloc));
 	if (!bits(format)) format = StrokeDefault;
 	return os << toString(p, format);
+}
+
+std::ostream& operator<<(std::ostream& os, Token const& t) {
+	return os << toString(t);
+}
+
+std::ostream& operator<<(std::ostream& os, Phrase const& p) {
+	return os << toString(p);
 }
 
 std::ostream& operator<<(std::ostream& os, Brief const& b) {

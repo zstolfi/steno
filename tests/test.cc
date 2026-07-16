@@ -691,6 +691,8 @@ TEST(StenoStrokeList, SequenceExpressions) {
 /* ~~ Phrase Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 TEST(StenoPhrase, EmptyConstruction) {
+	std::cout << steno::Phrase {"this{,}is a{:} {-|}test{^-^}phrase{.}"} << "\n";
+
 	steno::Phrase phrase;
 	EXPECT_EQ(phrase, steno::NoPhrase);
 	EXPECT_EQ(steno::Phrase (), steno::NoPhrase);

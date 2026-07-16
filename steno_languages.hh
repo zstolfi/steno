@@ -65,8 +65,8 @@ public:
 		case MongolianTraditional: // ᠮᠣᠩᠭᠣᠯ ᠬᠡᠯᠡ
 			*this = LanguageCode {"mon", "Mong"}; break;
 */
-		default:
-			assert(language == NoLanguage);
+		default: assert(language == NoLanguage);
+			*this = LanguageCode {};
 		}
 	}
 

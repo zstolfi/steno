@@ -318,8 +318,10 @@ class Signal {
         bool operator== (Name##_t const&) const = default;                     \
         auto operator<=>(Name##_t const&) const = default;                     \
     }
-#define SIGNAL_CONSTRUCTOR(Name)                                               \
-    Signal(Name##_Arg, auto&& ... args): m_value{Name##_t {args ... }} {}
+#define SIGNAL_MEMBERS(Name)                                                   \
+    Signal(Name##_Arg, auto&& ... args): m_value{Name##_t {args ... }} {}      \
+    auto as(Name##_Arg)       { return std::get_if<Name##_t>(&m_value); }      \
+    auto as(Name##_Arg) const { return std::get_if<Name##_t>(&m_value); }
 
 	/*         Name      Comment                                Example       */
 	/* (default init) */ // Will be ignored by all systems.     {#}
@@ -350,14 +352,14 @@ public:
 	Signal(Signal const&) = default;
 	Signal& operator=(Signal const&) = default;
 
-	// Tagged constructors          Example
-	SIGNAL_CONSTRUCTOR(Undo);       // Signal {Undo}
-	SIGNAL_CONSTRUCTOR(Cancel);     // Signal {Cancel}
-	SIGNAL_CONSTRUCTOR(Combine);    // Signal {Combine}
-	SIGNAL_CONSTRUCTOR(Glue);       // Signal {Glue}
-	SIGNAL_CONSTRUCTOR(CodeSwitch); // Signal {CodeSwitch, "en-US"}
-	SIGNAL_CONSTRUCTOR(Punctuate);  // Signal {Punctuate, "!"}
-	SIGNAL_CONSTRUCTOR(SysEx);      // Signal {SysEx, "MyApp", "Reload"}
+	// Tagged constructors      Example
+	SIGNAL_MEMBERS(Undo);       // Signal {Undo}
+	SIGNAL_MEMBERS(Cancel);     // Signal {Cancel}
+	SIGNAL_MEMBERS(Combine);    // Signal {Combine}
+	SIGNAL_MEMBERS(Glue);       // Signal {Glue}
+	SIGNAL_MEMBERS(CodeSwitch); // Signal {CodeSwitch, "en-US"}
+	SIGNAL_MEMBERS(Punctuate);  // Signal {Punctuate, "!"}
+	SIGNAL_MEMBERS(SysEx);      // Signal {SysEx, "MyApp", "Reload"}
 
 	// Comparison
 	bool operator== (Signal const&) const = default;
@@ -365,7 +367,7 @@ public:
 
 	operator bool() const;
 #undef SIGNAL_DEF
-#undef SIGNAL_CONSTRUCTOR
+#undef SIGNAL_MEMBERS
 };
 
 static auto const NoSignal = Signal {};
@@ -384,6 +386,12 @@ public:
 	// Comparison
 	bool operator== (Token const&) const = default;
 	auto operator<=>(Token const&) const = default;
+
+	// Getters
+	Word /* */* word();
+	Word const* word() const;
+	Signal /* */* signal();
+	Signal const* signal() const;
 };
 
 static auto const NoToken = Token {};
@@ -394,7 +402,7 @@ static auto const NoToken = Token {};
 // It is the Phrase's job to parse this information, but not apply any
 // orthography rules. On their own they act independently of context.
 
-class Phrase: public std::vector<Token> {
+class Phrase : public std::vector<Token> {
 public:
 	// Parse steno string
 	Phrase(std::string_view="");
@@ -404,9 +412,6 @@ public:
 	// Construct from Token sequence
 	template <std::input_iterator I> Phrase(I first, I last)
 	:	std::vector<Token>{first, last} {}
-
-	// Getters
-	operator std::string() const;
 
 	// Comparison
 	bool operator== (Phrase const&) const = default;
@@ -689,11 +694,14 @@ char toCharShift(Key);
 std::string toString(Key, Format = KeyDefault);
 std::string toString(Stroke, Format = StrokeDefault);
 std::string toString(StrokeList const&, Format = StrokeDefault);
+std::string toString(Token const&);
 std::string toString(Phrase const&);
 std::string toString(Brief const&, Format = StrokeDefault);
 std::ostream& operator<<(std::ostream&, Key);
 std::ostream& operator<<(std::ostream&, Stroke);
 std::ostream& operator<<(std::ostream&, StrokeList const&);
+std::ostream& operator<<(std::ostream&, Token const&);
+std::ostream& operator<<(std::ostream&, Phrase const&);
 std::ostream& operator<<(std::ostream&, Brief const&);
 
 // Format as manipulator
