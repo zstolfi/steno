@@ -851,25 +851,41 @@ TEST(StenoBrief, Construction) {
 }
 
 TEST(StenoBrief, Getters) {
-	steno::Brief brief {{"1/2"}, "one, two"};
+	steno::Brief brief {{"1/2"}, "one{,}two"};
 	EXPECT_EQ(brief.strokes(), steno::StrokeList {"1/2"});
-	EXPECT_EQ(brief.phrase(), "one, two");
+	EXPECT_EQ(brief.phrase().size(), 3);
+	EXPECT_EQ(brief.phrase()[0], steno::Word {"one"});
+	EXPECT_EQ(brief.phrase()[1], (steno::Signal {steno::Punctuate, ","}));
+	EXPECT_EQ(brief.phrase()[2], steno::Word {"two"});
 
 	brief.strokes() |= steno::Stroke {"3"};
-	brief.phrase() += ", three";
+	brief.phrase() += "{,}three";
 	EXPECT_EQ(brief.strokes(), steno::StrokeList {"1/2/3"});
-	EXPECT_EQ(brief.phrase(), "one, two, three");
+	EXPECT_EQ(brief.phrase().size(), 5);
+	EXPECT_EQ(brief.phrase()[0], steno::Word {"one"});
+	EXPECT_EQ(brief.phrase()[1], (steno::Signal {steno::Punctuate, ","}));
+	EXPECT_EQ(brief.phrase()[2], steno::Word {"two"});
+	EXPECT_EQ(brief.phrase()[3], (steno::Signal {steno::Punctuate, ","}));
+	EXPECT_EQ(brief.phrase()[4], steno::Word {"three"});
 
-	brief |= steno::Brief {{"4"}, ", four"};
-//	brief |= steno::Brief {{"4"}, "{,}four"};
+	brief |= steno::Brief {{"4"}, "{,}four"};
 	EXPECT_EQ(brief.strokes(), steno::StrokeList {"1/2/3/4"});
-	EXPECT_EQ(brief.phrase(), "one, two, three, four");
+	EXPECT_EQ(brief.phrase().size(), 7);
+	EXPECT_EQ(brief.phrase()[0], steno::Word {"one"});
+	EXPECT_EQ(brief.phrase()[1], (steno::Signal {steno::Punctuate, ","}));
+	EXPECT_EQ(brief.phrase()[2], steno::Word {"two"});
+	EXPECT_EQ(brief.phrase()[3], (steno::Signal {steno::Punctuate, ","}));
+	EXPECT_EQ(brief.phrase()[4], steno::Word {"three"});
+	EXPECT_EQ(brief.phrase()[5], (steno::Signal {steno::Punctuate, ","}));
+	EXPECT_EQ(brief.phrase()[6], steno::Word {"four"});
 
 	using enum steno::Key;
 	steno::Brief const ab {{"A/-B"}, "\tayy bee\t"};
 	EXPECT_TRUE(ab.strokes()[0][A]);
 	EXPECT_TRUE(ab.strokes()[1][_B]);
-	EXPECT_EQ(ab.phrase(), "ayy bee");
+	EXPECT_EQ(ab.phrase().size(), 2);
+	EXPECT_EQ(ab.phrase()[0], steno::Word {"ayy"});
+	EXPECT_EQ(ab.phrase()[1], steno::Word {"bee"});
 }
 
 TEST(StenoBrief, StructuredBinding) {
@@ -1022,7 +1038,7 @@ TEST(StenoDictionary, ContainerExpressions) {
 TEST(StenoDictionary, AssociativeTypes) {
 	using X = steno::Dictionary;
 	EXPECT_SAME_TYPE(X::key_type   , steno::StrokeList);
-	EXPECT_SAME_TYPE(X::mapped_type, std::string);
+	EXPECT_SAME_TYPE(X::mapped_type, steno::Phrase);
 	EXPECT_SAME_TYPE(X::value_type , steno::Brief);
 }
 
