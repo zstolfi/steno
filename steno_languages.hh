@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <array>
 #include <string>
 #include <string_view>
 #include <concepts>
@@ -29,9 +30,9 @@ static constexpr auto DefaultLanguage = Language {
 // used across multiple regions have identical rules, so this is rarely needed.
 
 class LanguageCode {
-	char m_name[3]; // ISO 639-2/T
-	char m_script[4]; // ISO 15924
-	char m_region[2]; // ISO 3166-1 alpha-2
+	std::array<char, 3> m_name {}; // ISO 639-2/T
+	std::array<char, 4> m_script {}; // ISO 15924
+	std::array<char, 2> m_region {}; // ISO 3166-1 alpha-2
 
 	constexpr LanguageCode(
 		std::string_view name,
@@ -44,8 +45,9 @@ class LanguageCode {
 	}
 
 public:
-	// Constructor
-	constexpr LanguageCode(Language language=NoLanguage) {
+	// By default we use reserved values to denote lack of code/script/region.
+	constexpr LanguageCode(): LanguageCode{"qaa", "Qaaa", "AA"} {}
+	constexpr LanguageCode(Language language) {
 		switch (language) {
 		case English:
 			*this = LanguageCode {"eng", "Latn"}; break;
@@ -63,9 +65,8 @@ public:
 		case MongolianTraditional: // ᠮᠣᠩᠭᠣᠯ ᠬᠡᠯᠡ
 			*this = LanguageCode {"mon", "Mong"}; break;
 */
-		default: assert(language == NoLanguage);
-			// We use reserved values to denote unspecified code/script/region.
-			*this = LanguageCode {"qaa", "Qaaa", "AA"}; break;
+		default:
+			assert(language == NoLanguage);
 		}
 	}
 
@@ -74,9 +75,9 @@ public:
 	auto operator<=>(LanguageCode const&) const = default;
 
 	// Getters
-	std::string name  () const { return m_name;   }
-	std::string script() const { return m_script; }
-	std::string region() const { return m_region; }
+	std::string name  () const;
+	std::string script() const;
+	std::string region() const;
 };
 
 static constexpr auto NoLanguageCode = LanguageCode {};
