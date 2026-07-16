@@ -29,7 +29,7 @@ TEST(StenoEnglishPhrase, Punctuation) {
 	SPEECH_SETUP(steno::English);
 
 	// Comma
-	PHRASE_EQ("into"<<"the"<<"street<<{,}", "into the street,");
+	PHRASE_EQ("into"<<"the"<<"street"<<"{,}", "into the street,");
 	PHRASE_EQ("street"<<"{,}"<<"and", "street, and");
 	PHRASE_EQ("{,}"<<"and"<<"methodically", ", and methodically");
 

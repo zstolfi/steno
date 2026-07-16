@@ -648,6 +648,25 @@ void Dictionary::normalize() {
 	std::sort(begin(), end(), EntryCompare);
 }
 
+/* ~~ Language Definitions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+// Getters
+std::string LanguageCode::name() const {
+	if (m_name == NoLanguageCode.m_name) return "";
+	return {m_name.begin(), m_name.end()};
+}
+
+std::string LanguageCode::script() const {
+	if (m_script == NoLanguageCode.m_script) return "";
+	return {m_script.begin(), m_script.end()};
+}
+
+std::string LanguageCode::region() const {
+	if (m_region == NoLanguageCode.m_region) return "";
+	return {m_region.begin(), m_region.end()};
+}
+
+
 /* ~~ Context Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 // Getters and Setters
@@ -663,11 +682,11 @@ LanguageCode Context::languageCode() const {
 	return LanguageCode {m_language};
 }
 
-Context::State& Context::state() {
+State& Context::state() {
 	return m_state;
 }
 
-Context::State Context::state() const {
+State Context::state() const {
 	return m_state;
 }
 
@@ -678,8 +697,34 @@ Context::State Context::state() const {
 // however, no ability to undo nor reinterpret Tokens.
 
 Speech& operator<<(Speech& s, Token const& t) {
-	const std::ostream& os = *s.m_output;
-	/* TODO */;
+	std::ostream& os = *s.m_output;
+	Language& language = s.m_context.language();
+	State& state = s.m_context.state();
+	using enum State::Position;
+
+	if (auto const* word = t.word()) {
+		if (state.position == WordStart) os << " ";
+		if (state.position == SentenceStart) os << " ";
+		os << *word;
+		state.position = State::WordStart;
+	}
+	if (auto const* signal = t.signal()) {
+		if (*signal == NoSignal) /**/;
+		// It's the Translator's job to handle the undoing of strokes. However,
+		// if this signal still slips through, it's best to not disregard it.
+		else if (signal->as(Undo))    os << Word {"\\ *\\ "};
+		else if (signal->as(Cancel))  state = {};
+		else if (signal->as(Combine)) state.position = WordMiddle;
+		else if (signal->as(Glue))    state.position = DigitSequence;
+		//Complex Signals
+		else if (auto const* data = signal->as(CodeSwitch)) {
+			language = parseLocaleName(data->localeName);
+		}
+		else if (auto const* data = signal->as(Punctuate)) {
+			processPunctuation(os, s.m_context, data->symbol);
+		}
+	}
+
 	return s;
 }
 
@@ -785,13 +830,13 @@ std::string toString(Token const& t) {
 		else if (signal->as(Cancel))  result += "{}";
 		else if (signal->as(Combine)) result += "{^}";
 		else if (signal->as(Glue))    result += "{&}";
-		else if (auto* data = signal->as(CodeSwitch)) {
+		else if (auto const* data = signal->as(CodeSwitch)) {
 			result += "{@" + data->localeName + "}";
 		}
-		else if (auto* data = signal->as(Punctuate)) {
+		else if (auto const* data = signal->as(Punctuate)) {
 			result += "{" + data->symbol + "}";
 		}
-		else if (auto* data = signal->as(SysEx)) {
+		else if (auto const* data = signal->as(SysEx)) {
 			result += "{#" + data->channel + ":" + data->message + "}";
 		}
 	}

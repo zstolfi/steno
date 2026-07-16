@@ -600,11 +600,66 @@ private:
 
 static auto const NoDictionary = Dictionary {};
 
-/* ~~ Supported Languages ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ State Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-} // namespace steno
-#include "steno_languages.hh"
-namespace steno {
+struct State {
+	enum Position {
+		WordMiddle,
+		WordStart,
+		SentenceStart,
+		ParagraphStart,
+		DigitSequence,
+	} position {WordStart};
+	// TODO: Allow language-dependent state.
+
+	bool operator== (State const&) const = default;
+	auto operator<=>(State const&) const = default;
+};
+
+/* ~~ Language Definitions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+enum Language {
+	NoLanguage,
+	English,
+	// See LanguageCode constructor for further examples.
+};
+
+//   Scripts are a mandatory part of language identification. This is okay
+// because this library only handles the written word, and never any semantic
+// meaning. Region, however, is only to be used when two cultures' use of a
+// language differ so much that their combining rules differ. Most languages
+// used across multiple regions have identical rules, so this is rarely needed.
+
+static constexpr auto DefaultLanguage = Language {
+#ifdef STENO_DEFAULT_LANGUAGE
+	STENO_DEFAULT_LANGUAGE
+#else
+	English // English by default is opt-out.
+#endif
+};
+
+class LanguageCode {
+	// By default we use reserved values to denote lack of code/script/region.
+	std::array<char, 3> m_name   {'q','a','a'    }; // ISO 639-2/T
+	std::array<char, 4> m_script {'Q','a','a','a'}; // ISO 15924
+	std::array<char, 2> m_region {'A','A'        }; // ISO 3166-1 alpha-2
+
+public:
+	// Constructors
+	constexpr LanguageCode() = default;
+	constexpr LanguageCode(Language language);
+
+	// Comparison
+	bool operator== (LanguageCode const&) const = default;
+	auto operator<=>(LanguageCode const&) const = default;
+
+	// Getters
+	std::string name  () const;
+	std::string script() const;
+	std::string region() const;
+};
+
+static constexpr auto NoLanguageCode = LanguageCode {};
 
 /* ~~ Context Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -614,17 +669,13 @@ namespace steno {
 
 class Context {
 	Language m_language {DefaultLanguage};
-	enum State {
-		startOfWord,
-		startOfSentence,
-		startOfParagraph,
-		inDigitSequence,
-		// ...
-	} m_state {startOfWord};
+	State m_state {};
 
 public:
 	// Constructors
-	Context(Language language=DefaultLanguage): m_language{language} {}
+	Context(Language language=DefaultLanguage, State state={})
+	:	m_language{language}
+	,	m_state{state} {}
 
 	// Getters and Setters
 	Language& language();
@@ -640,6 +691,12 @@ public:
 
 static auto const NoContext = Context {};
 
+/* ~~ Language Implementations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+} // namespace steno
+#include "steno_languages.hh"
+namespace steno {
+
 /* ~~ Speech Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 //   Speeches listen for Tokens, apply orthography, and output to std::ostream.
@@ -652,7 +709,7 @@ class Speech {
 
 public:
 	Speech(std::ostream& os, Language language=DefaultLanguage)
-	:	m_output{&os}, m_context{language} {}
+	:	m_output{&os}, m_context{language, State {State::ParagraphStart}} {}
 
 	friend Speech& operator<<(Speech&, Token const&);
 	friend Speech& operator<<(Speech&, Phrase const&);
@@ -821,6 +878,31 @@ template <std::input_iterator I>
 constexpr Stroke::Stroke(I first, I last) {
 	for (auto key=first; key!=last; ++key) {
 		this->m_bits |= (uint32_t)*key;
+	}
+}
+
+constexpr LanguageCode::LanguageCode(Language language) {
+	auto set = [this] (
+		std::string_view name,
+		std::string_view script,
+		std::string_view region={}
+	) {
+		for (int i=0; i<3; i++) m_name  [i] = name  [i];
+		for (int i=0; i<4; i++) m_script[i] = script[i];
+		if (!region.empty())
+		for (int i=0; i<2; i++) m_region[i] = region[i];
+	};
+
+	switch (language) {
+	break; case English: set("eng", "Latn");
+/*
+	// Further examples:
+	break; case EnglishBraille: set("eng", "Brai"); // ⠠⠢⠛⠇⠊⠩⠀⠠⠃⠗⠇
+	break; case JapaneseBraille: set("jpn", "Brai"); // ⠇⠮⠴⠐⠪⠎⠀⠟⠴⠐⠳
+	break; case Mongolian: set("mon", "Cyrl"); // Монгол хэл
+	break; case MongolianTraditional: set("mon", "Mong"); // ᠮᠣᠩᠭᠣᠯ ᠬᠡᠯᠡ
+*/
+	break; default: assert(language == NoLanguage);
 	}
 }
 
