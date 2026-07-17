@@ -39,6 +39,15 @@ std::vector<Language> recognizedPunctuation(std::string_view str) {
 	return {};
 }
 
+void accommodateWord(std::ostream& os, Context& c, Word word) {
+	using enum State::Position;
+	if (c.language() == English) {
+		if (c.state().position == WordStart) os << " ";
+		if (c.state().position == SentenceStart) os << " ";
+		os << word;
+	}
+}
+
 void processPunctuation(std::ostream& os, Context& c, std::string_view symbol) {
 	using enum State::Position;
 	if (c.language() == English) {
@@ -48,7 +57,7 @@ void processPunctuation(std::ostream& os, Context& c, std::string_view symbol) {
 		else if (symbol == "!") os << "!", c.state().position = SentenceStart;
 		else if (symbol == ";") os << ";", c.state().position = WordStart;
 		else if (symbol == ":") os << ":", c.state().position = WordStart;
-//		else if (symbol == "-|") c.state(English).capitalize = true;
+//		else if (symbol == "-|") c.state(English)->capitalize = true;
 	}
 }
 

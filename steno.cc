@@ -700,22 +700,19 @@ Speech& operator<<(Speech& s, Token const& t) {
 	std::ostream& os = *s.m_output;
 	Language& language = s.m_context.language();
 	State& state = s.m_context.state();
-	using enum State::Position;
 
 	if (auto const* word = t.word()) {
-		if (state.position == WordStart) os << " ";
-		if (state.position == SentenceStart) os << " ";
-		os << *word;
+		accommodateWord(os, s.m_context, *word);
 		state.position = State::WordStart;
 	}
 	if (auto const* signal = t.signal()) {
 		if (*signal == NoSignal) /**/;
 		// It's the Translator's job to handle the undoing of strokes. However,
 		// if this signal still slips through, it's best to not disregard it.
-		else if (signal->as(Undo))    os << Word {"\\ *\\ "};
+		else if (signal->as(Undo))    os << Word {"*"};
 		else if (signal->as(Cancel))  state = {};
-		else if (signal->as(Combine)) state.position = WordMiddle;
-		else if (signal->as(Glue))    state.position = DigitSequence;
+		else if (signal->as(Combine)) state.position = State::WordMiddle;
+		else if (signal->as(Glue))    state.position = State::DigitSequence;
 		//Complex Signals
 		else if (auto const* data = signal->as(CodeSwitch)) {
 			language = parseLocaleName(data->localeName);

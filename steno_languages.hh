@@ -22,6 +22,8 @@ std::string combine(Language, std::string_view, std::string_view);
 
 std::vector<Language> recognizedPunctuation(std::string_view);
 
+void accommodateWord(std::ostream&, Context&, Word);
+
 void processPunctuation(std::ostream&, Context&, std::string_view);
 
 } // namespace steno
