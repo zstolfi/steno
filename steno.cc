@@ -309,11 +309,9 @@ Phrase::Phrase(std::string_view str) {
 		else if (buffer == "#") push_back(Signal {});
 		else if (buffer == "*") push_back(Signal {Undo});
 		else if (buffer == "")  push_back(Signal {Cancel});
-		else if (buffer == "^") push_back(Signal {Combine});
-		else if (buffer == "&") push_back(Signal {Glue});
 		// Complex Signals
 		else if (buffer.starts_with("@")) {
-			push_back(Signal {CodeSwitch, buffer.substr(1)});
+			push_back(Signal {CodeSwitch, /*.localeName*/ buffer.substr(1)});
 		}
 		else if (buffer.starts_with("#")) {
 			if (auto split = buffer.find(':', 1); split != buffer.npos) {
@@ -327,7 +325,7 @@ Phrase::Phrase(std::string_view str) {
 			});
 		}
 		else if (!recognizedPunctuation(buffer).empty()) {
-			push_back(Signal {Punctuate, buffer});
+			push_back(Signal {Punctuate, /*.symbol*/ buffer});
 		}
 		// Alternate syntax
 		else {
@@ -336,6 +334,7 @@ Phrase::Phrase(std::string_view str) {
 			if (buffer.ends_with("^")) suffix = "^";
 			if (buffer.starts_with("&")) prefix = "&";
 
+			assert(prefix.size() + suffix.size() <= buffer.size());
 			std::string_view inside {
 				buffer.begin()+prefix.size(),
 				buffer.end()-suffix.size(),
@@ -666,8 +665,18 @@ std::string LanguageCode::region() const {
 	return {m_region.begin(), m_region.end()};
 }
 
-
 /* ~~ Context Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+// Constructors
+Context::Context(Opening_Arg, Language language) {
+	using enum State<English>::Position;
+	if (language == English) as<English>()->position = ParagraphStart;
+}
+
+Context::Context(Default_Arg, Language language) {
+	using enum State<English>::Position;
+	if (language == English) as<English>()->position = WordStart;
+}
 
 // Getters and Setters
 Language& Context::language() {
@@ -682,24 +691,16 @@ LanguageCode Context::languageCode() const {
 	return LanguageCode {m_language};
 }
 
-State& Context::state() {
-	return m_state;
-}
-
-State Context::state() const {
-	return m_state;
-}
-
 /* ~~ Speech Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 //   Speeches listen for Tokens, apply orthography, and output to std::ostream.
 // Information received will always be sent out as fast as possible. There is
 // however, no ability to undo nor reinterpret Tokens.
 
-Speech& operator<<(Speech& s, Token const& t) {
-	std::ostream& os = *s.m_output;
-	Language& language = s.m_context.language();
-	State& state = s.m_context.state();
+Speech& operator<<(Speech& speech, Token const& t) {
+	std::ostream& os = *speech.m_output;
+	Language& language = speech.m_context.language();
+	Context::State& state = speech.m_context.state();
 
 	if (auto const* word = t.word()) {
 		accommodateWord(os, s.m_context, *word);
@@ -709,25 +710,26 @@ Speech& operator<<(Speech& s, Token const& t) {
 		if (*signal == NoSignal) /**/;
 		// It's the Translator's job to handle the undoing of strokes. However,
 		// if this signal still slips through, it's best to not disregard it.
-		else if (signal->as(Undo))    os << Word {"*"};
+		else if (signal->as(Undo))    speech << Word {"*"};
 		else if (signal->as(Cancel))  state = {};
 		else if (signal->as(Combine)) state.position = State::WordMiddle;
 		else if (signal->as(Glue))    state.position = State::DigitSequence;
 		//Complex Signals
+		else if (auto const* data = signal->as(Punctuate)) {
+			processPunctuation(os, speech.m_context, data->symbol);
+		}
 		else if (auto const* data = signal->as(CodeSwitch)) {
 			language = parseLocaleName(data->localeName);
 		}
-		else if (auto const* data = signal->as(Punctuate)) {
-			processPunctuation(os, s.m_context, data->symbol);
-		}
+		else if (signal->as(SysEx)) /* Do nothing, with style! */;
 	}
 
-	return s;
+	return speech;
 }
 
-Speech& operator<<(Speech& s, Phrase const& p) {
-	for (auto token : p) s << token;
-	return s;
+Speech& operator<<(Speech& speech, Phrase const& p) {
+	for (auto token : p) speech << token;
+	return speech;
 }
 
 /* ~~ String Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -825,13 +827,11 @@ std::string toString(Token const& t) {
 		/**/ if (*signal == NoSignal) result += "{#}";
 		else if (signal->as(Undo))    result += "{*}";
 		else if (signal->as(Cancel))  result += "{}";
-		else if (signal->as(Combine)) result += "{^}";
-		else if (signal->as(Glue))    result += "{&}";
-		else if (auto const* data = signal->as(CodeSwitch)) {
-			result += "{@" + data->localeName + "}";
-		}
 		else if (auto const* data = signal->as(Punctuate)) {
 			result += "{" + data->symbol + "}";
+		}
+		else if (auto const* data = signal->as(CodeSwitch)) {
+			result += "{@" + data->localeName + "}";
 		}
 		else if (auto const* data = signal->as(SysEx)) {
 			result += "{#" + data->channel + ":" + data->message + "}";

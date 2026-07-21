@@ -49,15 +49,17 @@ void accommodateWord(std::ostream& os, Context& c, Word word) {
 }
 
 void processPunctuation(std::ostream& os, Context& c, std::string_view symbol) {
-	using enum State::Position;
-	if (c.language() == English) {
-		/**/ if (symbol == ",") os << ",", c.state().position = WordStart;
-		else if (symbol == ".") os << ".", c.state().position = SentenceStart;
-		else if (symbol == "?") os << "?", c.state().position = SentenceStart;
-		else if (symbol == "!") os << "!", c.state().position = SentenceStart;
-		else if (symbol == ";") os << ";", c.state().position = WordStart;
-		else if (symbol == ":") os << ":", c.state().position = WordStart;
-//		else if (symbol == "-|") c.state(English)->capitalize = true;
+	using enum State<English>::Position;
+	if (auto* state = c.as<English>()) {
+		/**/ if (symbol == "^") state->position = WordStart;
+		else if (symbol == "&") state->position = WordMiddle;
+		else if (symbol == ",") os << ",", state->position = WordStart;
+		else if (symbol == ".") os << ".", state->position = SentenceStart;
+		else if (symbol == "?") os << "?", state->position = SentenceStart;
+		else if (symbol == "!") os << "!", state->position = SentenceStart;
+		else if (symbol == ";") os << ";", state->position = WordStart;
+		else if (symbol == ":") os << ":", state->position = WordStart;
+		else if (symbol == "-|") state->capitalize = true;
 	}
 }
 

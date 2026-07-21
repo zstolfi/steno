@@ -8,6 +8,21 @@
 
 namespace steno {
 
+/* ~~ Language State ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+template <>
+struct Context::State<English> {
+	enum Position {
+		WordMiddle,
+		WordStart,
+		SentenceStart,
+		ParagraphStart,
+		DigitSequence,
+	} position {WordStart};
+
+	bool capitalize {false};
+};
+
 /* ~~ Orthography ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 //   Orthographies define the most common pattern in a language's spelling.

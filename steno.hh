@@ -72,6 +72,7 @@
 #include <deque>
 #include <span>
 #include <variant>
+#include <any>
 #include <initializer_list>
 #include <algorithm>
 #include <type_traits>
@@ -92,11 +93,12 @@ namespace flags {
 	// Signal construction
 	constexpr struct Cancel_Arg           {} Cancel           {};
 	constexpr struct Undo_Arg             {} Undo             {};
-	constexpr struct Combine_Arg          {} Combine          {};
-	constexpr struct Glue_Arg             {} Glue             {};
-	constexpr struct CodeSwitch_Arg       {} CodeSwitch       {};
 	constexpr struct Punctuate_Arg        {} Punctuate        {};
+	constexpr struct CodeSwitch_Arg       {} CodeSwitch       {};
 	constexpr struct SysEx_Arg            {} SysEx            {};
+	// Context construction
+	constexpr struct Opening_Arg          {} Opening          {};
+	constexpr struct Default_Arg          {} Default          {};
 }
 
 using namespace flags;
@@ -327,14 +329,12 @@ class Signal {
 	/* (default init) */ // Will be ignored by all systems.     {#}
 	SIGNAL_DEF(Undo   ); // Forget the previous Stroke.         {*}
 	SIGNAL_DEF(Cancel ); // We are at the start of a word.      {}
-	SIGNAL_DEF(Combine); // We are in the middle of a word.     {^}
-	SIGNAL_DEF(Glue   ); // We are typing a digit sequence.     {&}
-
-	// Accepts POSIX locales and Language IDs (Apple)           {@en-US}
-	SIGNAL_DEF(CodeSwitch, std::string localeName {}; );
 
 	// Language-specific formatting                             {!}
 	SIGNAL_DEF(Punctuate, std::string symbol {}; );
+
+	// Accepts POSIX locales and Language IDs (Apple)           {@en-US}
+	SIGNAL_DEF(CodeSwitch, std::string localeName {}; );
 
 	// Application-specific instructions. Your own universe!    {#MyApp:Reload}
 	SIGNAL_DEF(SysEx, std::string channel {}, message {}; );
@@ -352,13 +352,11 @@ public:
 	Signal(Signal const&) = default;
 	Signal& operator=(Signal const&) = default;
 
-	// Tagged constructors      Example
+	// Tagged constructors      API example
 	SIGNAL_MEMBERS(Undo);       // Signal {Undo}
 	SIGNAL_MEMBERS(Cancel);     // Signal {Cancel}
-	SIGNAL_MEMBERS(Combine);    // Signal {Combine}
-	SIGNAL_MEMBERS(Glue);       // Signal {Glue}
-	SIGNAL_MEMBERS(CodeSwitch); // Signal {CodeSwitch, "en-US"}
 	SIGNAL_MEMBERS(Punctuate);  // Signal {Punctuate, "!"}
+	SIGNAL_MEMBERS(CodeSwitch); // Signal {CodeSwitch, "en-US"}
 	SIGNAL_MEMBERS(SysEx);      // Signal {SysEx, "MyApp", "Reload"}
 
 	// Comparison
@@ -600,35 +598,14 @@ private:
 
 static auto const NoDictionary = Dictionary {};
 
-/* ~~ State Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
-struct State {
-	enum Position {
-		WordMiddle,
-		WordStart,
-		SentenceStart,
-		ParagraphStart,
-		DigitSequence,
-	} position {WordStart};
-	// TODO: Allow language-dependent state.
-
-	bool operator== (State const&) const = default;
-	auto operator<=>(State const&) const = default;
-};
-
 /* ~~ Language Definitions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+// TODO: Use tag structs to represent languages.
 enum Language {
 	NoLanguage,
 	English,
 	// See LanguageCode constructor for further examples.
 };
-
-//   Scripts are a mandatory part of language identification. This is okay
-// because this library only handles the written word, and never any semantic
-// meaning. Region, however, is only to be used when two cultures' use of a
-// language differ so much that their combining rules differ. Most languages
-// used across multiple regions have identical rules, so this is rarely needed.
 
 static constexpr auto DefaultLanguage = Language {
 #ifdef STENO_DEFAULT_LANGUAGE
@@ -637,6 +614,12 @@ static constexpr auto DefaultLanguage = Language {
 	English // English by default is opt-out.
 #endif
 };
+
+//   Scripts are a mandatory part of language identification. This is okay
+// because this library only handles the written word, and never any semantic
+// meaning. Region, however, is only to be used when two cultures' use of a
+// language differ so much that their combining rules differ. Most languages
+// used across multiple regions have identical rules, so this is rarely needed.
 
 class LanguageCode {
 	// By default we use reserved values to denote lack of code/script/region.
@@ -669,24 +652,30 @@ static constexpr auto NoLanguageCode = LanguageCode {};
 
 class Context {
 	Language m_language {DefaultLanguage};
-	State m_state {};
+	std::any m_state {};
+
+	// Languages will contain non-verbal information such as: part of speech,
+	// capitalization, etc. It's improper to store state which will go unused.
+	template <Language L=NoLanguage>
+	struct State {};
+	struct State_impl;
 
 public:
 	// Constructors
-	Context(Language language=DefaultLanguage, State state={})
-	:	m_language{language}
-	,	m_state{state} {}
+	Context(Language language=DefaultLanguage): Context {Default, language} {}
+	Context(Opening_Arg, Language=DefaultLanguage); // Start of our page
+	Context(Default_Arg, Language=DefaultLanguage); // The rest of the text
 
 	// Getters and Setters
 	Language& language();
 	Language  language() const;
 	LanguageCode languageCode() const;
-	State& state();
-	State  state() const;
+	template <Language L=NoLanguage> State<L> /* */* as();
+	template <Language L=NoLanguage> State<L> const* as() const;
 
-	// Comparison
-	bool operator== (Context const&) const = default;
-	auto operator<=>(Context const&) const = default;
+//	// Comparison
+//	bool operator== (Context const&) const = default;
+//	auto operator<=>(Context const&) const = default;
 };
 
 static auto const NoContext = Context {};
@@ -709,7 +698,7 @@ class Speech {
 
 public:
 	Speech(std::ostream& os, Language language=DefaultLanguage)
-	:	m_output{&os}, m_context{language, State {State::ParagraphStart}} {}
+	:	m_output{&os}, m_context{Opening, English} {}
 
 	friend Speech& operator<<(Speech&, Token const&);
 	friend Speech& operator<<(Speech&, Phrase const&);
@@ -764,7 +753,7 @@ std::ostream& operator<<(std::ostream&, Brief const&);
 // Format as manipulator
 std::ostream& operator<<(std::ostream&, Format);
 
-/* ~~ Constexpr Definitions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ Constexpr/Template Definitions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 constexpr Stroke::Stroke(std::string_view str) {
 	enum State {
@@ -881,6 +870,7 @@ constexpr Stroke::Stroke(I first, I last) {
 	}
 }
 
+
 constexpr LanguageCode::LanguageCode(Language language) {
 	auto set = [this] (
 		std::string_view name,
@@ -904,6 +894,14 @@ constexpr LanguageCode::LanguageCode(Language language) {
 */
 	break; default: assert(language == NoLanguage);
 	}
+}
+
+template <Language L> Context::State<L>* Context::as() {
+	return *std::any_cast<Context::State<L>>(&m_state);
+}
+
+template <Language L> Context::State<L> const* Context::as() const {
+	return *std::any_cast<Context::State<L>>(&m_state);
 }
 
 } // namespace steno
