@@ -63,22 +63,24 @@
 \*  └───┘          │            ║           │                                 */
 
 #pragma once
-#include <iostream>
-#include <string>
-#include <string_view>
+#include <algorithm>
+#include <array>
+#include <any>
 #include <bit>
 #include <bitset>
-#include <vector>
+#include <concepts>
 #include <deque>
-#include <span>
-#include <variant>
-#include <any>
 #include <initializer_list>
-#include <algorithm>
-#include <type_traits>
+#include <iostream>
 #include <iterator>
-#include <utility>
+#include <span>
+#include <string>
+#include <string_view>
+#include <type_traits>
 #include <typeinfo>
+#include <utility>
+#include <variant>
+#include <vector>
 #include <cstdint>
 #include <cassert>
 
@@ -108,8 +110,21 @@ struct Issues : std::vector<T> {
 	using std::vector<T>::vector;
 	operator bool() const { return !this->empty(); }
 };
-
 // TODO: NoIssues object which acts like std::nullopt
+
+template <class ... Ts>
+struct TypeList {
+	template <template <class> class MetaFunction>
+	using Map = TypeList<MetaFunction<Ts> ... >;
+
+	template <template <class ... > class Container>
+	using In = Container<Ts ... >;
+};
+
+template <auto ...  Vs>
+struct ValueList {
+	using Types = TypeList<decltype(Vs) ... >;
+};
 
 /* ~~ Key ID's ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -245,7 +260,6 @@ private:
 	uint32_t getFlags() const;
 	void setFlags(uint32_t);
 };
-
 static constexpr auto NoStroke = Stroke {};
 
 // Key promotion
@@ -291,7 +305,6 @@ private:
 	void erase_if_impl(auto&& pred)
 	{ erase(std::remove_if(begin(), end(), pred), end()); }
 };
-
 static auto const NoStrokeList = StrokeList {};
 
 // Stroke promotion
@@ -304,7 +317,6 @@ StrokeList operator|(Stroke, Stroke const&);
 // Phrase constructor.
 
 using Word = std::string;
-
 static auto const NoWord = Word {};
 
 /* ~~ Signal Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -341,9 +353,8 @@ class Signal {
 #undef SIGNAL_DEF
 
 	std::variant<
-		std::monostate, Undo_t,
-		Cancel_t, Combine_t, Glue_t,
-		CodeSwitch_t, Punctuate_t, SysEx_t
+		std::monostate, Undo_t, Cancel_t,
+		Punctuate_t, CodeSwitch_t, SysEx_t
 	> m_value {};
 
 public:
@@ -367,7 +378,6 @@ public:
 #undef SIGNAL_DEF
 #undef SIGNAL_MEMBERS
 };
-
 static auto const NoSignal = Signal {};
 
 /* ~~ Token Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -391,7 +401,6 @@ public:
 	Signal /* */* signal();
 	Signal const* signal() const;
 };
-
 static auto const NoToken = Token {};
 
 /* ~~ Phrase Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -428,7 +437,6 @@ public:
 	Issues<Token*> issues() const;
 	operator bool() const;
 };
-
 static auto const NoPhrase = Phrase {};
 
 /* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -487,7 +495,6 @@ private:
 	GET_IMPL(&) GET_IMPL(const&) GET_IMPL(&&)
 #undef GET_IMPL
 };
-
 static auto const NoBrief = Brief {};
 
 //// StrokeList promotion
@@ -595,31 +602,15 @@ private:
 	void erase_impl(auto&& value)
 	{ erase_if_impl([&] (auto y) { return value == y; }); }
 };
-
 static auto const NoDictionary = Dictionary {};
 
-/* ~~ Language Definitions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
-// TODO: Use tag structs to represent languages.
-enum Language {
-	NoLanguage,
-	English,
-	// See LanguageCode constructor for further examples.
-};
-
-static constexpr auto DefaultLanguage = Language {
-#ifdef STENO_DEFAULT_LANGUAGE
-	STENO_DEFAULT_LANGUAGE
-#else
-	English // English by default is opt-out.
-#endif
-};
+/* ~~ Language Identification ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 //   Scripts are a mandatory part of language identification. This is okay
 // because this library only handles the written word, and never any semantic
 // meaning. Region, however, is only to be used when two cultures' use of a
-// language differ so much that their combining rules differ. Most languages
-// used across multiple regions have identical rules, so this is rarely needed.
+// language differ so much that their combining rules differ. Most international
+// languages have identical rules, so this is rarely needed.
 
 class LanguageCode {
 	// By default we use reserved values to denote lack of code/script/region.
@@ -629,8 +620,12 @@ class LanguageCode {
 
 public:
 	// Constructors
-	constexpr LanguageCode() = default;
-	constexpr LanguageCode(Language language);
+	consteval LanguageCode() = default;
+	consteval LanguageCode(
+		std::string_view name,
+		std::string_view script,
+		std::string_view region={}
+	);
 
 	// Comparison
 	bool operator== (LanguageCode const&) const = default;
@@ -641,8 +636,47 @@ public:
 	std::string script() const;
 	std::string region() const;
 };
+static consteval auto NoLanguageCode = LanguageCode {};
 
-static constexpr auto NoLanguageCode = LanguageCode {};
+/* ~~ Language Definitions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+//   Language objects act similar to both namespaces and template arguments.
+// The "_Arg" struct contains all the details. However, only the object
+// with the language's name itself is meant to be used in the API.
+//   Examples:
+// speak(English); // Template-like usage (struct tag)
+// English.Capitalize; // Namespace-like usage
+
+template <class T>
+concept Language_Arg = std::is_empty<T> && requires(T) {
+	{ T::Name } -> std::convertible_to<std::string_view>;
+	{ T::Identifier } -> std::same_as<LanguageCode>;
+	{ typename T::State {} } -> std::regular;
+	{ T::State::Opening } -> std::same_as<T::State>;
+	{ T::State::Default } -> std::same_as<T::State>;
+};
+
+// Bare-bones Language implementation
+struct NoLanguage_Arg {
+	static constexpr std::string_view Name {"(no language)"};
+	static constexpr LanguageCode Identifier {NoLanguageCode};
+	static constexpr struct State : std::monostate {} Opening {}, Default {};
+};
+static constexpr auto NoLanguage = NoLanguage_Arg {};
+
+// Useful functions
+template <class T>
+consteval bool IsLanguage(T) { return Language_Arg<T>; }
+
+template <Language_Arg L>
+constexpr bool operator==(L, L) { return true; }
+
+template <Language_Arg L1, Language_Arg L2>
+constexpr bool operator==(L1, L2) { return false; }
+
+} // namespace steno
+#include "steno_languages.hh"
+namespace steno {
 
 /* ~~ Context Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -651,40 +685,32 @@ static constexpr auto NoLanguageCode = LanguageCode {};
 // and the first word will be treated as the start of the sentence/paragraph.
 
 class Context {
-	Language m_language {DefaultLanguage};
-	std::any m_state {};
-
-	// Languages will contain non-verbal information such as: part of speech,
-	// capitalization, etc. It's improper to store state which will go unused.
-	template <Language L=NoLanguage>
-	struct State {};
-	struct State_impl;
+	Languages::States::In<std::variant> m_state {};
 
 public:
 	// Constructors
-	Context(Language language=DefaultLanguage): Context {Default, language} {}
-	Context(Opening_Arg, Language=DefaultLanguage); // Start of our page
-	Context(Default_Arg, Language=DefaultLanguage); // The rest of the text
+	Context(): Context{DefaultLanguage} {}
+	Context(Opening_Arg): Context{Opening, DefaultLanguage} {}
+	Context(Default_Arg): Context{Default, DefaultLanguage} {}
+
+	template <Language_Arg L> Context(L): m_state{L::State {}} {}
+	template <Language_Arg L> Context(Opening_Arg, L): m_state{L::Opening} {}
+	template <Language_Arg L> Context(Default_Arg, L): m_state{L::Default} {}
 
 	// Getters and Setters
-	Language& language();
-	Language  language() const;
 	LanguageCode languageCode() const;
-	template <Language L=NoLanguage> State<L> /* */* as();
-	template <Language L=NoLanguage> State<L> const* as() const;
+	template <Language_Arg L> Context& codeSwitch(L);
+	template <Language_Arg L> L::State /* */* as(L);
+	template <Language_Arg L> L::State const* as(L) const;
 
-//	// Comparison
-//	bool operator== (Context const&) const = default;
-//	auto operator<=>(Context const&) const = default;
+	// Comparison
+	bool operator== (Context const&) const = default;
+	auto operator<=>(Context const&) const = default;
 };
-
 static auto const NoContext = Context {};
 
-/* ~~ Language Implementations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
-} // namespace steno
-#include "steno_languages.hh"
-namespace steno {
+Context context {};
+context.language().identifier
 
 /* ~~ Speech Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -870,39 +896,24 @@ constexpr Stroke::Stroke(I first, I last) {
 	}
 }
 
-
-constexpr LanguageCode::LanguageCode(Language language) {
-	auto set = [this] (
-		std::string_view name,
-		std::string_view script,
-		std::string_view region={}
-	) {
-		for (int i=0; i<3; i++) m_name  [i] = name  [i];
-		for (int i=0; i<4; i++) m_script[i] = script[i];
-		if (!region.empty())
-		for (int i=0; i<2; i++) m_region[i] = region[i];
-	};
-
-	switch (language) {
-	break; case English: set("eng", "Latn");
-/*
-	// Further examples:
-	break; case EnglishBraille: set("eng", "Brai"); // ⠠⠢⠛⠇⠊⠩⠀⠠⠃⠗⠇
-	break; case JapaneseBraille: set("jpn", "Brai"); // ⠇⠮⠴⠐⠪⠎⠀⠟⠴⠐⠳
-	break; case Mongolian: set("mon", "Cyrl"); // Монгол хэл
-	break; case MongolianTraditional: set("mon", "Mong"); // ᠮᠣᠩᠭᠣᠯ ᠬᠡᠯᠡ
-*/
-	break; default: assert(language == NoLanguage);
-	}
+constexpr LanguageCode::LanguageCode(
+	std::string_view name,
+	std::string_view script,
+	std::string_view region
+) {
+	for (int i=0; i<3; i++) m_name  [i] = name  [i];
+	for (int i=0; i<4; i++) m_script[i] = script[i];
+	if (region.empty()) return;
+	for (int i=0; i<2; i++) m_region[i] = region[i];
 }
 
-template <Language L> Context::State<L>* Context::as() {
-	return *std::any_cast<Context::State<L>>(&m_state);
-}
+//Context::State<L>* Context::as(auto Language_Arg Language) {
+//	return *std::any_cast<Context::State<L>>(&m_state);
+//}
 
-template <Language L> Context::State<L> const* Context::as() const {
-	return *std::any_cast<Context::State<L>>(&m_state);
-}
+//Context::State<L> const* Context::as(auto Language_Arg Language) const {
+//	return *std::any_cast<Context::State<L>>(&m_state);
+//}
 
 } // namespace steno
 

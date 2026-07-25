@@ -719,18 +719,18 @@ TEST(StenoPhrase, GoodInputString) {
 	EXPECT_NO_ISSUES(p = steno::Phrase {"prefix{^}"});
 	EXPECT_EQ(p.size(), 2);
 	EXPECT_EQ(p[0], steno::Word {"prefix"});
-	EXPECT_EQ(p[1], steno::Signal {steno::Combine});
+	EXPECT_EQ(p[1], steno::Signal {steno::Punctuate, "^"});
 
 	EXPECT_NO_ISSUES(p = steno::Phrase {"{^}suffix"});
 	EXPECT_EQ(p.size(), 2);
-	EXPECT_EQ(p[0], steno::Signal {steno::Combine});
+	EXPECT_EQ(p[0], steno::Signal {steno::Punctuate, "^"});
 	EXPECT_EQ(p[1], steno::Word {"suffix"});
 
 	EXPECT_NO_ISSUES(p = steno::Phrase {"{^}infix{^}"});
 	EXPECT_EQ(p.size(), 3);
-	EXPECT_EQ(p[0], steno::Signal {steno::Combine});
+	EXPECT_EQ(p[0], steno::Signal {steno::Punctuate, "^"});
 	EXPECT_EQ(p[1], steno::Word {"infix"});
-	EXPECT_EQ(p[2], steno::Signal {steno::Combine});
+	EXPECT_EQ(p[2], steno::Signal {steno::Punctuate, "^"});
 
 	// Alternate syntax
 	EXPECT_EQ(steno::Phrase {"{prefix^}"}, steno::Phrase {"prefix{^}"});
@@ -768,7 +768,6 @@ TEST(StenoPhrase, GoodInputString) {
 	EXPECT_NO_ISSUES(p = steno::Phrase {"in\\{side"});
 	EXPECT_EQ(p.size(), 1);
 	EXPECT_EQ(p[0], steno::Word {"in{side"});
-
 }
 
 TEST(StenoPhrase, BadInputString) {

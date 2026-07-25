@@ -331,8 +331,8 @@ Phrase::Phrase(std::string_view str) {
 		else {
 			std::string_view prefix {}, suffix {};
 			if (buffer.starts_with("^")) prefix = "^";
-			if (buffer.ends_with("^")) suffix = "^";
 			if (buffer.starts_with("&")) prefix = "&";
+			if (buffer.ends_with("^")) suffix = "^";
 
 			assert(prefix.size() + suffix.size() <= buffer.size());
 			std::string_view inside {
@@ -340,10 +340,10 @@ Phrase::Phrase(std::string_view str) {
 				buffer.end()-suffix.size(),
 			};
 
-			if (prefix == "^") push_back(Signal {Combine});
-			if (prefix == "&") push_back(Signal {Glue});
+			if (prefix == "^") push_back(Signal {Punctuate, "^"});
+			if (prefix == "&") push_back(Signal {Punctuate, "&"});
 			for (auto word : split(inside, ' ')) push_back(Word {word});
-			if (suffix == "^") push_back(Signal {Combine});
+			if (suffix == "^") push_back(Signal {Punctuate, "^"});
 		}
 		buffer.clear();
 	};
@@ -665,31 +665,13 @@ std::string LanguageCode::region() const {
 	return {m_region.begin(), m_region.end()};
 }
 
-/* ~~ Context Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
-// Constructors
-Context::Context(Opening_Arg, Language language) {
-	using enum State<English>::Position;
-	if (language == English) as<English>()->position = ParagraphStart;
-}
-
-Context::Context(Default_Arg, Language language) {
-	using enum State<English>::Position;
-	if (language == English) as<English>()->position = WordStart;
-}
-
-// Getters and Setters
-Language& Context::language() {
-	return m_language;
-}
-
-Language Context::language() const {
-	return m_language;
-}
-
-LanguageCode Context::languageCode() const {
-	return LanguageCode {m_language};
-}
+//std::array<char, 3+4+2> LanguageCode::raw() const {
+//	return std::array {
+//		m_name  [0], m_name  [1], m_name  [2],
+//		m_script[0], m_script[1], m_script[2], m_script[3],
+//		m_region[0], m_region[1],
+//	};
+//}
 
 /* ~~ Speech Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -710,10 +692,8 @@ Speech& operator<<(Speech& speech, Token const& t) {
 		if (*signal == NoSignal) /**/;
 		// It's the Translator's job to handle the undoing of strokes. However,
 		// if this signal still slips through, it's best to not disregard it.
-		else if (signal->as(Undo))    speech << Word {"*"};
-		else if (signal->as(Cancel))  state = {};
-		else if (signal->as(Combine)) state.position = State::WordMiddle;
-		else if (signal->as(Glue))    state.position = State::DigitSequence;
+		else if (signal->as(Undo)) speech << Word {"*"};
+		else if (signal->as(Cancel)) state = {};
 		//Complex Signals
 		else if (auto const* data = signal->as(Punctuate)) {
 			processPunctuation(os, speech.m_context, data->symbol);

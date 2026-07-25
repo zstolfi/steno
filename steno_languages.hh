@@ -1,26 +1,58 @@
 #pragma once
-#include <vector>
-#include <array>
+#include <iostream>
 #include <string>
 #include <string_view>
-#include <concepts>
-#include <cassert>
+#include <tuple>
+#include <vector>
 
 namespace steno {
 
-/* ~~ Language State ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ English ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-template <>
-struct Context::State<English> {
-	enum Position {
-		WordMiddle,
-		WordStart,
-		SentenceStart,
-		ParagraphStart,
-		DigitSequence,
-	} position {WordStart};
+struct English_Arg {
+	static constexpr std::string_view Name {"English"};
+	static constexpr LanguageCode Identifier {"eng", "Latn"};
 
-	bool capitalize {false};
+	struct State {
+		using Of = English_Arg;
+
+		enum Position {
+			WordMiddle,
+			WordStart,
+			ProperStart,
+			SentenceStart,
+			ParagraphStart,
+			DigitSequence,
+		} position {WordStart};
+
+		bool operator== (State const&) const = default;
+		auto operator<=>(State const&) const = default;
+	};
+
+	static constexpr State Opening {State::ParagraphStart};
+	static constexpr State Default {State::WordStart};
+};
+static constexpr auto English = English_Arg {};
+
+/* ~~ Default Language ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+#ifndef STENO_DEFAULT_LANGUAGE
+	// English by default is opt-out.
+	using DefaultLanguage_Arg = English_Arg;
+	static constexpr auto DefaultLanguage = English;
+#else
+	using DefaultLanguage_Arg = STENO_DEFAULT_LANGUAGE##_Arg;
+	static constexpr auto DefaultLanguage = STENO_DEFAULT_LANGUAGE;
+#endif
+
+/* ~~ Complete List ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+struct Languages : ValueList<English, French> {
+private:
+	template <Language_Arg L> using GetState = L::State;
+
+public:
+	using States = Types::Map<GetState>;
 };
 
 /* ~~ Orthography ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
