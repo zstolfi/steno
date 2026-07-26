@@ -31,7 +31,7 @@ std::vector<std::string_view> split(std::string_view str, char delim) {
 	return result;
 }
 
-steno::Language parseLocaleName(std::string_view str) {
+void parseLocaleName(Context& context, std::string_view str) {
 	return {/* TODO */};
 }
 
@@ -647,7 +647,7 @@ void Dictionary::normalize() {
 	std::sort(begin(), end(), EntryCompare);
 }
 
-/* ~~ Language Definitions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~ Language Identification ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 // Getters
 std::string LanguageCode::name() const {
@@ -673,37 +673,55 @@ std::string LanguageCode::region() const {
 //	};
 //}
 
+/* ~~ Context Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+LanguageCode Context::languageCode() const {
+	return std::visit(
+		[] <class State> (State) { return State::Language().Identification; },
+		m_state
+	);
+}
+
+decltype(Context::m_state)& Context::state() {
+	return m_state;
+}
+
+decltype(Context::m_state) const& Context::state() const {
+	return m_state;
+}
+
 /* ~~ Speech Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 //   Speeches listen for Tokens, apply orthography, and output to std::ostream.
 // Information received will always be sent out as fast as possible. There is
 // however, no ability to undo nor reinterpret Tokens.
 
-Speech& operator<<(Speech& speech, Token const& t) {
-	std::ostream& os = *speech.m_output;
-	Language& language = speech.m_context.language();
-	Context::State& state = speech.m_context.state();
-
-	if (auto const* word = t.word()) {
-		accommodateWord(os, s.m_context, *word);
-		state.position = State::WordStart;
-	}
-	if (auto const* signal = t.signal()) {
-		if (*signal == NoSignal) /**/;
-		// It's the Translator's job to handle the undoing of strokes. However,
-		// if this signal still slips through, it's best to not disregard it.
-		else if (signal->as(Undo)) speech << Word {"*"};
-		else if (signal->as(Cancel)) state = {};
-		//Complex Signals
-		else if (auto const* data = signal->as(Punctuate)) {
-			processPunctuation(os, speech.m_context, data->symbol);
+Speech& operator<<(Speech& speech, Token const& token) {
+	auto& context = speech.context();
+	auto modify = [&context, &token] <class State> (State& state) {
+		if (auto const* word = token.word()) {
+			accommodateWord(os, context, *word);
+			state = State {Default};
 		}
-		else if (auto const* data = signal->as(CodeSwitch)) {
-			language = parseLocaleName(data->localeName);
+		else if (auto const* signal = token.signal()) {
+			if (*signal == NoSignal) /**/;
+			// It's the Translator's job to handle the undoing of strokes.
+			// However, if this signal still slips though, don't disregard it.
+			else if (signal->as(Undo)) speech << Word {"*"};
+			else if (signal->as(Cancel)) state = State {Default};
+			// Complex Signals
+			else if (auto const* data = signal->as(Punctuate)) {
+				processPunctuation(os, context, data->symbol);
+			}
+			else if (auto const* data = signal->as(CodeSwitch)) {
+				// Invalidates state reference.
+				context.codeSwitch(State.Language());
+			}
+			else if (signal->as(SysEx)) /* Do nothing, with style! */;
 		}
-		else if (signal->as(SysEx)) /* Do nothing, with style! */;
-	}
+	};
 
+	std::visit(modify, context.state());
 	return speech;
 }
 

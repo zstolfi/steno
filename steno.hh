@@ -98,7 +98,7 @@ namespace flags {
 	constexpr struct Punctuate_Arg        {} Punctuate        {};
 	constexpr struct CodeSwitch_Arg       {} CodeSwitch       {};
 	constexpr struct SysEx_Arg            {} SysEx            {};
-	// Context construction
+	// Context/State construction
 	constexpr struct Opening_Arg          {} Opening          {};
 	constexpr struct Default_Arg          {} Default          {};
 }
@@ -652,8 +652,8 @@ concept Language_Arg = std::is_empty<T> && requires(T) {
 	{ T::Name } -> std::convertible_to<std::string_view>;
 	{ T::Identifier } -> std::same_as<LanguageCode>;
 	{ typename T::State {} } -> std::regular;
-	{ T::State::Opening } -> std::same_as<T::State>;
-	{ T::State::Default } -> std::same_as<T::State>;
+	{ T::State {Opening} };
+	{ T::State {Default} };
 };
 
 // Bare-bones Language implementation
@@ -693,13 +693,15 @@ public:
 	Context(Opening_Arg): Context{Opening, DefaultLanguage} {}
 	Context(Default_Arg): Context{Default, DefaultLanguage} {}
 
-	template <Language_Arg L> Context(L): m_state{L::State {}} {}
-	template <Language_Arg L> Context(Opening_Arg, L): m_state{L::Opening} {}
-	template <Language_Arg L> Context(Default_Arg, L): m_state{L::Default} {}
+	template <Language_Arg L> Context(L): Context{Default, L} {}
+	template <Language_Arg L> Context(auto Arg, L): m_state{L::State {Arg}} {}
 
 	// Getters and Setters
 	LanguageCode languageCode() const;
 	template <Language_Arg L> Context& codeSwitch(L);
+
+	decltype(m_state) /* */& state();
+	decltype(m_state) const& state() const;
 	template <Language_Arg L> L::State /* */* as(L);
 	template <Language_Arg L> L::State const* as(L) const;
 
@@ -708,9 +710,6 @@ public:
 	auto operator<=>(Context const&) const = default;
 };
 static auto const NoContext = Context {};
-
-Context context {};
-context.language().identifier
 
 /* ~~ Speech Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -723,8 +722,9 @@ class Speech {
 	Context m_context {};
 
 public:
-	Speech(std::ostream& os, Language language=DefaultLanguage)
-	:	m_output{&os}, m_context{Opening, English} {}
+	Speech(std::ostream& os): Speech{os, DefaultLanguage} {}
+	Speech(std::ostream& os, Language_Arg auto Language)
+	:	m_output{&os}, m_context{Opening, Language} {}
 
 	friend Speech& operator<<(Speech&, Token const&);
 	friend Speech& operator<<(Speech&, Phrase const&);
@@ -907,13 +907,27 @@ constexpr LanguageCode::LanguageCode(
 	for (int i=0; i<2; i++) m_region[i] = region[i];
 }
 
-//Context::State<L>* Context::as(auto Language_Arg Language) {
-//	return *std::any_cast<Context::State<L>>(&m_state);
-//}
+template <Language_Arg L> Context& Context::codeSwitch(L) {
+	// TODO: Better code switching. Carry over as much state as we can.
+	m_state = L::State {};
+	return *this;
+}
 
-//Context::State<L> const* Context::as(auto Language_Arg Language) const {
-//	return *std::any_cast<Context::State<L>>(&m_state);
-//}
+decltype(m_state) /* */& state() {
+	return m_state;
+}
+
+decltype(m_state) const& state() const {
+	return m_state;
+}
+
+template <Language_Arg L> L::State /* */* Context::as(L) {
+	return std::get_if<L::State>(&m_state);
+}
+
+template <Language_Arg L> L::State const* Context::as(L) const {
+	return std::get_if<L::State>(&m_state);
+}
 
 } // namespace steno
 

@@ -14,7 +14,8 @@ struct English_Arg {
 	static constexpr LanguageCode Identifier {"eng", "Latn"};
 
 	struct State {
-		using Of = English_Arg;
+		using Language_Arg = English_Arg;
+		static constexpr auto Language() { return Language_Arg {}; };
 
 		enum Position {
 			WordMiddle,
@@ -23,14 +24,14 @@ struct English_Arg {
 			SentenceStart,
 			ParagraphStart,
 			DigitSequence,
-		} position {WordStart};
+		} position;
+
+		State(Opening_Arg): position{ParagraphStart} {}
+		State(Default_Arg): position{WordStart} {}
 
 		bool operator== (State const&) const = default;
 		auto operator<=>(State const&) const = default;
 	};
-
-	static constexpr State Opening {State::ParagraphStart};
-	static constexpr State Default {State::WordStart};
 };
 static constexpr auto English = English_Arg {};
 
