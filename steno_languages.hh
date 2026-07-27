@@ -52,9 +52,8 @@ struct English_Arg {
 		bool operator== (State const&) const = default;
 		auto operator<=>(State const&) const = default;
 
-		// TODO: Put these in Language_Arg concept.
-		static void applyWord(std::ostream&, Word);
-		static void applyPunctuation(std::ostream&, std::string_view);
+		void applyWord(std::ostream&, Word);
+		void applyPunctuation(std::ostream&, std::string_view);
 	};
 };
 static constexpr auto English = English_Arg {};
@@ -82,15 +81,15 @@ public:
 
 // TODO: Make this value computed at compile time.
 static std::set const GlobalPunctuation {
-	English.Comma,
-	English.Period,
-	English.QuestionMark,
-	English.ExclamationPoint,
-	English.Semicolon,
-	English.Colon,
-	English.Combine,
-	English.DigitSequence,
-	English.Capitalize,
+	English.Comma           .as(Punctuate)->symbol,
+	English.Period          .as(Punctuate)->symbol,
+	English.QuestionMark    .as(Punctuate)->symbol,
+	English.ExclamationPoint.as(Punctuate)->symbol,
+	English.Semicolon       .as(Punctuate)->symbol,
+	English.Colon           .as(Punctuate)->symbol,
+	English.Combine         .as(Punctuate)->symbol,
+	English.DigitSequence   .as(Punctuate)->symbol,
+	English.Capitalize      .as(Punctuate)->symbol,
 };
 
 /* ~~ Orthography ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */

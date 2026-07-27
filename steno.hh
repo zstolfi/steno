@@ -672,9 +672,15 @@ struct NoLanguage_Arg {
 	static constexpr std::string_view Name {"(no language)"};
 	static constexpr LanguageCode Code {NoLanguageCode};
 	struct State {
+		static constexpr auto Language() { return NoLanguage_Arg {}; };
+
 		State(Default_Arg={}) {};
 		State(Opening_Arg) {};
 		auto operator<=>(State const&) const = default;
+
+		// TODO: Put these in Language_Arg concept.
+		void applyWord(std::ostream&, Word);
+		void applyPunctuation(std::ostream&, std::string_view);
 	};
 };
 static constexpr auto NoLanguage = NoLanguage_Arg {};
@@ -701,7 +707,8 @@ namespace steno {
 // and the first word will be treated as the start of the sentence/paragraph.
 
 class Context {
-	Languages::States::In<std::variant> m_state {};
+	using AnyState = Languages::States::In<std::variant>;
+	AnyState m_state {};
 
 public:
 	// Constructors
@@ -717,8 +724,8 @@ public:
 	LanguageCode languageCode() const;
 	template <Language_Arg L> Context& codeSwitch(L);
 
-	decltype(m_state) /* */& state();
-	decltype(m_state) const& state() const;
+	AnyState /* */& state();
+	AnyState const& state() const;
 	template <Language_Arg L> L::State /* */* as(L);
 	template <Language_Arg L> L::State const* as(L) const;
 
@@ -739,9 +746,13 @@ class Speech {
 	Context m_context {};
 
 public:
+	// Constructors
 	Speech(std::ostream& os): Speech{os, DefaultLanguage} {}
 	Speech(std::ostream& os, Language_Arg auto Language)
 	:	m_output{&os}, m_context{Language, Opening} {}
+
+	// Getters and Setters
+	Context const& context() const;
 
 	friend Speech& operator<<(Speech&, Token const&);
 	friend Speech& operator<<(Speech&, Phrase const&);

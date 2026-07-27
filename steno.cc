@@ -1,5 +1,7 @@
 #include "steno.hh"
 
+namespace steno {
+
 namespace /* detail */ {
 
 static constexpr bool isWhitespace(char c) {
@@ -31,13 +33,11 @@ std::vector<std::string_view> split(std::string_view str, char delim) {
 	return result;
 }
 
-void parseLocaleName(Context& context, std::string_view str) {
-	return {/* TODO */};
+void applyCodeSwitch(Context& context, std::string_view str) {
+	/* TODO */;
 }
 
 } // namespace /* detail */
-
-namespace steno {
 
 /* ~~ Stroke Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -651,17 +651,14 @@ void Dictionary::normalize() {
 
 // Getters
 std::string LanguageCode::name() const {
-	if (m_name == NoLanguageCode.m_name) return "";
 	return {m_name.begin(), m_name.end()};
 }
 
 std::string LanguageCode::script() const {
-	if (m_script == NoLanguageCode.m_script) return "";
 	return {m_script.begin(), m_script.end()};
 }
 
 std::string LanguageCode::region() const {
-	if (m_region == NoLanguageCode.m_region) return "";
 	return {m_region.begin(), m_region.end()};
 }
 
@@ -673,34 +670,50 @@ std::string LanguageCode::region() const {
 //	};
 //}
 
+/* ~~ Language Definitions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+void NoLanguage_Arg::State::applyWord(std::ostream& os, Word word) {
+	// Notice the lack of any spacing. NoLanguage is bare to the bone.
+	os << std::string_view {word};
+}
+
+void NoLanguage_Arg::State::applyPunctuation(
+	std::ostream& os,
+	std::string_view symbol
+) {
+	os << symbol;
+}
+
 /* ~~ Context Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 LanguageCode Context::languageCode() const {
 	return std::visit(
-		[] <class S> (S state) { return state.Language().Identification; },
+		[] <class S> (S const& state) { return state.Language().Code; },
 		m_state
 	);
 }
 
-decltype(Context::m_state)& Context::state() {
+Context::AnyState& Context::state() {
 	return m_state;
 }
 
-decltype(Context::m_state) const& Context::state() const {
+Context::AnyState const& Context::state() const {
 	return m_state;
 }
 
 /* ~~ Speech Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-//   Speeches listen for Tokens, apply orthography, and output to std::ostream.
-// Information received will always be sent out as fast as possible. There is
-// however, no ability to undo nor reinterpret Tokens.
+// Getters and Setters
+Context const& Speech::context() const {
+	return m_context;
+}
 
 Speech& operator<<(Speech& speech, Token const& token) {
-	auto& context = speech.context();
-	auto modify = [&context, &token] <class S> (S& state) {
+	auto& os = *speech.m_output;
+	auto& context = speech.m_context;
+	auto modify = [&] <class S> (S& state) {
 		if (auto const* word = token.word()) {
-			state.Language().applyWord(os, *word);
+			state.applyWord(os, *word);
 			state = {Default};
 		}
 		else if (auto const* signal = token.signal()) {
@@ -711,11 +724,11 @@ Speech& operator<<(Speech& speech, Token const& token) {
 			else if (signal->as(Cancel)) state = {Default};
 			// Complex Signals
 			else if (auto const* data = signal->as(Punctuate)) {
-				state.Language().applyPunctuation(os, data->symbol);
+				state.applyPunctuation(os, data->symbol);
 			}
 			else if (auto const* data = signal->as(CodeSwitch)) {
 				// Invalidates state reference.
-				context.codeSwitch(state.Language());
+				applyCodeSwitch(context, data->localeName);
 			}
 			else if (signal->as(SysEx)) /* Do nothing, with style! */;
 		}

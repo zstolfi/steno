@@ -789,30 +789,30 @@ TEST(StenoLanguages, ForEach) {
 	EXPECT_EQ(steno::Languages::Size, total);
 }
 
-TEST(StenoLanguage, IdentifierUniqueness) {
-	std::set<steno::LanguageCode> ids {};
+TEST(StenoLanguage, CodeUniqueness) {
+	std::set<steno::LanguageCode> codes {};
 	steno::Languages::ForEach([&] (auto Language) {
-		ids.insert(Language.Identifier);
+		codes.insert(Language.Code);
 	});
-	EXPECT_EQ(steno::Languages::Size, ids.size());
+	EXPECT_EQ(steno::Languages::Size, codes.size());
 }
 
-TEST(StenoLanguages, IdentifierFormat) {
+TEST(StenoLanguages, CodeFormat) {
 	steno::Languages::ForEach([&] (auto Language) {
 		std::string_view sv {};
 
-		EXPECT_EQ((sv = Language.Identifier.name()).size(), 3);
+		EXPECT_EQ((sv = Language.Code.name()).size(), 3);
 		EXPECT_TRUE('a' <= sv[0] && sv[0] <= 'z');
 		EXPECT_TRUE('a' <= sv[1] && sv[1] <= 'z');
 		EXPECT_TRUE('a' <= sv[2] && sv[2] <= 'z');
 
-		EXPECT_EQ((sv = Language.Identifier.script()).size(), 4);
+		EXPECT_EQ((sv = Language.Code.script()).size(), 4);
 		EXPECT_TRUE('A' <= sv[0] && sv[0] <= 'Z');
 		EXPECT_TRUE('a' <= sv[1] && sv[1] <= 'z');
 		EXPECT_TRUE('a' <= sv[2] && sv[2] <= 'z');
 		EXPECT_TRUE('a' <= sv[3] && sv[3] <= 'z');
 
-		EXPECT_EQ((sv = Language.Identifier.region()).size(), 2);
+		EXPECT_EQ((sv = Language.Code.region()).size(), 2);
 		EXPECT_TRUE('A' <= sv[0] && sv[0] <= 'Z');
 		EXPECT_TRUE('A' <= sv[1] && sv[1] <= 'Z');
 	});
@@ -829,7 +829,7 @@ TEST(StenoLanguages, State) {
 
 TEST(StenoContext, EmptyConstruction) {
 	steno::Context context {steno::NoLanguage};
-	EXPECT_EQ(context.languageCode(), steno::NoLanguage.Identifier);
+	EXPECT_EQ(context.languageCode(), steno::NoLanguage.Code);
 }
 
 TEST(StenoContext, DefaultConstruction) {
@@ -845,15 +845,15 @@ TEST(StenoContext, LanguageConstruction) {
 
 	// Default context (determined at compile time)
 	c = steno::Context {};
-	EXPECT_EQ(c.languageCode(), steno::DefaultLanguage.Identifier);
+	EXPECT_EQ(c.languageCode(), steno::DefaultLanguage.Code);
 
 	// Empty context
 	c = steno::Context {steno::NoLanguage};
-	EXPECT_EQ(c.languageCode(), steno::NoLanguage.Identifier);
+	EXPECT_EQ(c.languageCode(), steno::NoLanguage.Code);
 
 	// English context
 	c = steno::Context {steno::English};
-	EXPECT_EQ(c.languageCode(), steno::English.Identifier);
+	EXPECT_EQ(c.languageCode(), steno::English.Code);
 	EXPECT_EQ(c.languageCode().name(), "eng");
 	EXPECT_EQ(c.languageCode().script(), "Latn");
 	EXPECT_EQ(c.languageCode().region(), "");
@@ -864,15 +864,15 @@ TEST(StenoContext, CodeSwitch) {
 
 	c = steno::Context {steno::NoLanguage};
 	c.codeSwitch(steno::English);
-	EXPECT_EQ(c.languageCode(), steno::English.Identifier);
+	EXPECT_EQ(c.languageCode(), steno::English.Code);
 
 	c = steno::Context {steno::English};
 	c.codeSwitch(steno::NoLanguage);
-	EXPECT_EQ(c.languageCode(), steno::NoLanguage.Identifier);
+	EXPECT_EQ(c.languageCode(), steno::NoLanguage.Code);
 
 	c = steno::Context {steno::English};
 	c.codeSwitch(steno::English);
-	EXPECT_EQ(c.languageCode(), steno::English.Identifier);
+	EXPECT_EQ(c.languageCode(), steno::English.Code);
 }
 
 /* ~~ Supported Languages ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
