@@ -99,8 +99,8 @@ namespace flags {
 	constexpr struct CodeSwitch_Arg       {} CodeSwitch       {};
 	constexpr struct SysEx_Arg            {} SysEx            {};
 	// Context/State construction
-	constexpr struct Opening_Arg          {} Opening          {};
 	constexpr struct Default_Arg          {} Default          {};
+	constexpr struct Opening_Arg          {} Opening          {};
 }
 
 using namespace flags;
@@ -333,6 +333,7 @@ class Signal {
         auto operator<=>(Name##_t const&) const = default;                     \
     }
 #define SIGNAL_MEMBERS(Name)                                                   \
+    constexpr                                                                  \
     Signal(Name##_Arg, auto&& ... args): m_value{Name##_t {args ... }} {}      \
     auto as(Name##_Arg)       { return std::get_if<Name##_t>(&m_value); }      \
     auto as(Name##_Arg) const { return std::get_if<Name##_t>(&m_value); }
@@ -625,7 +626,12 @@ public:
 		std::string_view name,
 		std::string_view script,
 		std::string_view region={}
-	);
+	) {
+		for (int i=0; i<3; i++) m_name  [i] = name  [i];
+		for (int i=0; i<4; i++) m_script[i] = script[i];
+		if (region.empty()) return;
+		for (int i=0; i<2; i++) m_region[i] = region[i];
+	}
 
 	// Comparison
 	bool operator== (LanguageCode const&) const = default;
@@ -636,7 +642,7 @@ public:
 	std::string script() const;
 	std::string region() const;
 };
-static consteval auto NoLanguageCode = LanguageCode {};
+static constexpr auto NoLanguageCode = LanguageCode {};
 
 /* ~~ Language Definitions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -648,25 +654,29 @@ static consteval auto NoLanguageCode = LanguageCode {};
 // English.Capitalize; // Namespace-like usage
 
 template <class T>
-concept Language_Arg = std::is_empty<T> && requires(T) {
+concept Language_Arg = std::is_empty_v<T> && requires {
 	{ T::Name } -> std::convertible_to<std::string_view>;
-	{ T::Identifier } -> std::same_as<LanguageCode>;
-	{ typename T::State {} } -> std::regular;
-	{ T::State {Opening} };
-	{ T::State {Default} };
+	{ T::Identifier } -> std::convertible_to<LanguageCode>;
+	requires std::regular<typename T::State>;
+	typename T::State {Default};
+	typename T::State {Opening};
 };
 
 // Bare-bones Language implementation
 struct NoLanguage_Arg {
 	static constexpr std::string_view Name {"(no language)"};
 	static constexpr LanguageCode Identifier {NoLanguageCode};
-	static constexpr struct State : std::monostate {} Opening {}, Default {};
+	struct State {
+		State(Default_Arg={}) {};
+		State(Opening_Arg) {};
+		auto operator<=>(State const&) const = default;
+	};
 };
 static constexpr auto NoLanguage = NoLanguage_Arg {};
 
 // Useful functions
 template <class T>
-consteval bool IsLanguage(T) { return Language_Arg<T>; }
+constexpr bool IsLanguage(T) { return Language_Arg<T>; }
 
 template <Language_Arg L>
 constexpr bool operator==(L, L) { return true; }
@@ -690,11 +700,12 @@ class Context {
 public:
 	// Constructors
 	Context(): Context{DefaultLanguage} {}
-	Context(Opening_Arg): Context{Opening, DefaultLanguage} {}
-	Context(Default_Arg): Context{Default, DefaultLanguage} {}
+	Context(Default_Arg): Context{DefaultLanguage, Default} {}
+	Context(Opening_Arg): Context{DefaultLanguage, Opening} {}
 
-	template <Language_Arg L> Context(L): Context{Default, L} {}
-	template <Language_Arg L> Context(auto Arg, L): m_state{L::State {Arg}} {}
+	Context(Language_Arg auto Language): Context{Language, Default} {}
+	template <Language_Arg L> Context(L, auto StartingState)
+	:	m_state{typename L::State {StartingState}} {}
 
 	// Getters and Setters
 	LanguageCode languageCode() const;
@@ -724,7 +735,7 @@ class Speech {
 public:
 	Speech(std::ostream& os): Speech{os, DefaultLanguage} {}
 	Speech(std::ostream& os, Language_Arg auto Language)
-	:	m_output{&os}, m_context{Opening, Language} {}
+	:	m_output{&os}, m_context{Language, Opening} {}
 
 	friend Speech& operator<<(Speech&, Token const&);
 	friend Speech& operator<<(Speech&, Phrase const&);
@@ -896,29 +907,10 @@ constexpr Stroke::Stroke(I first, I last) {
 	}
 }
 
-constexpr LanguageCode::LanguageCode(
-	std::string_view name,
-	std::string_view script,
-	std::string_view region
-) {
-	for (int i=0; i<3; i++) m_name  [i] = name  [i];
-	for (int i=0; i<4; i++) m_script[i] = script[i];
-	if (region.empty()) return;
-	for (int i=0; i<2; i++) m_region[i] = region[i];
-}
-
 template <Language_Arg L> Context& Context::codeSwitch(L) {
 	// TODO: Better code switching. Carry over as much state as we can.
-	m_state = L::State {};
+	m_state = typename L::State {};
 	return *this;
-}
-
-decltype(m_state) /* */& state() {
-	return m_state;
-}
-
-decltype(m_state) const& state() const {
-	return m_state;
 }
 
 template <Language_Arg L> L::State /* */* Context::as(L) {

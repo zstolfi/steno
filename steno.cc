@@ -324,7 +324,7 @@ Phrase::Phrase(std::string_view str) {
 				/*.channel*/ buffer.substr(1),
 			});
 		}
-		else if (!recognizedPunctuation(buffer).empty()) {
+		else if (GlobalPunctuation.contains(buffer)) {
 			push_back(Signal {Punctuate, /*.symbol*/ buffer});
 		}
 		// Alternate syntax
@@ -677,7 +677,7 @@ std::string LanguageCode::region() const {
 
 LanguageCode Context::languageCode() const {
 	return std::visit(
-		[] <class State> (State) { return State::Language().Identification; },
+		[] <class S> (S state) { return state.Language().Identification; },
 		m_state
 	);
 }
@@ -698,24 +698,24 @@ decltype(Context::m_state) const& Context::state() const {
 
 Speech& operator<<(Speech& speech, Token const& token) {
 	auto& context = speech.context();
-	auto modify = [&context, &token] <class State> (State& state) {
+	auto modify = [&context, &token] <class S> (S& state) {
 		if (auto const* word = token.word()) {
-			accommodateWord(os, context, *word);
-			state = State {Default};
+			state.Language().applyWord(os, *word);
+			state = {Default};
 		}
 		else if (auto const* signal = token.signal()) {
 			if (*signal == NoSignal) /**/;
 			// It's the Translator's job to handle the undoing of strokes.
 			// However, if this signal still slips though, don't disregard it.
 			else if (signal->as(Undo)) speech << Word {"*"};
-			else if (signal->as(Cancel)) state = State {Default};
+			else if (signal->as(Cancel)) state = {Default};
 			// Complex Signals
 			else if (auto const* data = signal->as(Punctuate)) {
-				processPunctuation(os, context, data->symbol);
+				state.Language().applyPunctuation(os, data->symbol);
 			}
 			else if (auto const* data = signal->as(CodeSwitch)) {
 				// Invalidates state reference.
-				context.codeSwitch(State.Language());
+				context.codeSwitch(state.Language());
 			}
 			else if (signal->as(SysEx)) /* Do nothing, with style! */;
 		}
