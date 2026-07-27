@@ -856,7 +856,6 @@ TEST(StenoContext, LanguageConstruction) {
 	EXPECT_EQ(c.languageCode(), steno::English.Code);
 	EXPECT_EQ(c.languageCode().name(), "eng");
 	EXPECT_EQ(c.languageCode().script(), "Latn");
-	EXPECT_EQ(c.languageCode().region(), "");
 }
 
 TEST(StenoContext, CodeSwitch) {

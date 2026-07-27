@@ -76,6 +76,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <type_traits>
 #include <typeinfo>
 #include <utility>
@@ -116,6 +117,9 @@ template <class ... Ts>
 struct TypeList {
 	static constexpr std::size_t Size {sizeof ... (Ts)};
 
+	template <std::size_t I>
+	using At = std::tuple_element_t<I, std::tuple<Ts ... >>;
+
 	template <template <class> class MetaFunction>
 	using Map = TypeList<MetaFunction<Ts> ... >;
 
@@ -128,7 +132,14 @@ struct ValueList {
 	using Types = TypeList<decltype(Vs) ... >;
 	static constexpr std::size_t Size {sizeof ... (Vs)};
 
-	static void ForEach( ... ) {/* TODO */}
+	template <std::size_t I>
+	static constexpr auto At {std::get<I>(std::tuple {Vs ... })};
+
+	static void ForEach(auto&& function) {
+		[&] <std::size_t ... I> (std::index_sequence<I ... >) {
+			(function(At<I>), ... );
+		} (std::make_index_sequence<Size> {});
+	}
 };
 
 /* ~~ Key ID's ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
