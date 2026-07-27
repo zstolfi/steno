@@ -4,13 +4,15 @@
 namespace steno {
 
 void English_Arg::State::applyWord(std::ostream& os, Word word) {
-	bool const withSpace {position == WordStart && !beginning};
+	bool const withSpace {
+		!beginning && (position == WordHead || position == NumberHead)
+	};
 
 	if (withSpace) os << " ";
 	if (capitalize) word[0] = English.Uppercase(word[0]);
 	os << std::string_view {word};
 
-	beginning = false;
+	if (position == WordHead || position == WordTail) *this = {Default};
 }
 
 void English_Arg::State::applyPunctuation(
@@ -18,18 +20,18 @@ void English_Arg::State::applyPunctuation(
 	std::string_view symbol
 ) {
 	// Standard punctuation
-	/**/ if (symbol == ",") os << ",", position = WordStart;
-	else if (symbol == ".") os << ".", position = WordStart, capitalize = true;
-	else if (symbol == "?") os << "?", position = WordStart, capitalize = true;
-	else if (symbol == "!") os << "!", position = WordStart, capitalize = true;
-	else if (symbol == ";") os << ";", position = WordStart;
-	else if (symbol == ":") os << ":", position = WordStart;
+	/**/ if (symbol == ",") os << ",", *this = {Default};
+	else if (symbol == ".") os << ".", *this = {Default}, capitalize = true;
+	else if (symbol == "?") os << "?", *this = {Default}, capitalize = true;
+	else if (symbol == "!") os << "!", *this = {Default}, capitalize = true;
+	else if (symbol == ";") os << ";", *this = {Default};
+	else if (symbol == ":") os << ":", *this = {Default};
 	// Invisible punctuation
-	else if (symbol == "^") position = WordMiddle;
-	else if (symbol == "&") position = DigitSequence;
+	else if (symbol == "^") position = WordTail;
+	else if (symbol == "&" && position == NumberHead) position = NumberTail;
+	else if (symbol == "&" && position == NumberTail) position = NumberTail;
+	else if (symbol == "&") position = NumberHead;
 	else if (symbol == "-|") capitalize = true;
-
-	beginning = false;
 }
 
 } // namespace steno

@@ -9,7 +9,7 @@ TEST(StenoEnglishCode, Construction) {
 #define SPEECH_SETUP(Langage)                                                  \
     g_oss = {};                                                                \
     auto speech = steno::Speech {g_oss};                                       \
-    auto CaseLanguage = Langage;
+    auto CaseLanguage = Langage
 
 #define PHRASE_EQ(Stream, Result)                                              \
     g_oss = {}, speech = {g_oss, CaseLanguage, steno::Default};                \
@@ -57,6 +57,32 @@ TEST(StenoEnglishPhrase, Punctuation) {
 	PHRASE_EQ("something"<<"like"<<"this"<<"{:}", "something like this:");
 	PHRASE_EQ("this"<<"{:}"<<"though", "this: though");
 	PHRASE_EQ("{:}"<<"Though"<<"I"<<"cannot", ": Though I cannot");
+}
+
+TEST(StenoEnglishPhrase, InvisiblePunctuation) {
+	SPEECH_SETUP(steno::English);
+
+	// Combine
+	PHRASE_EQ("a{^}"<<"gain", "again");
+	PHRASE_EQ("a{^}"<<"gain"<<"{^}st", "against");
+	PHRASE_EQ("1"<<"{^}st", "1st");
+
+	// DigitSequence
+	PHRASE_EQ("{&2}"<<"{&5}"<<"{&1}", "251");
+	PHRASE_EQ("{&25}"<<"{&1}", "251");
+	PHRASE_EQ("{&2}"<<"{&51}", "251");
+	PHRASE_EQ("{&251}", "251");
+	PHRASE_EQ("{&B}"<<"{&4}", "B4");
+	PHRASE_EQ("once"<<"{&B}"<<"{&4}", "once B4");
+	PHRASE_EQ("{&B}"<<"{&4}"<<"us", "B4 us");
+	PHRASE_EQ("{&B}"<<"and"<<"{&4}", "B and 4");
+	PHRASE_EQ("{&4}"<<"holy"<<"name", "4 holy name");
+	PHRASE_EQ("shall"<<"always"<<"{&B}", "shall always B");
+
+	// Capitalize
+	PHRASE_EQ("{-|}"<<"november", "November");
+	PHRASE_EQ("drizzly"<<"{-|}"<<"november", "drizzly November");
+	PHRASE_EQ("{-|}"<<"sabbath"<<"afternoon", "Sabbath afternoon");
 }
 
 #undef SPEECH_SETUP

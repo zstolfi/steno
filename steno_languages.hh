@@ -46,10 +46,9 @@ struct English_Arg {
 		static constexpr auto Language() { return English_Arg {}; };
 
 		enum Position {
-			WordMiddle,
-			WordStart,
-			DigitSequence,
-		} position {WordStart};
+			WordHead, WordTail,
+			NumberHead, NumberTail,
+		} position {WordHead};
 
 		bool beginning {false};
 		bool capitalize {false};

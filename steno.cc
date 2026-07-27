@@ -718,7 +718,6 @@ Speech& operator<<(Speech& speech, Token const& token) {
 	auto modify = [&] <class S> (S& state) {
 		if (auto const* word = token.word()) {
 			state.applyWord(os, *word);
-			state = {Default};
 		}
 		else if (auto const* signal = token.signal()) {
 			if (*signal == NoSignal) /**/;
