@@ -10,7 +10,7 @@
 // 23-key keyboard which is used the same way one would play chords on a piano.
 
 //   Text classes contain the data for sentence fragments and punctuation. They
-// require a context to be manipulated, i.e. which languages rules to follow.
+// require a context to be manipulated, i.e. which language's rules to follow.
 
 //   Language classes contain region-specific rules for orthography. This allows
 // international developers to add in support for their own languages.
@@ -114,6 +114,8 @@ struct Issues : std::vector<T> {
 
 template <class ... Ts>
 struct TypeList {
+	static constexpr std::size_t Size {sizeof ... (Ts)};
+
 	template <template <class> class MetaFunction>
 	using Map = TypeList<MetaFunction<Ts> ... >;
 
@@ -121,9 +123,12 @@ struct TypeList {
 	using In = Container<Ts ... >;
 };
 
-template <auto ...  Vs>
+template <auto ... Vs>
 struct ValueList {
 	using Types = TypeList<decltype(Vs) ... >;
+	static constexpr std::size_t Size {sizeof ... (Vs)};
+
+	static void ForEach( ... ) {/* TODO */}
 };
 
 /* ~~ Key ID's ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -678,6 +683,7 @@ static constexpr auto NoLanguage = NoLanguage_Arg {};
 template <class T>
 constexpr bool IsLanguage(T) { return Language_Arg<T>; }
 
+// TODO: Decide if Languages should be truthy based on if they equal NoLanguage.
 template <Language_Arg L>
 constexpr bool operator==(L, L) { return true; }
 

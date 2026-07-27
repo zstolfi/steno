@@ -1,10 +1,10 @@
 /* ~~ Phrase Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 TEST(StenoEnglishCode, Construction) {
-	auto code = steno::LanguageCode {steno::English};
-	EXPECT_EQ(code.name(), "eng");
-	EXPECT_EQ(code.script(), "Latn");
-	EXPECT_EQ(code.region(), "");
+	auto const Code = steno::English.Identifier;
+	EXPECT_EQ(Code.name(), "eng");
+	EXPECT_EQ(Code.script(), "Latn");
+	EXPECT_EQ(Code.region(), "");
 }
 
 #define SPEECH_SETUP(Langage)                                                  \

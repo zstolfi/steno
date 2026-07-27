@@ -719,18 +719,18 @@ TEST(StenoPhrase, GoodInputString) {
 	EXPECT_NO_ISSUES(p = steno::Phrase {"prefix{^}"});
 	EXPECT_EQ(p.size(), 2);
 	EXPECT_EQ(p[0], steno::Word {"prefix"});
-	EXPECT_EQ(p[1], steno::Signal {steno::Punctuate, "^"});
+	EXPECT_EQ(p[1], (steno::Signal {steno::Punctuate, "^"}));
 
 	EXPECT_NO_ISSUES(p = steno::Phrase {"{^}suffix"});
 	EXPECT_EQ(p.size(), 2);
-	EXPECT_EQ(p[0], steno::Signal {steno::Punctuate, "^"});
+	EXPECT_EQ(p[0], (steno::Signal {steno::Punctuate, "^"}));
 	EXPECT_EQ(p[1], steno::Word {"suffix"});
 
 	EXPECT_NO_ISSUES(p = steno::Phrase {"{^}infix{^}"});
 	EXPECT_EQ(p.size(), 3);
-	EXPECT_EQ(p[0], steno::Signal {steno::Punctuate, "^"});
+	EXPECT_EQ(p[0], (steno::Signal {steno::Punctuate, "^"}));
 	EXPECT_EQ(p[1], steno::Word {"infix"});
-	EXPECT_EQ(p[2], steno::Signal {steno::Punctuate, "^"});
+	EXPECT_EQ(p[2], (steno::Signal {steno::Punctuate, "^"}));
 
 	// Alternate syntax
 	EXPECT_EQ(steno::Phrase {"{prefix^}"}, steno::Phrase {"prefix{^}"});
@@ -779,11 +779,57 @@ TEST(StenoPhrase, BadInputString) {
 	EXPECT_ISSUES(steno::Phrase {"{\\}"});
 }
 
+/* ~~ Language Identification Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+TEST(StenoLanguages, ForEach) {
+	std::size_t total {};
+	steno::Languages::ForEach([&] (steno::Language_Arg auto Language) {
+		total++;
+	});
+	EXPECT_EQ(steno::Languages::Size, total);
+}
+
+TEST(StenoLanguage, IdentifierUniqueness) {
+	std::set<steno::LanguageCode> ids {};
+	steno::Languages::ForEach([&] (auto Language) {
+		ids.insert(Language.Identifier);
+	});
+	EXPECT_EQ(steno::Languages::Size, ids.size());
+}
+
+TEST(StenoLanguages, IdentifierFormat) {
+	steno::Languages::ForEach([&] (auto Language) {
+		std::string_view sv {};
+
+		EXPECT_EQ((sv = Language.Identifier.name()).size(), 3);
+		EXPECT_TRUE('a' <= sv[0] && sv[0] <= 'z');
+		EXPECT_TRUE('a' <= sv[1] && sv[1] <= 'z');
+		EXPECT_TRUE('a' <= sv[2] && sv[2] <= 'z');
+
+		EXPECT_EQ((sv = Language.Identifier.script()).size(), 4);
+		EXPECT_TRUE('A' <= sv[0] && sv[0] <= 'Z');
+		EXPECT_TRUE('a' <= sv[1] && sv[1] <= 'z');
+		EXPECT_TRUE('a' <= sv[2] && sv[2] <= 'z');
+		EXPECT_TRUE('a' <= sv[3] && sv[3] <= 'z');
+
+		EXPECT_EQ((sv = Language.Identifier.region()).size(), 2);
+		EXPECT_TRUE('A' <= sv[0] && sv[0] <= 'Z');
+		EXPECT_TRUE('A' <= sv[1] && sv[1] <= 'Z');
+	});
+}
+
+TEST(StenoLanguages, State) {
+	steno::Languages::ForEach([&] <class L> (L) {
+		using State = L::State;
+		EXPECT_EQ(State {}, State(steno::Default));
+	});
+}
+
 /* ~~ Context Tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 TEST(StenoContext, EmptyConstruction) {
 	steno::Context context {steno::NoLanguage};
-	EXPECT_EQ(context.language(), steno::NoLanguage);
+	EXPECT_EQ(context.languageCode(), steno::NoLanguage.Identifier);
 }
 
 TEST(StenoContext, DefaultConstruction) {
@@ -799,19 +845,15 @@ TEST(StenoContext, LanguageConstruction) {
 
 	// Default context (determined at compile time)
 	c = steno::Context {};
-	EXPECT_EQ(c.language(), steno::DefaultLanguage);
-	EXPECT_EQ(c.languageCode(), steno::LanguageCode {steno::DefaultLanguage});
+	EXPECT_EQ(c.languageCode(), steno::DefaultLanguage.Identifier);
 
 	// Empty context
 	c = steno::Context {steno::NoLanguage};
-	EXPECT_EQ(c.language(), steno::NoLanguage);
-	EXPECT_EQ(c.languageCode().name(), "");
-	EXPECT_EQ(c.languageCode().script(), "");
-	EXPECT_EQ(c.languageCode().region(), "");
+	EXPECT_EQ(c.languageCode(), steno::NoLanguage.Identifier);
 
 	// English context
 	c = steno::Context {steno::English};
-	EXPECT_EQ(c.language(), steno::English);
+	EXPECT_EQ(c.languageCode(), steno::English.Identifier);
 	EXPECT_EQ(c.languageCode().name(), "eng");
 	EXPECT_EQ(c.languageCode().script(), "Latn");
 	EXPECT_EQ(c.languageCode().region(), "");
@@ -821,16 +863,16 @@ TEST(StenoContext, CodeSwitch) {
 	steno::Context c {};
 
 	c = steno::Context {steno::NoLanguage};
-	c.language() = steno::English;
-	EXPECT_EQ(c.language(), steno::English);
+	c.codeSwitch(steno::English);
+	EXPECT_EQ(c.languageCode(), steno::English.Identifier);
 
 	c = steno::Context {steno::English};
-	c.language() = steno::NoLanguage;
-	EXPECT_EQ(c.language(), steno::NoLanguage);
+	c.codeSwitch(steno::NoLanguage);
+	EXPECT_EQ(c.languageCode(), steno::NoLanguage.Identifier);
 
 	c = steno::Context {steno::English};
-	c.language() = steno::English;
-	EXPECT_EQ(c.language(), steno::English);
+	c.codeSwitch(steno::English);
+	EXPECT_EQ(c.languageCode(), steno::English.Identifier);
 }
 
 /* ~~ Supported Languages ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
