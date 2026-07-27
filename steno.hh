@@ -759,10 +759,12 @@ class Speech {
 public:
 	// Constructors
 	Speech(std::ostream& os): Speech{os, DefaultLanguage} {}
-	Speech(std::ostream& os, Language_Arg auto Language)
-	:	m_output{&os}, m_context{Language, Opening} {}
+	Speech(std::ostream& os, auto Language): Speech{os, Language, Opening} {}
+	Speech(std::ostream& os, auto Language, auto StartingState)
+	:	m_output{&os}, m_context{Language, StartingState} {}
 
 	// Getters and Setters
+	Context /* */& context();
 	Context const& context() const;
 
 	friend Speech& operator<<(Speech&, Token const&);
@@ -942,11 +944,11 @@ template <Language_Arg L> Context& Context::codeSwitch(L) {
 }
 
 template <Language_Arg L> L::State /* */* Context::as(L) {
-	return std::get_if<L::State>(&m_state);
+	return std::get_if<typename L::State>(&m_state);
 }
 
 template <Language_Arg L> L::State const* Context::as(L) const {
-	return std::get_if<L::State>(&m_state);
+	return std::get_if<typename L::State>(&m_state);
 }
 
 } // namespace steno

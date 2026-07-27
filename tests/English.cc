@@ -7,14 +7,15 @@ TEST(StenoEnglishCode, Construction) {
 }
 
 #define SPEECH_SETUP(Langage)                                                  \
-	g_oss = {};                                                                \
-	auto speech = steno::Speech {g_oss, Langage};                              \
-	auto language = Langage;
+    g_oss = {};                                                                \
+    auto speech = steno::Speech {g_oss};                                       \
+    auto CaseLanguage = Langage;
 
 #define PHRASE_EQ(Stream, Result)                                              \
-	g_oss = {}, speech = {g_oss, language};                                    \
-	speech << Stream;                                                          \
-	EXPECT_EQ(g_oss.str(), Result)
+    g_oss = {}, speech = {g_oss, CaseLanguage, steno::Default};                \
+    speech.context().as(CaseLanguage)->beginning = true;                       \
+    speech << Stream;                                                          \
+    EXPECT_EQ(g_oss.str(), Result)
 
 TEST(StenoEnglishPhrase, OutputStream) {
 	SPEECH_SETUP(steno::English);
@@ -35,17 +36,17 @@ TEST(StenoEnglishPhrase, Punctuation) {
 	// Period
 	PHRASE_EQ("Ishmael"<<"{.}", "Ishmael.");
 	PHRASE_EQ("Ishmael"<<"{.}"<<"Some", "Ishmael. Some");
-	PHRASE_EQ("{.}"<<"some", ". some");
+	PHRASE_EQ("{.}"<<"some", ". Some");
 
 	// Question mark
 	PHRASE_EQ("how"<<"then"<<"is"<<"this"<<"{?}", "how then is this?");
 	PHRASE_EQ("this"<<"{?}"<<"are", "this? Are");
-	PHRASE_EQ("{?}"<<"are"<<"the"<<"green", "? are the green");
+	PHRASE_EQ("{?}"<<"are"<<"the"<<"green", "? Are the green");
 
 	// Exclamation point
 	PHRASE_EQ("But"<<"look"<<"{!}", "But look!");
 	PHRASE_EQ("look"<<"{!}"<<"here", "look! Here");
-	PHRASE_EQ("{!}"<<"here"<<"come"<<"more", "! here come more");
+	PHRASE_EQ("{!}"<<"here"<<"come"<<"more", "! Here come more");
 
 	// Semicolon
 	PHRASE_EQ("upon"<<"his"<<"sword"<<"{;}", "upon his sword;");

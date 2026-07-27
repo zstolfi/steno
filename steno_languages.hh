@@ -32,22 +32,30 @@ struct English_Arg {
 		Combine, DigitSequence, Capitalize,
 	};
 
+	static constexpr char Uppercase(char c) {
+		if ('a' <= c&&c <= 'z') return c + ('A' - 'a');
+		else return c;
+	}
+
+	static constexpr char Lowercase(char c) {
+		if ('A' <= c&&c <= 'Z') return c + ('a' - 'A');
+		else return c;
+	}
+
 	struct State {
 		static constexpr auto Language() { return English_Arg {}; };
 
 		enum Position {
 			WordMiddle,
 			WordStart,
-			ProperStart,
-			SentenceStart,
-			ParagraphStart,
 			DigitSequence,
 		} position {WordStart};
 
-		bool forceCapitalize {false};
+		bool beginning {false};
+		bool capitalize {false};
 
 		State(Default_Arg={}) {}
-		State(Opening_Arg): position{ParagraphStart} {}
+		State(Opening_Arg): beginning{true}, capitalize{true} {}
 
 		bool operator== (State const&) const = default;
 		auto operator<=>(State const&) const = default;

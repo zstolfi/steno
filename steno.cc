@@ -704,6 +704,10 @@ Context::AnyState const& Context::state() const {
 /* ~~ Speech Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 // Getters and Setters
+Context& Speech::context() {
+	return m_context;
+}
+
 Context const& Speech::context() const {
 	return m_context;
 }
