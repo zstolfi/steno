@@ -1,7 +1,7 @@
 /* ~~ Phrase Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 TEST(StenoEnglishCode, Construction) {
-	auto const Code = steno::English.Identifier;
+	auto const Code = steno::English.Code;
 	EXPECT_EQ(Code.name(), "eng");
 	EXPECT_EQ(Code.script(), "Latn");
 	EXPECT_EQ(Code.region(), "");

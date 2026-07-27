@@ -661,7 +661,7 @@ static constexpr auto NoLanguageCode = LanguageCode {};
 template <class T>
 concept Language_Arg = std::is_empty_v<T> && requires {
 	{ T::Name } -> std::convertible_to<std::string_view>;
-	{ T::Identifier } -> std::convertible_to<LanguageCode>;
+	{ T::Code } -> std::convertible_to<LanguageCode>;
 	requires std::regular<typename T::State>;
 	typename T::State {Default};
 	typename T::State {Opening};
@@ -670,7 +670,7 @@ concept Language_Arg = std::is_empty_v<T> && requires {
 // Bare-bones Language implementation
 struct NoLanguage_Arg {
 	static constexpr std::string_view Name {"(no language)"};
-	static constexpr LanguageCode Identifier {NoLanguageCode};
+	static constexpr LanguageCode Code {NoLanguageCode};
 	struct State {
 		State(Default_Arg={}) {};
 		State(Opening_Arg) {};

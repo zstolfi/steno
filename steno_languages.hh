@@ -13,7 +13,7 @@ namespace steno {
 
 struct English_Arg {
 	static constexpr std::string_view Name {"English"};
-	static constexpr LanguageCode Identifier {"eng", "Latn"};
+	static constexpr LanguageCode Code {"eng", "Latn"};
 
 	// Standard punctuation
 	static constexpr Signal Comma            {Punctuate, ","};
