@@ -730,7 +730,7 @@ Speech& operator<<(Speech& speech, Token const& token) {
 				// Invalidates state reference.
 				applyCodeSwitch(context, data->localeName);
 			}
-			else if (signal->as(SysEx)) /* Do nothing, with style! */;
+			else if (signal->as(SysEx)) {/* Do nothing, with style! */}
 		}
 	};
 

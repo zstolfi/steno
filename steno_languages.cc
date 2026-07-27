@@ -6,7 +6,7 @@ namespace steno {
 void English_Arg::State::applyWord(std::ostream& os, Word word) {
 	if (position == WordStart) os << " ";
 	if (position == SentenceStart) os << " ";
-	if (forceCapitalize) /* TODO */;
+	if (forceCapitalize) {/* TODO */}
 	os << std::string_view {word};
 }
 
