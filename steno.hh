@@ -602,8 +602,8 @@ public:
 	Dictionary& operator=(Dictionary&&/* */) = default;
 
 	// Class constructors
-	// Use parseDictionary() for file type support.
 	Dictionary(std::span<Brief const>);
+	Dictionary(std::istream&, FileType=NoFileType);
 
 	// Comparison
 	bool operator== (Dictionary const&) const = default;
@@ -886,10 +886,6 @@ std::ostream& operator<<(std::ostream&, Brief const&);
 
 // Format as manipulator
 std::ostream& operator<<(std::ostream&, Format);
-
-/* ~~ TEMP ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
-std::optional<Dictionary> parseDictionary(std::istream&, FileType=NoFileType);
 
 /* ~~ Constexpr/Template Definitions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 

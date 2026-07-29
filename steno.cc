@@ -676,6 +676,47 @@ Dictionary::Dictionary(std::span<Brief const> span) {
 	insert(span.begin(), span.end());
 }
 
+Dictionary::Dictionary(std::istream& input, FileType type) {
+	if (type != NoFileType) {
+		// TODO: Figure out how to refactor to remove duplicate code.
+		if (type == Plain) {
+			EntryIterator<Plain> begin {input}, end {};
+			if (begin == end) return;
+			*this = Dictionary {begin, end};
+		}
+		if (type == Json) {
+			EntryIterator<Json> begin {input}, end {};
+			if (begin == end) return;
+			*this = Dictionary {begin, end};
+		}
+		if (type == Rtf) {
+			EntryIterator<Rtf> begin {input}, end {};
+			if (begin == end) return;
+			*this = Dictionary {begin, end};
+		}
+	}
+	// In order to guess the file type we lose the luxury of being able to
+	// iterate our data as it comes in. There's probably an advanced solution
+	// which uses the first 100 or so bytes to determine the winning file type
+	// and processes the (potentially ginormous) rest of the file that way.
+	else {
+		std::istreambuf_iterator<char> begin {input}, end {};
+		std::string entireFile {begin, end};
+		for (auto guess : {Rtf, Json, Plain}) {
+			std::istringstream iss {entireFile};
+			if (auto result = Dictionary {iss, guess}; !result.issues()) {
+				*this = result;
+			}
+		}
+	}
+	// TODO: Let the user know the parse failed by returning something other
+	// than an empty dictionary.
+}
+
+Issues<Brief const*> Dictionary::issues() const {
+	return {/* TODO */};
+}
+
 void Dictionary::clean() {
 	std::erase_if(m_entries, [] (Brief const& b) {
 		return b.issues()
@@ -1060,43 +1101,6 @@ std::ostream& operator<<(std::ostream& os, Format f) {
 	iword &= ~mask(f);
 	iword |= bits(f);
 	return os;
-}
-
-/* ~~ TEMP ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
-std::optional<Dictionary> parseDictionary(std::istream& input, FileType type) {
-	if (type != NoFileType) {
-		if (type == Plain) {
-			EntryIterator<Plain> begin {input}, end {};
-			if (begin == end) return {};
-			return Dictionary {begin, end};
-		}
-		if (type == Json) {
-			EntryIterator<Json> begin {input}, end {};
-			if (begin == end) return {};
-			return Dictionary {begin, end};
-		}
-		if (type == Rtf) {
-			EntryIterator<Rtf> begin {input}, end {};
-			if (begin == end) return {};
-			return Dictionary {begin, end};
-		}
-	}
-	// In order to guess the file type we lose the luxury of being able to
-	// iterate our data as it comes in. There's probably an advanced solution
-	// which uses the first 100 or so bytes to determine the winning file type
-	// and processes the (potentially ginormous) rest of the file that way.
-	else {
-		std::istreambuf_iterator<char> begin {input}, end {};
-		std::string entireFile {begin, end};
-		for (auto guess : {Rtf, Json, Plain}) {
-			std::istringstream iss {entireFile};
-			if (auto result = parseDictionary(iss, guess)) {
-				return result;
-			}
-		}
-	}
-	return {};
 }
 
 /* ~~ Misc. STL Functionality ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
