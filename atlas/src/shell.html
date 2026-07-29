@@ -31,7 +31,7 @@
 	<canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
 	<script type='text/javascript'>
 		var printCreationDate = () => {
-			if (location.hostname == "localhost") console.log(`COMPILED: ${document.lastModified}`)
+			if (location.hostname.match(/^localhost$|^.+\.local$/)) console.log(`COMPILED: ${document.lastModified}`)
 			else fetch("https://api.github.com/repos/zstolfi/steno/commits/main")
 			.	then(response => response.json())
 			.	then(json => {
