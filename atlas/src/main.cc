@@ -2,7 +2,6 @@
 #include "window.hh"
 #include "canvas.hh"
 #include "atlas.hh"
-#include "steno_parsers.hh"
 #include <istream>
 #include <fstream>
 #include <iterator>
@@ -19,9 +18,9 @@ struct Dictionary {
 
 	Dictionary(std::istream& input, std::string name, steno::FileType type)
 	: name{name} {
-		if (auto result = steno::parseDictionary(input, type)) {
-			this->entries = *result;
-			std::printf("%zu entries parsed.\n", result->size());
+		if (steno::Dictionary result {input, type}; !result.issues()) {
+			this->entries = result;
+			std::printf("%zu entries parsed.\n", result.size());
 		}
 		else { std::printf("Parse failed for %s\n", name.c_str()); return; }
 		std::printf("Generating atlas...\n");

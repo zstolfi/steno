@@ -432,12 +432,16 @@ class Phrase : public std::vector<Token> {
 public:
 	// Parse steno string
 	Phrase(std::string_view="");
+	Phrase(std::string str): Phrase{std::string_view {str}} {}
 	template <std::size_t N> Phrase(char const (& str)[N])
 	:	Phrase{std::string_view {str}} {}
 
 	// Construct from Token sequence
 	template <std::input_iterator I> Phrase(I first, I last)
 	:	std::vector<Token>{first, last} {}
+
+	// Getters
+	std::string string() const;
 
 	// Comparison
 	bool operator== (Phrase const&) const = default;
@@ -448,6 +452,7 @@ public:
 	Phrase& operator+=(Token);
 	friend Phrase operator+(Phrase, Token);
 	friend Phrase operator+(Token, Phrase);
+	friend Phrase operator+(Phrase, Phrase);
 	// Disambiguate string literals, prefer Phrases
 	template <std::size_t N>
 	Phrase& operator+=(char const (& str)[N]) { return *this += Phrase {str}; }
@@ -457,6 +462,23 @@ public:
 	operator bool() const;
 };
 static auto const NoPhrase = Phrase {};
+
+template <std::size_t N>
+Phrase operator+(Phrase p, char const (& str)[N]) {
+	for (auto token : Phrase {str}) {
+		p.push_back(token);
+	}
+	return p;
+}
+
+template <std::size_t N>
+Phrase operator+(char const (& str)[N], Phrase p) {
+	Phrase result {str};
+	for (auto token : p) {
+		result.push_back(token);
+	}
+	return result;
+}
 
 /* ~~ Brief Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -478,8 +500,8 @@ public:
 	Brief(Brief const&, Phrase);
 
 	// Getters and Setters
-	StrokeList /* */& strokes();
-	StrokeList const& strokes() const;
+	StrokeList /* */& strokeList();
+	StrokeList const& strokeList() const;
 	Phrase /* */& phrase();
 	Phrase const& phrase() const;
 	template <std::size_t I> friend auto&& get(Brief&);
@@ -812,6 +834,7 @@ public:
 	Context /* */& context();
 	Context const& context() const;
 
+	friend Speech& operator<<(Speech&, Word const&);
 	friend Speech& operator<<(Speech&, Token const&);
 	friend Speech& operator<<(Speech&, Phrase const&);
 };

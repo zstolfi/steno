@@ -37,7 +37,7 @@ Stroke const N_Start[20] = {
 };
 
 Stroke const N_Tens[10] = {
-	/*0~*/ And.phrase()[0],
+	/*0~*/ And.strokeList()[0],
 	/*1~*/ NoStroke,
 	/*2~*/ {" T PW    -            "},
 	/*3~*/ {" T   HR  -            "},
@@ -84,12 +84,13 @@ int main() {
 
 	for (int x : Fib) {
 		std::cout << steno::Wide;
-		std::cout << "|" << Num(x).phrase() << "| == " << Num(x).text() << "\n";
+		std::cout << "|" << Num(x).strokeList() << "| == ";
+		std::cout << Num(x).phrase() << "\n";
 	}
 
 	Dictionary numbers {};
 	for (int x=0; x<=999; x++) numbers.insert(Num(x));
 //	for (auto const& entry : numbers) {
-//		std::cout << entry.phrase() << "  =  " << entry.text() << "\n";
+//		std::cout << entry.strokeList() << "  =  " << entry.phrase() << "\n";
 //	}
 }

@@ -64,10 +64,10 @@ auto hilbert_inv(std::array<unsigned, 2> pos) -> unsigned {
 struct Mapping {
 	virtual std::string name() const = 0;
 	virtual std::array<unsigned, 2> size() const = 0;
-	virtual bool displayable(steno::Phrase) const = 0;
+	virtual bool displayable(steno::StrokeList) const = 0;
 	virtual char summary(std::string) const = 0;
-	virtual std::array<unsigned, 2> toPosition(steno::Phrase) const = 0;
-	virtual steno::Phrase toPhrase(std::array<unsigned, 2>) const = 0;
+	virtual std::array<unsigned, 2> toPosition(steno::StrokeList) const = 0;
+	virtual steno::StrokeList toStrokeList(std::array<unsigned, 2>) const = 0;
 };
 
 template <bool BitOrder>
@@ -80,11 +80,11 @@ struct HilbertMap final : Mapping {
 		return {2048, 2048};
 	}
 
-	bool displayable(steno::Phrase phrase) const {
-		if (phrase.size() != 1) return false;
-		// Ignore number bar phrase ... for now.
+	bool displayable(steno::StrokeList strokeList) const {
+		if (strokeList.size() != 1) return false;
+		// Ignore number bar strokeList ... for now.
 		steno::Stroke const Allowed {"STKPWHRAO*EUFRPBLGTSDZ"};
-		steno::Stroke const first {phrase[0]};
+		steno::Stroke const first {strokeList[0]};
 		return (first & Allowed) == first;
 	}
 
@@ -93,12 +93,12 @@ struct HilbertMap final : Mapping {
 		return BitOrder? text.front(): text.back();
 	}
 
-	std::array<unsigned, 2> toPosition(steno::Phrase phrase) const {
-		auto bitValue = customBitOrdering(phrase[0]);
+	std::array<unsigned, 2> toPosition(steno::StrokeList strokeList) const {
+		auto bitValue = customBitOrdering(strokeList[0]);
 		return math::hilbert(bitValue);
 	}
 
-	steno::Phrase toPhrase(std::array<unsigned, 2> position) const {
+	steno::StrokeList toStrokeList(std::array<unsigned, 2> position) const {
 		return customBitOrdering_inv(math::hilbert_inv(position));
 	}
 
@@ -121,14 +121,15 @@ class Atlas {
 		unsigned count = 0;
 
 		View() = default;
-		View(steno::Dictionary dict, Mapping* m): mapping{m}, image{EmptyImage()} {
+		View(steno::Dictionary dict, Mapping* m)
+		: mapping{m}, image{EmptyImage()} {
 			std::for_each(dict.begin(), dict.end(), [this] (auto entry) {
-				auto const& [phrase, text] = entry;
-				if (!mapping->displayable(phrase)) return;
-				auto [posX, posY] = mapping->toPosition(phrase);
+				auto const& [strokeList, phrase] = entry;
+				if (!mapping->displayable(strokeList)) return;
+				auto [posX, posY] = mapping->toPosition(strokeList);
 
 				std::array<uint8_t, 3> rgb {255, 255, 255};
-				if (char const c = mapping->summary(text)) {
+				if (char const c = mapping->summary(phrase.string())) {
 					if ('a' <= c&&c <= 'z') rgb = hues[c - 'a'];
 					if ('A' <= c&&c <= 'Z') rgb = hues[c - 'A'];
 				}

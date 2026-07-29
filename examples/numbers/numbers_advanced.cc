@@ -35,7 +35,7 @@ Stroke const N_Start[20] = {
 };
 
 Stroke const N_Tens[10] = {
-	/*0~*/ And.phrase()[0],
+	/*0~*/ And.strokeList()[0],
 	/*1~*/ NoStroke,
 	/*2~*/ {" T PW    -            "},
 	/*3~*/ {" T   HR  -            "},
@@ -84,12 +84,12 @@ int main() {
 //		if (x <= 999) numbers.insert(Num(x));
 		if ((1 <= h&&h <= 12) && (0 <= m&&m <= 59)) {
 			Brief time = Num(h) | Num(m, true);
-			time.phrase()[1].set(Key::x);
-			time.text() = std::format("{}:{:0>2}", h, m);
+			time.strokeList()[1].set(Key::x);
+			time.phrase() = std::format("{}:{:0>2}", h, m);
 			numbers.insert(time);
 		}
 	}
 	for (auto const& entry : numbers) {
-		std::cout << entry.phrase() << "  =  " << entry.text() << "\n";
+		std::cout << entry.strokeList() << "  =  " << entry.phrase() << "\n";
 	}
 }

@@ -10,78 +10,82 @@ int main() {
 
 	/* ~~ The Platonic Solids ~~ */
 	// https://www.youtube.com/watch?v=5xD7ndQPcg4
-	dict[steno::Phrase {"PHRO*PBG"}] = "Platonic";
-	dict[steno::Phrase {"POEUL"} | _hedron] = "polyhedron";
-	dict[steno::Phrase {"TET"} | _hedron] = "tetrahedron";
-	dict[steno::Phrase {"OBGT"} | _hedron] = "octahedron";
-	dict[steno::Phrase {"K*UB"}] = "cube";
-	dict[steno::Phrase {"AOEUBGS"} | _hedron] = "icosahedron";
-	dict[steno::Phrase {"TKOEBGD"} | _hedron] = "dodecahedron";
+	dict[steno::StrokeList {"PHRO*PBG"}] = "Platonic";
+	dict[steno::StrokeList {"POEUL"} | _hedron] = "polyhedron";
+	dict[steno::StrokeList {"TET"} | _hedron] = "tetrahedron";
+	dict[steno::StrokeList {"OBGT"} | _hedron] = "octahedron";
+	dict[steno::StrokeList {"K*UB"}] = "cube";
+	dict[steno::StrokeList {"AOEUBGS"} | _hedron] = "icosahedron";
+	dict[steno::StrokeList {"TKOEBGD"} | _hedron] = "dodecahedron";
 
 	/* ~~ The Archimedean Solids ~~ */
 	// https://www.youtube.com/watch?v=_It-7VJH6n4
-	dict[steno::Phrase {"ARBG/PHAOED"}] = "Archimedean";
-	dict[steno::Phrase {"TRUPBT"}] = "truncate"; // verb
-	dict[steno::Phrase {"TRUPBGS"}] = "truncation"; // noun
-	dict[steno::Phrase {"STPHUB"}] = "snub";
-	dict[steno::Phrase {"K*UB/OBGT"} | _hedron] = "cuboctahedron";
-	dict[steno::Phrase {"RAUPLS"}] = "rhombus"; // noun (irregular plural)
-	dict[steno::Phrase {"RAUPL"}] = "rhombi";
-	dict[steno::Phrase {"RAUPL/K*UB/OBGT"} | _hedron] = "rhombicuboctahedron";
-	dict[steno::Phrase {"AOEUBGS/TKOEBGD"} | _hedron] = "icosidodecahedron";
+	dict[steno::StrokeList {"ARBG/PHAOED"}] = "Archimedean";
+	dict[steno::StrokeList {"TRUPBT"}] = "truncate"; // verb
+	dict[steno::StrokeList {"TRUPBGS"}] = "truncation"; // noun
+	dict[steno::StrokeList {"STPHUB"}] = "snub";
+	dict[steno::StrokeList {"K*UB/OBGT"} | _hedron] = "cuboctahedron";
+	dict[steno::StrokeList {"RAUPLS"}] = "rhombus"; // noun (irregular plural)
+	dict[steno::StrokeList {"RAUPL"}] = "rhombi";
+	dict[steno::StrokeList {"RAUPL/K*UB/OBGT"} | _hedron] = "rhombicuboctahedron";
+	dict[steno::StrokeList {"AOEUBGS/TKOEBGD"} | _hedron] = "icosidodecahedron";
 
 	/* ~~ Prisms and Antiprisms ~~ */
 	// https://www.youtube.com/watch?v=01fSnAs0q0Q
-	dict[steno::Phrase {"PREUFPL"}] = "prism";
-	dict[steno::Phrase {"AEPBT/PREUFPL"}] = "antiprism";
-	dict[steno::Phrase {"TK*EU"} | _hedron] = "dihedron";
-	dict[steno::Phrase {"SPAPBD"}] = "expand"; // verb
-	dict[steno::Phrase {"RA*UPL"}] = "{rhombi^}";
+	dict[steno::StrokeList {"PREUFPL"}] = "prism";
+	dict[steno::StrokeList {"AEPBT/PREUFPL"}] = "antiprism";
+	dict[steno::StrokeList {"TK*EU"} | _hedron] = "dihedron";
+	dict[steno::StrokeList {"SPAPBD"}] = "expand"; // verb
+	dict[steno::StrokeList {"RA*UPL"}] = "{rhombi^}";
 
 	/* ~~ Dihedra, Hosohedra and Spherical Polyhedra ~~ */
 	// https://www.youtube.com/watch?v=n7rqeRkqsU4
-	dict[steno::Phrase {"TKAOEPBLGT"}] = "degenerate"; // adjective
-	dict[steno::Phrase {"HOS"} | _hedron] = "hosohedron";
+	dict[steno::StrokeList {"TKAOEPBLGT"}] = "degenerate"; // adjective
+	dict[steno::StrokeList {"HOS"} | _hedron] = "hosohedron";
 
 	auto inflections = steno::Dictionary {};
 	// -HEDRON words
-	for (auto const& entry : dict) if (entry.phrase().back() == _hedron) {
+	for (auto const& entry : dict) if (entry.strokeList().back() == _hedron) {
 		// -HEDRON -> -HEDRA
 		{
-			auto [phrase, text] = entry;
-			phrase.pop_back();
-			phrase.push_back(_hedra);
-			text = text.substr(0, text.find("hedron")) + "hedra";
-			inflections[phrase] = text;
+			auto [strokeList, phrase] = entry;
+			strokeList.pop_back();
+			strokeList.push_back(_hedra);
+			auto const str = phrase.string();
+			phrase = str.substr(0, str.find("hedron")) + "hedra";
+			inflections[strokeList] = phrase;
 		}
 		// -HEDRON -> -HEDRA (2 strokes)
 		{
-			auto [phrase, text] = entry;
-			phrase.push_back(steno::Stroke {"RA"});
-			text = text.substr(0, text.find("hedron")) + "hedra";
-			inflections[phrase] = text;
+			auto [strokeList, phrase] = entry;
+			strokeList.push_back(steno::Stroke {"RA"});
+			auto const str = phrase.string();
+			phrase = str.substr(0, str.find("hedron")) + "hedra";
+			inflections[strokeList] = phrase;
 		}
 		// -HEDRON -> -HEDRONS
 		{
-			auto [phrase, text] = entry;
-			phrase.back() += steno::Key::_Z;
-			text += "s";
-			inflections[phrase] = text;
+			auto [strokeList, phrase] = entry;
+			strokeList.back() += steno::Key::_Z;
+			phrase += "s";
+			inflections[strokeList] = phrase;
 		}
 		// -HEDRON -> -HEDRAL
 		{
-			auto [phrase, text] = entry;
-			phrase.pop_back();
-			phrase.push_back(_hedral);
-			text = text.substr(0, text.find("hedron")) + "hedral";
-			inflections[phrase] = text;
+			auto [strokeList, phrase] = entry;
+			strokeList.pop_back();
+			strokeList.push_back(_hedral);
+			auto const str = phrase.string();
+			phrase = str.substr(0, str.find("hedron")) + "hedral";
+			inflections[strokeList] = phrase;
 		}
 		// -HEDRON -> -HEDRAL (2 strokes)
 		{
-			auto [phrase, text] = entry;
-			phrase.push_back(steno::Stroke {"RAL"});
-			text = text.substr(0, text.find("hedron")) + "hedral";
-			inflections[phrase] = text;
+			auto [strokeList, phrase] = entry;
+			strokeList.push_back(steno::Stroke {"RAL"});
+			auto const str = phrase.string();
+			phrase = str.substr(0, str.find("hedron")) + "hedral";
+			inflections[strokeList] = phrase;
 		}
 	}
 	dict.merge(std::move(inflections));
@@ -93,23 +97,23 @@ int main() {
 		dict[steno::Stroke {"TRUPBGT"}] = "truncating";
 		dict[steno::Stroke {"TRUPBTS"}] = "truncates";
 
-		dict[steno::Phrase {"SPAPBTD"}] = "expanded";
-		dict[steno::Phrase {"SPAPBGD"}] = "expanding";
-		dict[steno::Phrase {"SPAPBDZ"}] = "expands";
+		dict[steno::StrokeList {"SPAPBTD"}] = "expanded";
+		dict[steno::StrokeList {"SPAPBGD"}] = "expanding";
+		dict[steno::StrokeList {"SPAPBDZ"}] = "expands";
 
 		// Noun entries
 		dict[steno::Stroke {"TRUPBGSZ"}] = "truncations";
-		dict[steno::Phrase {"RAUPLSZ"}] = "rhombuses";
+		dict[steno::StrokeList {"RAUPLSZ"}] = "rhombuses";
 	}
 
 	// THE- entries
 	inflections.clear();
 	for (auto const& entry : dict) {
 		{
-			auto [phrase, text] = entry;
-			phrase.front() += steno::Key::Num;
-			text = "the " + text;
-			inflections[phrase] = text;
+			auto [strokeList, phrase] = entry;
+			strokeList.front() += steno::Key::Num;
+			phrase = "the " + phrase;
+			inflections[strokeList] = phrase;
 		}
 		// Special rules for adding "the" before certain letters
 		auto const LeftMask = steno::Stroke {"STKPWHR-"};
@@ -122,13 +126,13 @@ int main() {
 			{{"     HR-"}, {" T   HR-"}},
 		};
 		{
-			auto [phrase, text] = entry;
-			auto const newLeft = AddThe.find(phrase.front() & LeftMask);
+			auto [strokeList, phrase] = entry;
+			auto const newLeft = AddThe.find(strokeList.front() & LeftMask);
 			if (newLeft != AddThe.end()) {
-				phrase.front() -= LeftMask;
-				phrase.front() += newLeft->second;
-				text = "the " + text;
-				inflections[phrase] = text;
+				strokeList.front() -= LeftMask;
+				strokeList.front() += newLeft->second;
+				phrase = "the " + phrase;
+				inflections[strokeList] = phrase;
 			}
 		}
 	}

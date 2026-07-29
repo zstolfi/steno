@@ -881,25 +881,25 @@ TEST(StenoContext, CodeSwitch) {
 
 TEST(StenoBrief, Construction) {
 	steno::Brief apple1 {{"AP/EL"}, "apple"};
-	EXPECT_EQ(apple1.strokes(), steno::StrokeList {"AP/EL"});
+	EXPECT_EQ(apple1.strokeList(), steno::StrokeList {"AP/EL"});
 	EXPECT_EQ(apple1.phrase(), "apple");
 
 	steno::Brief apple2 {apple1, "Apple ]["};
-	EXPECT_EQ(apple2.strokes(), steno::StrokeList {"AP/EL"});
+	EXPECT_EQ(apple2.strokeList(), steno::StrokeList {"AP/EL"});
 	EXPECT_EQ(apple2.phrase(), "Apple ][");
 }
 
 TEST(StenoBrief, Getters) {
 	steno::Brief brief {{"1/2"}, "one{,}two"};
-	EXPECT_EQ(brief.strokes(), steno::StrokeList {"1/2"});
+	EXPECT_EQ(brief.strokeList(), steno::StrokeList {"1/2"});
 	EXPECT_EQ(brief.phrase().size(), 3);
 	EXPECT_EQ(brief.phrase()[0], steno::Word {"one"});
 	EXPECT_EQ(brief.phrase()[1], (steno::Signal {steno::Punctuate, ","}));
 	EXPECT_EQ(brief.phrase()[2], steno::Word {"two"});
 
-	brief.strokes() |= steno::Stroke {"3"};
+	brief.strokeList() |= steno::Stroke {"3"};
 	brief.phrase() += "{,}three";
-	EXPECT_EQ(brief.strokes(), steno::StrokeList {"1/2/3"});
+	EXPECT_EQ(brief.strokeList(), steno::StrokeList {"1/2/3"});
 	EXPECT_EQ(brief.phrase().size(), 5);
 	EXPECT_EQ(brief.phrase()[0], steno::Word {"one"});
 	EXPECT_EQ(brief.phrase()[1], (steno::Signal {steno::Punctuate, ","}));
@@ -908,7 +908,7 @@ TEST(StenoBrief, Getters) {
 	EXPECT_EQ(brief.phrase()[4], steno::Word {"three"});
 
 	brief |= steno::Brief {{"4"}, "{,}four"};
-	EXPECT_EQ(brief.strokes(), steno::StrokeList {"1/2/3/4"});
+	EXPECT_EQ(brief.strokeList(), steno::StrokeList {"1/2/3/4"});
 	EXPECT_EQ(brief.phrase().size(), 7);
 	EXPECT_EQ(brief.phrase()[0], steno::Word {"one"});
 	EXPECT_EQ(brief.phrase()[1], (steno::Signal {steno::Punctuate, ","}));
@@ -920,8 +920,8 @@ TEST(StenoBrief, Getters) {
 
 	using enum steno::Key;
 	steno::Brief const ab {{"A/-B"}, "\tayy bee\t"};
-	EXPECT_TRUE(ab.strokes()[0][A]);
-	EXPECT_TRUE(ab.strokes()[1][_B]);
+	EXPECT_TRUE(ab.strokeList()[0][A]);
+	EXPECT_TRUE(ab.strokeList()[1][_B]);
 	EXPECT_EQ(ab.phrase().size(), 2);
 	EXPECT_EQ(ab.phrase()[0], steno::Word {"ayy"});
 	EXPECT_EQ(ab.phrase()[1], steno::Word {"bee"});
@@ -929,13 +929,13 @@ TEST(StenoBrief, Getters) {
 
 TEST(StenoBrief, StructuredBinding) {
 	steno::Brief brief {{"AP/EL"}, "apple"};
-	  [[maybe_unused]] auto        [strokes, phrase] = brief;
-	{ [[maybe_unused]] auto      & [strokes, phrase] = brief; }
-	{ [[maybe_unused]] auto const  [strokes, phrase] = brief; }
-	{ [[maybe_unused]] auto const& [strokes, phrase] = brief; }
-	EXPECT_EQ(strokes.size(), 2);
-	EXPECT_EQ(strokes[0], steno::Stroke {"AP"});
-	EXPECT_EQ(strokes[1], steno::Stroke {"EL"});
+	  [[maybe_unused]] auto        [strokeList, phrase] = brief;
+	{ [[maybe_unused]] auto      & [strokeList, phrase] = brief; }
+	{ [[maybe_unused]] auto const  [strokeList, phrase] = brief; }
+	{ [[maybe_unused]] auto const& [strokeList, phrase] = brief; }
+	EXPECT_EQ(strokeList.size(), 2);
+	EXPECT_EQ(strokeList[0], steno::Stroke {"AP"});
+	EXPECT_EQ(strokeList[1], steno::Stroke {"EL"});
 	EXPECT_EQ(phrase, "apple");
 }
 
@@ -986,7 +986,7 @@ TEST(StenoDictionary, StrokeListAccess) {
 	EXPECT_EQ(dict[newKey], steno::NoPhrase);
 	dict.clean();
 	EXPECT_FALSE(dict.contains(newKey));
-	for (steno::Brief b : dict) EXPECT_NE(b.strokes(), newKey);
+	for (steno::Brief b : dict) EXPECT_NE(b.strokeList(), newKey);
 
 	dict[newKey] = "new value";
 	EXPECT_TRUE(dict.contains(newKey));
@@ -1154,8 +1154,8 @@ TEST(StenoDictionary, AssociativeExpressions) {
 	}
 	// Map specific
 	a = b;
-	EXPECT_EXPRESSION(a.at(a.begin()->strokes()), X::mapped_type&);
-	EXPECT_EXPRESSION(b.at(b.begin()->strokes()), X::mapped_type const&);
+	EXPECT_EXPRESSION(a.at(a.begin()->strokeList()), X::mapped_type&);
+	EXPECT_EXPRESSION(b.at(b.begin()->strokeList()), X::mapped_type const&);
 	EXPECT_THROW(std::ignore = a.at(steno::NoStroke), std::out_of_range);
 	EXPECT_THROW(std::ignore = b.at(steno::NoStroke), std::out_of_range);
 }

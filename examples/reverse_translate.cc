@@ -1,5 +1,4 @@
 #include "steno.hh"
-#include "steno_parsers.hh"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -11,7 +10,7 @@
 #include <format>
 #include <cctype>
 
-std::vector<std::string> lex(std::string input) {
+std::vector<steno::Phrase> lex(std::string input) {
 	std::regex const pattern {R"([A-Za-z]+|[^\s])"};
 	using Iter = std::regex_iterator<std::string::iterator>;
 	Iter begin {input.begin(), input.end(), pattern}, end {};
@@ -19,7 +18,7 @@ std::vector<std::string> lex(std::string input) {
 	std::set<char> const sentenceEnders = {'.', '?', '!'};
 	bool sentenceStart = true;
 
-	std::vector<std::string> result {};
+	std::vector<steno::Phrase> result {};
 	for (auto it=begin; it!=end; ++it) {
 		auto morpheme = it->str();
 		char& first = morpheme.front();
@@ -35,30 +34,30 @@ std::vector<std::string> lex(std::string input) {
 	return result;
 }
 
-std::vector<std::string> lex(std::istream& input) {
+std::vector<steno::Phrase> lex(std::istream& input) {
 	using Iter = std::istreambuf_iterator<char>;
 	Iter begin {input}, end {};
 	return lex(std::string {begin, end});
 }
 
 class ReverseDictionary {
-	std::multimap<std::string, steno::Phrase> map {};
+	std::multimap<steno::Phrase, steno::StrokeList> map {};
 
 public:
 	ReverseDictionary(steno::Dictionary const& d) {
-		for (auto const& [phrase, text] : d) {
-			auto [lower, upper] = map.equal_range(text);
+		for (auto const& [strokeList, phrase] : d) {
+			auto [lower, upper] = map.equal_range(phrase);
 			bool seen = false;
 			for (auto it=lower; it!=upper; ++it) {
-				if (it->second == phrase) { seen = true; break; }
+				if (it->second == strokeList) { seen = true; break; }
 			}
-			if (!seen) map.insert({text, phrase});
+			if (!seen) map.insert({phrase, strokeList});
 		}
 	}
 
-	std::vector<steno::Brief> find(std::string text) const {
+	std::vector<steno::Brief> find(steno::Phrase phrase) const {
 		std::vector<steno::Brief> result {};
-		auto [lower, upper] = map.equal_range(text);
+		auto [lower, upper] = map.equal_range(phrase);
 		for (auto it=lower; it!=upper; ++it) {
 			result.emplace_back(it->second, it->first);
 		}
@@ -78,7 +77,7 @@ void reverseTranslate(
 	for (auto word : lex(input)) {
 		auto options = dict.find(word);
 		if (!options.empty()) {
-			output << best(options).phrase() << "\n";
+			output << best(options).strokeList() << "\n";
 		}
 		else output << word << "\n";
 	}
@@ -90,8 +89,8 @@ int main(int argc, char const* argv[]) {
 	steno::Dictionary forwardDictionary {};
 	for (std::string path : args) {
 		if (std::ifstream file {path}) {
-			if (auto result = steno::parseDictionary(file)) {
-				for (auto const& entry : *result) {
+			if (steno::Dictionary result {file}; !result.issues()) {
+				for (auto const& entry : result) {
 					forwardDictionary.insert(entry);
 				}
 			}

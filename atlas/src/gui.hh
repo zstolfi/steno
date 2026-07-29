@@ -100,15 +100,15 @@
 //				auto const flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter;
 //				if (ImGui::BeginTable("Entries", 2, flags, ImVec2 {400, 160})) {
 //					int const limit = 1'000;
-//					for (int i=0; auto const& [strokes, text] : dict->entries) {
-//						if (strokes.size() != 1) continue;
-//						if (strokes[0][steno::Key::Num]) continue;
+//					for (int i=0; auto const& [strokeList, phrase] : dict->entries) {
+//						if (strokeList.size() != 1) continue;
+//						if (strokeList[0][steno::Key::Num]) continue;
 //						if (i++ == limit) break;
 //						ImGui::TableNextRow();
 //						ImGui::TableSetColumnIndex(0);
-//						ImGui::Text("%s", toString(strokes).c_str());
+//						ImGui::Text("%s", toString(strokeList).c_str());
 //						ImGui::TableSetColumnIndex(1);
-//						ImGui::Text("%s", text.c_str());
+//						ImGui::Text("%s", phrase.c_str());
 //					}
 //					ImGui::EndTable();
 //				}
@@ -149,12 +149,12 @@
 					});
 					if (atlasPos) {
 						auto [x, y] = *atlasPos;
-						steno::Stroke stroke = dict->atlas.getMapping()->toPhrase({x, y})[0];
+						steno::Stroke stroke = dict->atlas.getMapping()->toStrokeList({x, y})[0];
 						auto const entry = dict->entries.find(stroke);
 						auto const NoEntry = dict->entries.end();
 						if (entry != NoEntry || ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
 							ImGui::BeginTooltip();
-							if (entry != NoEntry) ImGui::Text("%s", entry->text().c_str());
+							if (entry != NoEntry) ImGui::Text("%s", entry->phrase().string().c_str());
 							drawStenotype(stroke);
 							ImGui::Text("%s", steno::toString(stroke, steno::Wide).c_str());
 							ImGui::Text("%u, %u", x, y);

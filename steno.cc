@@ -292,6 +292,11 @@ Signal const* Token::signal() const {
 
 /* ~~ Phrase Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+// Getters
+std::string Phrase::string() const {
+	return toString(*this);
+}
+
 namespace /* detail */ {
 
 void warn( ... ) {/* TODO */}
@@ -408,6 +413,11 @@ Phrase operator+(Token t, Phrase p) {
 	return p;
 }
 
+Phrase operator+(Phrase p1, Phrase p2) {
+	for (auto token : p2) p1 += token;
+	return p1;
+}
+
 // Fail-state query
 Issues<Token*> Phrase::issues() const {
 	return {/* TODO */};
@@ -427,11 +437,11 @@ Brief::Brief(Brief const& b, Phrase s)
 : m_strokeList{b.m_strokeList}, m_phrase{s} { normalize(); }
 
 // Getters and Setters
-StrokeList& Brief::strokes() {
+StrokeList& Brief::strokeList() {
 	return m_strokeList;
 }
 
-StrokeList const& Brief::strokes() const {
+StrokeList const& Brief::strokeList() const {
 	return m_strokeList;
 }
 
@@ -667,7 +677,7 @@ void EntryIterator<Rtf>::next() {
 namespace /*detail*/ {
 	constexpr struct {
 		bool operator()(Brief const& a, Brief const& b) const {
-			return a.strokes() < b.strokes();
+			return a.strokeList() < b.strokeList();
 		}
 	} EntryCompare {};
 }
@@ -720,7 +730,7 @@ Issues<Brief const*> Dictionary::issues() const {
 void Dictionary::clean() {
 	std::erase_if(m_entries, [] (Brief const& b) {
 		return b.issues()
-		||     b.strokes() == NoStrokeList
+		||     b.strokeList() == NoStrokeList
 		||     b.phrase() == NoPhrase;
 	});
 }
@@ -731,7 +741,7 @@ Dictionary::iterator Dictionary::insert(Brief const& b) {
 	// Efficiently find our sorted position
 	auto position = std::lower_bound(begin(), end(), b, EntryCompare);
 	// Our entry doesn't already exist
-	if (position == end() || position->strokes() != b.strokes()) {
+	if (position == end() || position->strokeList() != b.strokeList()) {
 		// Insert our entry sorted
 		return m_entries.insert(position, b);
 	}
@@ -779,13 +789,13 @@ bool Dictionary::contains(StrokeList const& p) const {
 
 Dictionary::iterator Dictionary::find(StrokeList const& p) {
 	auto it = std::lower_bound(begin(), end(), Brief {p, ""}, EntryCompare);
-	if (it == end() || it->strokes() != p) return end();
+	if (it == end() || it->strokeList() != p) return end();
 	else return it;
 }
 
 Dictionary::const_iterator Dictionary::find(StrokeList const& p) const {
 	auto it = std::lower_bound(begin(), end(), Brief {p, ""}, EntryCompare);
-	if (it == end() || it->strokes() != p) return end();
+	if (it == end() || it->strokeList() != p) return end();
 	else return it;
 }
 
@@ -912,6 +922,11 @@ Context& Speech::context() {
 
 Context const& Speech::context() const {
 	return m_context;
+}
+
+Speech& operator<<(Speech& speech, Word const& word) {
+	speech << Token {word};
+	return speech;
 }
 
 Speech& operator<<(Speech& speech, Token const& token) {
@@ -1065,7 +1080,7 @@ std::string toString(Phrase const& p) {
 }
 
 std::string toString(Brief const& b, Format format) {
-	return toString(b.strokes(), format) + ", " + toString(b.phrase());
+	return toString(b.strokeList(), format) + ", " + toString(b.phrase());
 }
 
 std::ostream& operator<<(std::ostream& os, Stroke s) {
