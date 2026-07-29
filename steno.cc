@@ -344,6 +344,7 @@ Phrase::Phrase(std::string_view str) {
 			if (prefix == "&") push_back(Signal {Punctuate, "&"});
 			for (auto word : split(inside, ' ')) push_back(Word {word});
 			if (suffix == "^") push_back(Signal {Punctuate, "^"});
+			if (prefix == "&") push_back(Signal {Punctuate, "!&"});
 		}
 		buffer.clear();
 	};

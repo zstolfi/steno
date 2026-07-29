@@ -25,6 +25,7 @@ struct English_Arg {
 	// Invisible punctuation
 	static constexpr Signal Combine          {Punctuate, "^"};
 	static constexpr Signal DigitSequence    {Punctuate, "&"};
+	static constexpr Signal DigitSequenceEnd {Punctuate, "!&"};
 	static constexpr Signal Capitalize       {Punctuate, "-|"};
 
 	static constexpr std::array Punctuation {
@@ -47,7 +48,7 @@ struct English_Arg {
 
 		enum Position {
 			WordHead, WordTail,
-			NumberHead, NumberTail,
+			NumberHead, NumberTail, NumberEnd,
 		} position {WordHead};
 
 		bool beginning {false};

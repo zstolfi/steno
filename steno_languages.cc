@@ -4,6 +4,8 @@
 namespace steno {
 
 void English_Arg::State::applyWord(std::ostream& os, Word word) {
+	if (position == NumberEnd) position = WordHead;
+
 	bool const withSpace {
 		!beginning && (position == WordHead || position == NumberHead)
 	};
@@ -13,6 +15,7 @@ void English_Arg::State::applyWord(std::ostream& os, Word word) {
 	os << std::string_view {word};
 
 	if (position == WordHead || position == WordTail) *this = {Default};
+	beginning = false;
 }
 
 void English_Arg::State::applyPunctuation(
@@ -28,9 +31,9 @@ void English_Arg::State::applyPunctuation(
 	else if (symbol == ":") os << ":", *this = {Default};
 	// Invisible punctuation
 	else if (symbol == "^") position = WordTail;
-	else if (symbol == "&" && position == NumberHead) position = NumberTail;
-	else if (symbol == "&" && position == NumberTail) position = NumberTail;
+	else if (symbol == "&" && position == NumberEnd) position = NumberTail;
 	else if (symbol == "&") position = NumberHead;
+	else if (symbol == "!&") position = NumberEnd;
 	else if (symbol == "-|") capitalize = true;
 }
 
