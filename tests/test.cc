@@ -735,7 +735,7 @@ TEST(StenoPhrase, GoodInputString) {
 	EXPECT_EQ(steno::Phrase {"{prefix^}"}, steno::Phrase {"prefix{^}"});
 	EXPECT_EQ(steno::Phrase {"{^suffix}"}, steno::Phrase {"{^}suffix"});
 	EXPECT_EQ(steno::Phrase {"{^infix^}"}, steno::Phrase {"{^}infix{^}"});
-	EXPECT_EQ(steno::Phrase {"{&251}"}, steno::Phrase {"{&}251"});
+	EXPECT_EQ(steno::Phrase {"{&251}"}, steno::Phrase {"{&}251{!&}"});
 	EXPECT_EQ(steno::Phrase {"{word}"}, steno::Phrase {"word"});
 	EXPECT_EQ(steno::Phrase {"{two words}"}, steno::Phrase {"two words"});
 

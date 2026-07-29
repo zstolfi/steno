@@ -30,7 +30,7 @@ struct English_Arg {
 
 	static constexpr std::array Punctuation {
 		Comma, Period, QuestionMark, ExclamationPoint, Semicolon, Colon,
-		Combine, DigitSequence, Capitalize,
+		Combine, DigitSequence, DigitSequenceEnd, Capitalize,
 	};
 
 	static constexpr char Uppercase(char c) {
@@ -97,6 +97,7 @@ static std::set const GlobalPunctuation {
 	English.Colon           .as(Punctuate)->symbol,
 	English.Combine         .as(Punctuate)->symbol,
 	English.DigitSequence   .as(Punctuate)->symbol,
+	English.DigitSequenceEnd.as(Punctuate)->symbol,
 	English.Capitalize      .as(Punctuate)->symbol,
 };
 
