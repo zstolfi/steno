@@ -528,16 +528,16 @@ enum FileType {
 	Plain, Json, Rtf,
 };
 
+// TODO: Flesh out SourceLocation class.
+using SourceLocation = std::shared_ptr<std::string>;
+
 template <FileType FT>
 class EntryIterator {
 	std::istream* input {nullptr};
 	Brief current {};
-
-	// TODO: Flesh out SourceLocation class.
-	using SourceLocation = std::shared_ptr<std::string>;
+	std::any parseState {};
 	Issues<SourceLocation> issueLocations {};
 
-	std::any parseState {};
 	void setup() {}
 	void next();
 
@@ -551,38 +551,16 @@ public:
 
 	EntryIterator(std::istream& in): input{&in} { setup(); next(); }
 
-	Issues<SourceLocation> const& issues() const { return issueLocations; }
-
-	bool operator==(EntryIterator const& other) const {
-		return this->over() && other.over();
-	}
-
-	Brief operator*() const { return current; }
-	EntryIterator& operator++() { next(); return *this; }
-
-	EntryIterator operator++(int) {
-		EntryIterator old = *this;
-		++(*this);
-		return old;
-	}
+	Issues<SourceLocation> const& issues() const;
+	bool operator==(EntryIterator const&) const;
+	Brief operator*() const;
+	EntryIterator& operator++();
+	EntryIterator operator++(int);
 
 private:
-	void finish() {
-		input = nullptr;
-	}
-
-	bool over() const {
-		return input == nullptr;
-	}
-
-	void fail(std::string message={}) {
-		issueLocations.push_back(std::make_shared<std::string>(message));
-		input = nullptr;
-	}
-
-	static constexpr bool isWhitespace(char c) {
-		return c == ' ' || c == '\t' || c == '\n' || c == '\r';
-	}
+	void finish();
+	bool over() const;
+	void fail(std::string={});
 };
 
 /* ~~ Dictionary Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -1002,6 +980,51 @@ constexpr Stroke::Stroke(I first, I last) {
 	for (auto key=first; key!=last; ++key) {
 		this->m_bits |= (uint32_t)*key;
 	}
+}
+
+template <FileType FT>
+Issues<SourceLocation> const& EntryIterator<FT>::issues() const {
+	return issueLocations;
+}
+
+template <FileType FT>
+bool EntryIterator<FT>::operator==(EntryIterator const& other) const {
+	// Only use operator== for end comparison.
+	return this->over() && other.over();
+}
+
+template <FileType FT>
+Brief EntryIterator<FT>::operator*() const {
+	return current;
+}
+
+template <FileType FT>
+EntryIterator<FT>& EntryIterator<FT>::operator++() {
+	next();
+	return *this;
+}
+
+template <FileType FT>
+EntryIterator<FT> EntryIterator<FT>::operator++(int) {
+	EntryIterator old = *this;
+	++(*this);
+	return old;
+}
+
+template <FileType FT>
+void EntryIterator<FT>::finish() {
+	input = nullptr;
+}
+
+template <FileType FT>
+bool EntryIterator<FT>::over() const {
+	return input == nullptr;
+}
+
+template <FileType FT>
+void EntryIterator<FT>::fail(std::string message) {
+	issueLocations.push_back(std::make_shared<std::string>(message));
+	input = nullptr;
 }
 
 template <Language_Arg L> Context& Context::codeSwitch(L) {
