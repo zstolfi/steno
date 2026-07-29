@@ -17,18 +17,15 @@ CXXFLAGS   += -isystem $(GTEST)/include
 
 all : test
 
-$(STENO)/steno.hh : $(STENO)/steno_parsers.hh $(STENO)/steno_languages.hh
+$(STENO)/steno.hh : $(STENO)/steno_languages.hh
 
-test : test.o steno.o steno_parsers.o steno_languages.o gtest_main.a
+test : test.o steno.o steno_languages.o gtest_main.a
 	$(CXX) $(LDFLAGS) $^ -o $@
 
 test.o : test.cc $(STENO)/steno.cc $(STENO)/steno.hh English.cc $(GTEST_INC)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 steno.o : $(STENO)/steno.cc $(STENO)/steno_languages.cc
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-steno_parsers.o : $(STENO)/steno_parsers.cc $(STENO)/steno_parsers.hh
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 steno_languages.o : $(STENO)/steno_languages.cc $(STENO)/steno_languages.hh
