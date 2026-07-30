@@ -15,22 +15,26 @@ struct English_Arg {
 	static constexpr std::string_view Name {"English"};
 	static constexpr LanguageCode Code {"eng", "Latn"};
 
-	// Standard punctuation
-	static constexpr Signal Comma            {Punctuate, ","};
-	static constexpr Signal Period           {Punctuate, "."};
-	static constexpr Signal QuestionMark     {Punctuate, "?"};
-	static constexpr Signal ExclamationPoint {Punctuate, "!"};
-	static constexpr Signal Semicolon        {Punctuate, ";"};
-	static constexpr Signal Colon            {Punctuate, ":"};
-	// Invisible punctuation
-	static constexpr Signal Combine          {Punctuate, "^"};
-	static constexpr Signal DigitSequence    {Punctuate, "&"};
-	static constexpr Signal DigitSequenceEnd {Punctuate, "!&"};
-	static constexpr Signal Capitalize       {Punctuate, "-|"};
+	struct Symbols {
+		static constexpr std::string_view
+			// Standard punctuation
+			Comma {","},
+			Period {"."},
+			QuestionMark {"?"},
+			ExclamationPoint {"!"},
+			Semicolon {";"},
+			Colon {":"},
+			// Invisible punctuation
+			Combine {"^"},
+			DigitSequence {"&"},
+			DigitSequenceEnd {"!&"},
+			Capitalize {"-|"}
+		;
 
-	static constexpr std::array Punctuation {
-		Comma, Period, QuestionMark, ExclamationPoint, Semicolon, Colon,
-		Combine, DigitSequence, DigitSequenceEnd, Capitalize,
+		static constexpr std::array All {
+			Comma, Period, QuestionMark, ExclamationPoint, Semicolon, Colon,
+			Combine, DigitSequence, DigitSequenceEnd, Capitalize,
+		};
 	};
 
 	static constexpr char Uppercase(char c) {
@@ -63,6 +67,20 @@ struct English_Arg {
 		void applyWord(std::ostream&, Word);
 		void applyPunctuation(std::ostream&, std::string_view);
 	};
+
+	// API access to punctuation Signals
+	// Example:
+	// speech << "well" << English.Comma() << "I told you" << English.Period();
+	static Signal Comma();
+	static Signal Period();
+	static Signal QuestionMark();
+	static Signal ExclamationPoint();
+	static Signal Semicolon();
+	static Signal Colon();
+	static Signal Combine();
+	static Signal DigitSequence();
+	static Signal DigitSequenceEnd();
+	static Signal Capitalize();
 };
 static constexpr auto English = English_Arg {};
 
@@ -89,16 +107,16 @@ public:
 
 // TODO: Make this value computed at compile time.
 static std::set const GlobalPunctuation {
-	English.Comma           .as(Punctuate)->symbol,
-	English.Period          .as(Punctuate)->symbol,
-	English.QuestionMark    .as(Punctuate)->symbol,
-	English.ExclamationPoint.as(Punctuate)->symbol,
-	English.Semicolon       .as(Punctuate)->symbol,
-	English.Colon           .as(Punctuate)->symbol,
-	English.Combine         .as(Punctuate)->symbol,
-	English.DigitSequence   .as(Punctuate)->symbol,
-	English.DigitSequenceEnd.as(Punctuate)->symbol,
-	English.Capitalize      .as(Punctuate)->symbol,
+	English_Arg::Symbols::Comma,
+	English_Arg::Symbols::Period,
+	English_Arg::Symbols::QuestionMark,
+	English_Arg::Symbols::ExclamationPoint,
+	English_Arg::Symbols::Semicolon,
+	English_Arg::Symbols::Colon,
+	English_Arg::Symbols::Combine,
+	English_Arg::Symbols::DigitSequence,
+	English_Arg::Symbols::DigitSequenceEnd,
+	English_Arg::Symbols::Capitalize,
 };
 
 /* ~~ Orthography ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */

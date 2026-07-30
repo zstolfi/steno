@@ -37,4 +37,44 @@ void English_Arg::State::applyPunctuation(
 	else if (symbol == "-|") capitalize = true;
 }
 
+Signal English_Arg::Comma() {
+	return Signal {Punctuate, std::string {Symbols::Comma}};
+}
+
+Signal English_Arg::Period() {
+	return Signal {Punctuate, std::string {Symbols::Period}};
+}
+
+Signal English_Arg::QuestionMark() {
+	return Signal {Punctuate, std::string {Symbols::QuestionMark}};
+}
+
+Signal English_Arg::ExclamationPoint() {
+	return Signal {Punctuate, std::string {Symbols::ExclamationPoint}};
+}
+
+Signal English_Arg::Semicolon() {
+	return Signal {Punctuate, std::string {Symbols::Semicolon}};
+}
+
+Signal English_Arg::Colon() {
+	return Signal {Punctuate, std::string {Symbols::Colon}};
+}
+
+Signal English_Arg::Combine() {
+	return Signal {Punctuate, std::string {Symbols::Combine}};
+}
+
+Signal English_Arg::DigitSequence() {
+	return Signal {Punctuate, std::string {Symbols::DigitSequence}};
+}
+
+Signal English_Arg::DigitSequenceEnd() {
+	return Signal {Punctuate, std::string {Symbols::DigitSequenceEnd}};
+}
+
+Signal English_Arg::Capitalize() {
+	return Signal {Punctuate, std::string {Symbols::Capitalize}};
+}
+
 } // namespace steno

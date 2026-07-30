@@ -798,22 +798,22 @@ TEST(StenoLanguage, CodeUniqueness) {
 
 TEST(StenoLanguages, CodeFormat) {
 	steno::Languages::ForEach([&] (auto Language) {
-		std::string_view sv {};
+		std::string str {};
 
-		EXPECT_EQ((sv = Language.Code.name()).size(), 3);
-		EXPECT_TRUE('a' <= sv[0] && sv[0] <= 'z');
-		EXPECT_TRUE('a' <= sv[1] && sv[1] <= 'z');
-		EXPECT_TRUE('a' <= sv[2] && sv[2] <= 'z');
+		EXPECT_EQ((str = Language.Code.name()).size(), 3);
+		EXPECT_TRUE('a' <= str[0] && str[0] <= 'z');
+		EXPECT_TRUE('a' <= str[1] && str[1] <= 'z');
+		EXPECT_TRUE('a' <= str[2] && str[2] <= 'z');
 
-		EXPECT_EQ((sv = Language.Code.script()).size(), 4);
-		EXPECT_TRUE('A' <= sv[0] && sv[0] <= 'Z');
-		EXPECT_TRUE('a' <= sv[1] && sv[1] <= 'z');
-		EXPECT_TRUE('a' <= sv[2] && sv[2] <= 'z');
-		EXPECT_TRUE('a' <= sv[3] && sv[3] <= 'z');
+		EXPECT_EQ((str = Language.Code.script()).size(), 4);
+		EXPECT_TRUE('A' <= str[0] && str[0] <= 'Z');
+		EXPECT_TRUE('a' <= str[1] && str[1] <= 'z');
+		EXPECT_TRUE('a' <= str[2] && str[2] <= 'z');
+		EXPECT_TRUE('a' <= str[3] && str[3] <= 'z');
 
-		EXPECT_EQ((sv = Language.Code.region()).size(), 2);
-		EXPECT_TRUE('A' <= sv[0] && sv[0] <= 'Z');
-		EXPECT_TRUE('A' <= sv[1] && sv[1] <= 'Z');
+		EXPECT_EQ((str = Language.Code.region()).size(), 2);
+		EXPECT_TRUE('A' <= str[0] && str[0] <= 'Z');
+		EXPECT_TRUE('A' <= str[1] && str[1] <= 'Z');
 	});
 }
 
