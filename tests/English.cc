@@ -1,33 +1,24 @@
-/* ~~ Phrase Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
 TEST(StenoEnglishCode, Construction) {
 	auto const Code = steno::English.Code;
 	EXPECT_EQ(Code.name(), "eng");
 	EXPECT_EQ(Code.script(), "Latn");
 }
 
-#define SPEECH_SETUP(Langage)                                                  \
+#define PHRASE_EQ(Stream, Expected) {                                          \
     g_oss = {};                                                                \
-    auto speech = steno::Speech {g_oss};                                       \
-    auto CaseLanguage = Langage
-
-#define PHRASE_EQ(Stream, Result)                                              \
-    g_oss = {}, speech = {g_oss, CaseLanguage, steno::Default};                \
-    speech.context().as(CaseLanguage)->beginning = true;                       \
+    auto speech = steno::Speech {g_oss, steno::English, steno::Default};       \
+    speech.context().as(steno::English)->beginning = true;                     \
     speech << Stream;                                                          \
-    EXPECT_EQ(g_oss.str(), Result)
+    EXPECT_EQ(g_oss.str(), Expected);                                          \
+}
 
-TEST(StenoEnglishPhrase, OutputStream) {
-	SPEECH_SETUP(steno::English);
-
+TEST(StenoEnglishSpeech, OutputStream) {
 	PHRASE_EQ("call me Ishmael", "call me Ishmael");
 	PHRASE_EQ("some years ago", "some years ago");
 	PHRASE_EQ("never mind how long", "never mind how long");
 }
 
-TEST(StenoEnglishPhrase, Punctuation) {
-	SPEECH_SETUP(steno::English);
-
+TEST(StenoEnglishSpeech, Punctuation) {
 	// Comma
 	PHRASE_EQ("into the street {,}", "into the street,");
 	PHRASE_EQ("street {,} and", "street, and");
@@ -59,9 +50,7 @@ TEST(StenoEnglishPhrase, Punctuation) {
 	PHRASE_EQ("{:} Though I cannot", ": Though I cannot");
 }
 
-TEST(StenoEnglishPhrase, InvisiblePunctuation) {
-	SPEECH_SETUP(steno::English);
-
+TEST(StenoEnglishSpeech, InvisiblePunctuation) {
 	// Combine
 	PHRASE_EQ("a{^} gain", "again");
 	PHRASE_EQ("a{^} gain {^}st", "against");
@@ -85,5 +74,72 @@ TEST(StenoEnglishPhrase, InvisiblePunctuation) {
 	PHRASE_EQ("{-|} sabbath afternoon", "Sabbath afternoon");
 }
 
-#undef SPEECH_SETUP
+// https://en.wikipedia.org/wiki/English_plurals#Regular_plurals
+TEST(StenoEnglishSpeech, RegularPlurals) {
+	// Any sibilant
+	PHRASE_EQ("kiss {^s}", "kisses");
+	PHRASE_EQ("phase {^s}", "phases");
+	PHRASE_EQ("dish {^s}", "dishes");
+	PHRASE_EQ("massage {^s}", "massages");
+	PHRASE_EQ("witch {^s}", "witches");
+	PHRASE_EQ("judge {^s}", "judges");
+
+	// Other voiceless consonants
+	PHRASE_EQ("lap {^s}", "laps");
+	PHRASE_EQ("cat {^s}", "cats");
+	PHRASE_EQ("clock {^s}", "clocks");
+	PHRASE_EQ("cuff {^s}", "cuffs");
+	PHRASE_EQ("death {^s}", "deaths");
+	PHRASE_EQ("loch {^s}", "lochs");
+
+	// Other voiced phonemes
+	PHRASE_EQ("girl {^s}", "girls");
+	PHRASE_EQ("chair {^s}", "chairs");
+	PHRASE_EQ("boy {^s}", "boys");
+
+	// Plurals of nouns in -o preceded by a consonant
+	PHRASE_EQ("hero {^s}", "heroes");
+	PHRASE_EQ("potato {^s}", "potatoes");
+//	PHRASE_EQ("volcano {^s}", "volcanoes" or "volcanos");
+	PHRASE_EQ("echo {^s}", "echoes");
+	PHRASE_EQ("canto {^s}", "cantos");
+	PHRASE_EQ("hetero {^s}", "heteros");
+	PHRASE_EQ("photo {^s}", "photos");
+//	PHRASE_EQ("zero {^s}", "zeros" or "zeroes");
+	PHRASE_EQ("piano {^s}", "pianos");
+	PHRASE_EQ("portico {^s}", "porticos");
+	PHRASE_EQ("pro {^s}", "pros");
+	PHRASE_EQ("quarto {^s}", "quartos");
+	PHRASE_EQ("kimono {^s}", "kimonos");
+
+	// Plurals of nouns in -y
+	PHRASE_EQ("cherry {^s}", "cherries");
+	PHRASE_EQ("lady {^s}", "ladies");
+	PHRASE_EQ("sky {^s}", "skies");
+	PHRASE_EQ("colloquy {^s}", "colloquies");
+	PHRASE_EQ("obsequy {^_s", "	obsequies");
+	PHRASE_EQ("soliloquy {^s}", "soliloquies");
+	PHRASE_EQ("Sicily {^s}", "Sicilies");
+	PHRASE_EQ("Scilly {^s}", "Scillies");
+//	PHRASE_EQ("Germany {^s}", "Germanys" or "Germanies");
+	PHRASE_EQ("lay-by {^s}", "lay-bys");
+	PHRASE_EQ("stand-by {^s}", "stand-bys");
+	PHRASE_EQ("day {^s}", "days");
+	PHRASE_EQ("monkey {^s}", "monkeys");
+
+	// Plurals of nouns in -i
+	PHRASE_EQ("alibi {^s}", "alibis");
+	PHRASE_EQ("bikini {^s}", "bikinis");
+	PHRASE_EQ("Israeli {^s}", "Israelis");
+//	PHRASE_EQ("chili {^s}", "chilis" or "chilies");
+//	PHRASE_EQ("chilli {^s}", "chillis" or "chillies");
+	PHRASE_EQ("alkali {^s}", "alkalies");
+}
+
+// Plurals examples not found in the above Wikipedia article
+TEST(StenoEnglishSpeech, PluralsOther) {
+	PHRASE_EQ("box {^s}", "boxes");
+	PHRASE_EQ("quiz {^s}", "quizzes");
+}
+
 #undef PHRASE_EQ
