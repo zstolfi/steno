@@ -37,44 +37,22 @@ void English_Arg::State::applyPunctuation(
 	else if (symbol == "-|") capitalize = true;
 }
 
-Signal English_Arg::Comma() {
-	return Signal {Punctuate, std::string {Symbols::Comma}};
+#define DEFINE_SHORTHAND(Language, Name)                                       \
+Signal Language##_Arg::Name() {                                                \
+    return Signal {Punctuate, std::string {Symbols::Name}};                    \
 }
 
-Signal English_Arg::Period() {
-	return Signal {Punctuate, std::string {Symbols::Period}};
-}
+DEFINE_SHORTHAND(English, Comma);
+DEFINE_SHORTHAND(English, Period);
+DEFINE_SHORTHAND(English, QuestionMark);
+DEFINE_SHORTHAND(English, ExclamationPoint);
+DEFINE_SHORTHAND(English, Semicolon);
+DEFINE_SHORTHAND(English, Colon);
+DEFINE_SHORTHAND(English, Combine);
+DEFINE_SHORTHAND(English, DigitSequence);
+DEFINE_SHORTHAND(English, DigitSequenceEnd);
+DEFINE_SHORTHAND(English, Capitalize);
 
-Signal English_Arg::QuestionMark() {
-	return Signal {Punctuate, std::string {Symbols::QuestionMark}};
-}
-
-Signal English_Arg::ExclamationPoint() {
-	return Signal {Punctuate, std::string {Symbols::ExclamationPoint}};
-}
-
-Signal English_Arg::Semicolon() {
-	return Signal {Punctuate, std::string {Symbols::Semicolon}};
-}
-
-Signal English_Arg::Colon() {
-	return Signal {Punctuate, std::string {Symbols::Colon}};
-}
-
-Signal English_Arg::Combine() {
-	return Signal {Punctuate, std::string {Symbols::Combine}};
-}
-
-Signal English_Arg::DigitSequence() {
-	return Signal {Punctuate, std::string {Symbols::DigitSequence}};
-}
-
-Signal English_Arg::DigitSequenceEnd() {
-	return Signal {Punctuate, std::string {Symbols::DigitSequenceEnd}};
-}
-
-Signal English_Arg::Capitalize() {
-	return Signal {Punctuate, std::string {Symbols::Capitalize}};
-}
+#undef DEFINE_SHORTHAND
 
 } // namespace steno
