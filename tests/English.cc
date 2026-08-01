@@ -142,6 +142,48 @@ TEST(StenoEnglishSpeech, PluralsOther) {
 	PHRASE_EQ("quiz {^s}", "quizzes");
 }
 
+// https://en.wikipedia.org/wiki/Frequentative#English
+TEST(StenoEnglishSpeech, Frequentative) {
+	PHRASE_EQ("blab {^er}", "blabber");
+	PHRASE_EQ("bob {^le}", "bobble");
+	PHRASE_EQ("crack {^le}", "crackle");
+	PHRASE_EQ("crumb {^le}", "crumble");
+	PHRASE_EQ("curd {^le}", "curdle");
+	PHRASE_EQ("dab {^le}", "dabble");
+	PHRASE_EQ("drag {^le}", "draggle");
+	PHRASE_EQ("daze {^le}", "dazzle");
+	PHRASE_EQ("fizz {^le}", "fizzle");
+	PHRASE_EQ("flit {^er}", "flitter");
+	PHRASE_EQ("fond {^le}", "fondle");
+	PHRASE_EQ("gob {^le}", "gobble");
+	PHRASE_EQ("grunt {^le}", "gruntle");
+	PHRASE_EQ("hag {^le}", "haggle");
+	PHRASE_EQ("jig {^le}", "jiggle");
+	PHRASE_EQ("mud {^le}", "muddle");
+	PHRASE_EQ("nest {^le}", "nestle");
+	PHRASE_EQ("pad {^le}", "paddle");
+	PHRASE_EQ("pat {^er}", "patter");
+	PHRASE_EQ("prate {^le}", "prattle");
+	PHRASE_EQ("prick {^le}", "prickle");
+	PHRASE_EQ("put {^er}", "putter");
+	PHRASE_EQ("scuff {^le}", "scuffle");
+	PHRASE_EQ("sniff {^le}", "sniffle");
+	PHRASE_EQ("snuff {^le}", "snuffle");
+	PHRASE_EQ("snug {^le}", "snuggle");
+	PHRASE_EQ("spark {^le}", "sparkle");
+	PHRASE_EQ("speck {^le}", "speckle");
+	PHRASE_EQ("suck {^le}", "suckle");
+	PHRASE_EQ("swag {^er}", "swagger");
+	PHRASE_EQ("tick {^le}", "tickle");
+	PHRASE_EQ("top {^le}", "topple");
+	PHRASE_EQ("tramp {^le}", "trample");
+	PHRASE_EQ("twink {^le}", "twinkle");
+	PHRASE_EQ("wade {^le}", "waddle");
+	PHRASE_EQ("wag {^le}", "waggle");
+	PHRASE_EQ("wring {^le}", "wrangle");
+	PHRASE_EQ("wrest {^le}", "wrestle");
+}
+
 // https://en.wikipedia.org/wiki/English_prefix#Native
 TEST(StenoEnglishSpeech, NativePrefixes) {
 	PHRASE_EQ("{a^} float", "afloat");
