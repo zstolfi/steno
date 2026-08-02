@@ -142,6 +142,47 @@ TEST(StenoEnglishSpeech, PluralsOther) {
 	PHRASE_EQ("quiz {^s}", "quizzes");
 }
 
+// https://en.wikipedia.org/wiki/English_verbs#Past_tense
+TEST(StenoEnglishSpeech, PastTense) {
+	PHRASE_EQ("play {^ed}", "played");
+	PHRASE_EQ("like {^ed}", "liked");
+	PHRASE_EQ("try {^ed}", "tried");
+//	PHRASE_EQ("sky {^ed}", "skied" or "skyed");
+	PHRASE_EQ("lay {^ed}", "laid");
+	PHRASE_EQ("pay {^ed}", "paid");
+	PHRASE_EQ("say {^ed}", "said");
+	PHRASE_EQ("ship {^ed}", "shipped");
+	PHRASE_EQ("fathom {^ed}", "fathomed");
+	PHRASE_EQ("panic {^ed}", "panicked");
+//	PHRASE_EQ("zinc {^ed}", "zincked" or "zinced");
+	PHRASE_EQ("arc {^ed}", "arced");
+//	PHRASE_EQ("spec {^ed}", "specced" or "speced");
+//	PHRASE_EQ("sync {^ed}", "synced" or "synched");
+//	PHRASE_EQ("travel {^ed}", "traveled" or "travelled");
+	PHRASE_EQ("parallel {^ed}", "paralleled");
+//	PHRASE_EQ("dial {^ed}", "dialed" or "dialled");
+//	PHRASE_EQ("fuel {^ed}", "fueled" or "fuelled");
+	PHRASE_EQ("backflip {^ed}", "backflipped");
+	PHRASE_EQ("hobnob {^ed}", "hobnobbed");
+	PHRASE_EQ("kidnap {^ed}", "kidnapped");
+//	PHRASE_EQ("dialog {^ed}", "dialogued" or "dialogged");
+//	PHRASE_EQ("hiccup {^ed}", "hiccupped" or "hiccuped");
+//	PHRASE_EQ("program {^ed}", "programed" or "programmed");
+	PHRASE_EQ("catalog {^ed}", "cataloged");
+	PHRASE_EQ("pyramid {^ed}", "pyramided");
+	PHRASE_EQ("format {^ed}", "formatted");
+//	PHRASE_EQ("combat {^ed}", "combated" or "combatted");
+//	PHRASE_EQ("bus {^ed}", "bused" or "bussed");
+//	PHRASE_EQ("bias {^ed}", "biased" or "biassed");
+//	PHRASE_EQ("focus {^ed}", "focused" or "focussed");
+	PHRASE_EQ("drift {^ed}", "drifted");
+	PHRASE_EQ("exceed {^ed}", "exceeded");
+	PHRASE_EQ("cap {^ed}", "capped");
+	PHRASE_EQ("pass {^ed}", "passed");
+	PHRASE_EQ("buzz {^ed}", "buzzed");
+	PHRASE_EQ("tango {^ed}", "tangoed");
+}
+
 // https://en.wikipedia.org/wiki/Frequentative#English
 TEST(StenoEnglishSpeech, Frequentative) {
 	PHRASE_EQ("blab {^er}", "blabber");
