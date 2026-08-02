@@ -75,7 +75,7 @@ TEST(StenoEnglishSpeech, InvisiblePunctuation) {
 }
 
 // https://en.wikipedia.org/wiki/English_plurals#Regular_plurals
-TEST(StenoEnglishSpeech, RegularPlurals) {
+TEST(StenoEnglishSpeech, Suffix_s) {
 	// Any sibilant
 	PHRASE_EQ("kiss {^s}", "kisses");
 	PHRASE_EQ("phase {^s}", "phases");
@@ -134,16 +134,14 @@ TEST(StenoEnglishSpeech, RegularPlurals) {
 //	PHRASE_EQ("chili {^s}", "chilis" or "chilies");
 //	PHRASE_EQ("chilli {^s}", "chillis" or "chillies");
 	PHRASE_EQ("alkali {^s}", "alkalies");
-}
 
-// Plurals examples not found in the above Wikipedia article
-TEST(StenoEnglishSpeech, PluralsOther) {
+	// Plural examples not found in the above Wikipedia article
 	PHRASE_EQ("box {^s}", "boxes");
 	PHRASE_EQ("quiz {^s}", "quizzes");
 }
 
 // https://en.wikipedia.org/wiki/English_verbs#Past_tense
-TEST(StenoEnglishSpeech, PastTense) {
+TEST(StenoEnglishSpeech, Suffix_ed) {
 	PHRASE_EQ("play {^ed}", "played");
 	PHRASE_EQ("like {^ed}", "liked");
 	PHRASE_EQ("try {^ed}", "tried");
@@ -184,7 +182,7 @@ TEST(StenoEnglishSpeech, PastTense) {
 }
 
 // https://en.wikipedia.org/wiki/Frequentative#English
-TEST(StenoEnglishSpeech, Frequentative) {
+TEST(StenoEnglishSpeech, Suffix_le) {
 	PHRASE_EQ("blab {^er}", "blabber");
 	PHRASE_EQ("bob {^le}", "bobble");
 	PHRASE_EQ("crack {^le}", "crackle");
