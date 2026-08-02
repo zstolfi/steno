@@ -4,12 +4,18 @@ TEST(StenoEnglishCode, Construction) {
 	EXPECT_EQ(Code.script(), "Latn");
 }
 
-#define PHRASE_EQ(Stream, Expected) {                                          \
-    g_oss = {};                                                                \
-    auto speech = steno::Speech {g_oss, steno::English, steno::Default};       \
+#define PHRASE_REDUCE(String) ([] (steno::Phrase phrase) {                     \
+    auto oss = std::ostringstream {};                                          \
+    auto speech = steno::Speech {oss, steno::English, steno::Default};         \
     speech.context().as(steno::English)->beginning = true;                     \
-    speech << Stream;                                                          \
-    EXPECT_EQ(g_oss.str(), Expected);                                          \
+    speech << phrase;                                                          \
+    return oss.str();                                                          \
+} (String))
+
+#define PHRASE_EQ(String, Expected) {                                          \
+    auto reduced = PHRASE_REDUCE(String);                                      \
+    /* Include macro parameter 'String' so it shows up in failure messages*/   \
+    EXPECT_EQ(((void)String, reduced), Expected);                              \
 }
 
 TEST(StenoEnglishSpeech, OutputStream) {
@@ -598,4 +604,5 @@ TEST(StenoEnglishSpeech, NeoClassicalPrefixes) {
 	PHRASE_EQ("{vice-^} admiral", "vice-admiral");
 }
 
+#undef PHRASE_REDUCE
 #undef PHRASE_EQ
