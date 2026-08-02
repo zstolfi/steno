@@ -81,6 +81,7 @@ TEST(StenoEnglishSpeech, InvisiblePunctuation) {
 }
 
 // https://en.wikipedia.org/wiki/English_plurals#Regular_plurals
+// https://en.wikipedia.org/wiki/English_verbs#Third_person_singular_present
 TEST(StenoEnglishSpeech, Suffix_s) {
 	// Any sibilant
 	PHRASE_EQ("kiss {^s}", "kisses");
@@ -89,6 +90,8 @@ TEST(StenoEnglishSpeech, Suffix_s) {
 	PHRASE_EQ("massage {^s}", "massages");
 	PHRASE_EQ("witch {^s}", "witches");
 	PHRASE_EQ("judge {^s}", "judges");
+	PHRASE_EQ("box {^s}", "boxes"); // 2026-07-31
+	PHRASE_EQ("quiz {^s}", "quizzes"); // 2026-07-31
 
 	// Other voiceless consonants
 	PHRASE_EQ("lap {^s}", "laps");
@@ -141,9 +144,11 @@ TEST(StenoEnglishSpeech, Suffix_s) {
 //	PHRASE_EQ("chilli {^s}", "chillis" or "chillies");
 	PHRASE_EQ("alkali {^s}", "alkalies");
 
-	// Plural examples not found in the above Wikipedia article
-	PHRASE_EQ("box {^s}", "boxes");
-	PHRASE_EQ("quiz {^s}", "quizzes");
+	PHRASE_EQ("run {^s}", "runs");
+	PHRASE_EQ("buzz {^s}", "buzzes");
+	PHRASE_EQ("catch {^s}", "catches");
+	PHRASE_EQ("veto {^s}", "vetoes");
+	PHRASE_EQ("cry {^s}", "cries");
 }
 
 // https://en.wikipedia.org/wiki/English_verbs#Past_tense
@@ -185,6 +190,36 @@ TEST(StenoEnglishSpeech, Suffix_ed) {
 	PHRASE_EQ("pass {^ed}", "passed");
 	PHRASE_EQ("buzz {^ed}", "buzzed");
 	PHRASE_EQ("tango {^ed}", "tangoed");
+}
+
+// https://en.wikipedia.org/wiki/-ing
+// https://en.wikipedia.org/wiki/English_verbs#Present_participle
+TEST(StenoEnglishSpeech, Suffix_ing) {
+	PHRASE_EQ("go {^ing}", "going");
+	PHRASE_EQ("believe {^ing}", "believing");
+	PHRASE_EQ("lie {^ing}", "lying");
+	PHRASE_EQ("run {^ing}", "running");
+	PHRASE_EQ("panic {^ing}", "panicking");
+	PHRASE_EQ("sing {^ing}", "singing");
+	PHRASE_EQ("singe {^ing}", "singeing");
+	PHRASE_EQ("die {^ing}", "dying");
+	PHRASE_EQ("dye {^ing}", "dyeing");
+//	PHRASE_EQ("age {^ing}", "aging" or "ageing");
+//	PHRASE_EQ("rue {^ing}", "ruing" or "rueing");
+	PHRASE_EQ("cache {^ing}", "cacheing");
+	PHRASE_EQ("whinge {^ing}", "whingeing");
+
+	PHRASE_EQ("read {^ing}", "reading");
+	PHRASE_EQ("fail {^ing}", "failing");
+	PHRASE_EQ("sit {^ing}", "sitting");
+	PHRASE_EQ("change {^ing}", "changing");
+
+//	// -in' will have identical behavior to -ing
+//	for (auto verb : EnglishTop100Verbs) {
+//		auto in = PHRASE_REDUCE(verb + "{^in'}");
+//		auto ing = PHRASE_REDUCE(verb + "{^ing}");
+//		EXPECT_EQ(in, ing);
+//	}
 }
 
 // https://en.wikipedia.org/wiki/Frequentative#English
