@@ -1,7 +1,7 @@
 # ~~~~ Compilers & Options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 CXX         = clang++
 LDFLAGS     =
-CXXFLAGS    = -std=c++20 -Wall -ferror-limit=24
+CXXFLAGS    = -std=c++23 -g -Wall -ferror-limit=24
 
 # ~~~~ Directories ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 STENO       = ..
@@ -31,6 +31,9 @@ number_builder : number_builder.o steno.o steno_languages.o
 	$(CXX) $(LDFLAGS) $^ -o $@
 
 polyhedra : polyhedra.o steno.o steno_languages.o
+	$(CXX) $(LDFLAGS) $^ -o $@
+
+elan_mira : elan_mira.o steno.o steno_languages.o
 	$(CXX) $(LDFLAGS) $^ -o $@
 
 steno.o : $(STENO)/steno.cc $(STENO)/steno.hh Makefile

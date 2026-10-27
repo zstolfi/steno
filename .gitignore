@@ -15,6 +15,7 @@ examples/dictionary_open
 examples/reverse_translate
 examples/number_builder
 examples/polyhedra
+examples/elan_mira
 examples/numbers/numbers_advanced
 IO/JSON_import
 atlas/src/desktop/atlas
